@@ -30,6 +30,7 @@ GNU General Public License for more details.
 #include <QProgressDialog>
 #include <QFileIconProvider>
 #include <QTabletEvent>
+#include <QDesktopWidget>
 
 // core_lib headers
 #include "pencildef.h"
@@ -138,6 +139,8 @@ MainWindow2::~MainWindow2()
 
 void MainWindow2::createDockWidgets()
 {
+    qDebug() << "Geometry:" << QApplication::desktop()->availableGeometry(this);
+
     mTimeLine = new TimeLine(this);
     mTimeLine->setObjectName("TimeLine");
 

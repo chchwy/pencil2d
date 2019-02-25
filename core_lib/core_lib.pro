@@ -38,6 +38,7 @@ HEADERS +=  \
     src/graphics/vector/vectorimage.h \
     src/graphics/vector/vectorselection.h \
     src/graphics/vector/vertexref.h \
+    src/graphics/buffercanvas.h \
     src/interface/backupelement.h \
     src/interface/editor.h \
     src/interface/flowlayout.h \
@@ -108,6 +109,7 @@ SOURCES +=  src/graphics/bitmap/bitmapimage.cpp \
     src/graphics/vector/vectorimage.cpp \
     src/graphics/vector/vectorselection.cpp \
     src/graphics/vector/vertexref.cpp \
+    src/graphics/buffercanvas.cpp \
     src/interface/editor.cpp \
     src/interface/flowlayout.cpp \
     src/interface/recentfilemenu.cpp \

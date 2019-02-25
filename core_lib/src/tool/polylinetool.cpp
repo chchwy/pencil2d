@@ -185,7 +185,7 @@ void PolylineTool::drawPolyline(QList<QPointF> points, QPointF endPoint)
         return;
     }
 
-    if (points.size() > 0)
+    if (!points.empty())
     {
         QPen pen(mEditor->color()->frontColor(),
                  properties.width,
@@ -260,14 +260,14 @@ void PolylineTool::endPolyline(QList<QPointF> points)
         curve.setVariableWidth(false);
         curve.setInvisibility(mScribbleArea->makeInvisible());
 
-        ((LayerVector *)layer)->getLastVectorImageAtFrame(mEditor->currentFrame(), 0)->addCurve(curve, mEditor->view()->scaling());
+        ((LayerVector*)layer)->getLastVectorImageAtFrame(mEditor->currentFrame(), 0)->addCurve(curve, mEditor->view()->scaling());
     }
     if (layer->type() == Layer::BITMAP)
     {
         drawPolyline(points, points.last());
-        BitmapImage *bitmapImage = ((LayerBitmap *)layer)->getLastBitmapImageAtFrame(mEditor->currentFrame(), 0);
+        BitmapImage* bitmapImage = ((LayerBitmap*)layer)->getLastBitmapImageAtFrame(mEditor->currentFrame(), 0);
         bitmapImage->paste(mScribbleArea->mBufferImg);
     }
-    mScribbleArea->mBufferImg->clear();
+    mScribbleArea->clearBitmapBuffer();
     mScribbleArea->setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
 }

@@ -46,18 +46,20 @@ class StrokeManager;
 class PointerEvent;
 class BitmapImage;
 class VectorImage;
+class BufferCanvas;
+
 
 class ScribbleArea : public QWidget
 {
     Q_OBJECT
 
-        friend class MoveTool;
+    friend class MoveTool;
     friend class EditTool;
     friend class SmudgeTool;
     friend class BucketTool;
 
 public:
-    ScribbleArea(QWidget *parent);
+    ScribbleArea(QWidget* parent);
     ~ScribbleArea();
 
     bool init();
@@ -201,7 +203,7 @@ public:
     /// on an empty frame, and if so, takes action according to use preference.
     void handleDrawingOnEmptyFrame();
 
-    BitmapImage* mBufferImg = nullptr; // used to pre-draw vector modifications
+    BufferCanvas* mBufferImg = nullptr; // used to pre-draw bitmap/vector things before applying to the canvas
 
     QPixmap mCursorImg;
     QPixmap mTransCursImg;

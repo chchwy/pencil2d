@@ -30,6 +30,7 @@ GNU General Public License for more details.
 #include "layercamera.h"
 #include "bitmapimage.h"
 #include "vectorimage.h"
+#include "buffercanvas.h"
 
 #include "colormanager.h"
 #include "toolmanager.h"
@@ -75,7 +76,7 @@ bool ScribbleArea::init()
     mIsSimplified = mPrefs->isOn(SETTING::OUTLINES);
     mMultiLayerOnionSkin = mPrefs->isOn(SETTING::MULTILAYER_ONION);
 
-    mBufferImg = new BitmapImage;
+    mBufferImg = new BufferCanvas;
 
     QRect newSelection(QPoint(0, 0), QSize(0, 0));
     mySelection = newSelection;
@@ -637,9 +638,11 @@ void ScribbleArea::mousePressEvent(QMouseEvent* e)
 
 void ScribbleArea::mouseMoveEvent(QMouseEvent* e)
 {
+    qDebug() << e->globalPos();
+
     // Workaround for tablet issue (#677 part 2)
-    if (mStrokeManager->isTabletInUse() &&
-        (!isMouseInUse() && currentTool()->type() != POLYLINE)) {
+    if (mStrokeManager->isTabletInUse() && (!isMouseInUse() && currentTool()->type() != POLYLINE))
+    {
         e->ignore(); return;
     }
 
@@ -910,7 +913,7 @@ void ScribbleArea::updateCanvasCursor()
     }
     else
     {
-        // if above does not comply, delocate image
+        // if above does not comply, deallocate image
         mCursorImg = QPixmap();
     }
 
@@ -1047,10 +1050,8 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
                 // ------------ vertices of the edited curves
                 colour = QColor(200, 200, 200);
                 painter.setBrush(colour);
-                for (int k = 0; k < vectorSelection.curve.size(); k++)
+                for (int curveNumber : vectorSelection.curve)
                 {
-                    int curveNumber = vectorSelection.curve.at(k);
-
                     for (int vertexNumber = -1; vertexNumber < vectorImage->getCurveSize(curveNumber); vertexNumber++)
                     {
                         QPointF vertexPoint = vectorImage->getVertex(curveNumber, vertexNumber);
@@ -1064,9 +1065,8 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
                 // ------------ selected vertices of the edited curves
                 colour = QColor(100, 100, 255);
                 painter.setBrush(colour);
-                for (int k = 0; k < vectorSelection.vertex.size(); k++)
+                for (VertexRef vertexRef : vectorSelection.vertex)
                 {
-                    VertexRef vertexRef = vectorSelection.vertex.at(k);
                     QPointF vertexPoint = vectorImage->getVertex(vertexRef);
                     QRectF rectangle0 = QRectF(mEditor->view()->mapCanvasToScreen(vertexPoint) - QPointF(3.0, 3.0), QSizeF(7, 7));
                     painter.drawRect(rectangle0);
@@ -1074,11 +1074,10 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
                 // ----- paints the closest vertices
                 colour = QColor(255, 0, 0);
                 painter.setBrush(colour);
-                if (vectorSelection.curve.size() > 0)
+                if (!vectorSelection.curve.empty())
                 {
-                    for (int k = 0; k < mClosestVertices.size(); k++)
+                    for (VertexRef vertexRef : mClosestVertices)
                     {
-                        VertexRef vertexRef = mClosestVertices.at(k);
                         QPointF vertexPoint = vectorImage->getVertex(vertexRef);
 
                         QRectF rectangle = QRectF(mEditor->view()->mapCanvasToScreen(vertexPoint) - QPointF(3.0, 3.0), QSizeF(7, 7));
@@ -1406,7 +1405,6 @@ void ScribbleArea::drawPolyline(QPainterPath path, QPen pen, bool useAA)
     mBufferImg->clear();
     mBufferImg->drawPath(path, pen, Qt::NoBrush, QPainter::CompositionMode_SourceOver, useAA);
     update(boundingRect.toRect());
-
 }
 
 /************************************************************************************/

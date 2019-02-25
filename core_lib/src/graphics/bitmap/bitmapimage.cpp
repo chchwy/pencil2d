@@ -20,7 +20,10 @@ GNU General Public License for more details.
 #include <QDebug>
 #include <QtMath>
 #include <QFile>
+
 #include "util.h"
+#include "buffercanvas.h"
+
 
 BitmapImage::BitmapImage()
 {
@@ -158,6 +161,11 @@ void BitmapImage::paste(BitmapImage* bitmapImage, QPainter::CompositionMode cm)
     painter.end();
 
     modification();
+}
+
+void BitmapImage::paste(BufferCanvas*, QPainter::CompositionMode cm /*= QPainter::CompositionMode_SourceOver*/)
+{
+
 }
 
 void BitmapImage::moveTopLeft(QPoint point)

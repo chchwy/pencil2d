@@ -21,6 +21,8 @@ GNU General Public License for more details.
 #include <QPainter>
 #include "keyframe.h"
 
+class BufferCanvas;
+
 
 class BitmapImage : public KeyFrame
 {
@@ -48,6 +50,7 @@ public:
     BitmapImage copy();
     BitmapImage copy(QRect rectangle);
     void paste(BitmapImage*, QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver);
+    void paste(BufferCanvas*, QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver);
 
     void moveTopLeft(QPoint point);
     void moveTopLeft(QPointF point) { moveTopLeft(point.toPoint()); }
