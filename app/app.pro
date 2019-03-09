@@ -18,7 +18,8 @@ DESTDIR = ../bin
 
 RESOURCES += \
     data/app.qrc \
-    ../translations/translations.qrc
+    ../translations/translations.qrc \
+    data/brushes.qrc
 
 INCLUDEPATH += \
     src \
@@ -175,3 +176,38 @@ else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../core
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../core_lib/release/core_lib.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../core_lib/debug/core_lib.lib
 else:unix: PRE_TARGETDEPS += $$OUT_PWD/../core_lib/libcore_lib.a
+
+# --- qtmypaint ---
+INCLUDEPATH += $$PWD/../3rdlib/qtmypaint/json-c \
+               $$PWD/../3rdlib/qtmypaint/libmypaint \
+               $$PWD/../3rdlib/qtmypaint/src
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../3rdlib/qtmypaint/release/ -lqtmypaint
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../3rdlib/qtmypaint/debug/ -lqtmypaint
+else:unix: LIBS += -L$$OUT_PWD/../3rdlib/qtmypaint/ -lqtmypaint
+
+macx: LIBS += -L../3rdlib/qtmypaint/src/ -lqtmypaint \
+              ../3rdlib/qtmypaint/src/libQTMyPaint.1.0.0.dylib
+
+INCLUDEPATH += ../3rdlib/qtmypaint
+DEPENDPATH += ../3rdlib/qtmypaint
+
+message(../3rdlib/qtmypaint/)
+
+#win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/qtmypaint/release/libqtmypaint.a
+#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/qtmypaint/debug/libqtmypaint.a
+#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/qtmypaint/release/qtmypaint.lib
+#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/qtmypaint/debug/qtmypaint.lib
+#else:unix: PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/qtmypaint/libqtmypaint.a
+
+#win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../src/release/libQTMyPaint.a
+#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../src/debug/libQTMyPaint.a
+#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../src/release/QTMyPaint.lib
+#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../src/debug/QTMyPaint.lib
+#else:unix: PRE_TARGETDEPS += $$OUT_PWD/../src/libQTMyPaint.a
+
+#macx: LIBS += -L$$OUT_PWD/../libmypaint/ -llibmypaint \
+#              $$OUT_PWD/libmypaint/libmypaint-2.0.0.dylib
+
+#INCLUDEPATH += $$PWD/../libmypaint
+#DEPENDPATH += $$PWD/../libmypaint
