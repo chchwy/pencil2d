@@ -186,15 +186,13 @@ INCLUDEPATH += $$PWD/../3rdlib/qtmypaint/json-c \
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../3rdlib/qtmypaint/release/ -lqtmypaint
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../3rdlib/qtmypaint/debug/ -lqtmypaint
-else:unix: LIBS += -L$$OUT_PWD/../3rdlib/qtmypaint/ -lqtmypaint
+else:!macx:unix: LIBS += -L$$OUT_PWD/../3rdlib/qtmypaint/ -lqtmypaint
 
 macx: LIBS += -L../3rdlib/qtmypaint/src/ -lqtmypaint \
               ../3rdlib/qtmypaint/src/libQTMyPaint.1.0.0.dylib
 
 INCLUDEPATH += ../3rdlib/qtmypaint
 DEPENDPATH += ../3rdlib/qtmypaint
-
-message(../3rdlib/qtmypaint/)
 
 #win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/qtmypaint/release/libqtmypaint.a
 #else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/qtmypaint/debug/libqtmypaint.a

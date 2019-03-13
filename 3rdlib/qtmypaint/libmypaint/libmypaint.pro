@@ -1,6 +1,6 @@
 QT += core gui widgets
 
-TARGET = libmypaint
+TARGET = mypaint
 TEMPLATE = lib
 CONFIG += sharedlib
 

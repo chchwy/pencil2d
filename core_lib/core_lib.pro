@@ -184,3 +184,11 @@ unix:!macx {
     INCLUDEPATH += src/external/linux
     SOURCES += src/external/linux/linux.cpp
 }
+
+# --- mypaint ---
+INCLUDEPATH += $$PWD/../3rdlib/qtmypaint/json-c \
+               $$PWD/../3rdlib/qtmypaint/libmypaint \
+               $$PWD/../3rdlib/qtmypaint/src \
+               $$PWD/../3rdlib/qtmypaint
+
+DEPENDPATH += $$PWD/../3rdlib/qtmypaint

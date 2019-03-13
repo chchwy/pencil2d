@@ -26,8 +26,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "mphandler.h"
 
+extern "C" {
 #include "mypaint-brush.h"
 #include "mypaint-surface.h"
+}
 
 //#include "libmypaint.c"
 

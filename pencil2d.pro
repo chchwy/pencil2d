@@ -5,10 +5,10 @@
 TEMPLATE = subdirs
 
 SUBDIRS = \ # sub-project names
+    qtmypaint \
     core_lib \
     app \
     tests \
-    qtmypaint
 
 # build the project sequentially as listed in SUBDIRS !
 CONFIG += ordered

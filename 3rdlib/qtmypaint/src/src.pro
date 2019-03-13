@@ -14,16 +14,15 @@ SOURCES += mpbrush.cpp \
            mpsurface.cpp \
            mptile.cpp
 
-LIBS += -L../json-c -ljson-c
-LIBS += -L../libmypaint -llibmypaint
-
 # --- json-c ---
 win32:CONFIG(release, debug|release): LIBS += -L../json-c/release/ -ljson-c
 else:win32:CONFIG(debug, debug|release): LIBS += -L../json-c/debug/ -ljson-c
 else:unix: LIBS += -L../json-c -ljson-c
+macx: LIBS += -L../json-c -ljson-c
 
 INCLUDEPATH += ../json-c
 DEPENDPATH += ../json-c
+
 
 win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += ../json-c/release/libjson-c.a
 else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../json-c/debug/libjson-c.a
@@ -32,18 +31,13 @@ else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../json-c/
 else:unix: PRE_TARGETDEPS += ../json-c/libjson-c.a
 
 # --- libmypaint ---
+
+# We use a precompiled version of mypaint to avoid various compile problem with dependencies
 win32:CONFIG(release, debug|release): LIBS += -L../libmypaint/release/ -l libmypaint
 else:win32:CONFIG(debug, debug|release): LIBS += -L../libmypaint/debug/ -l libmypaint
-else:unix: LIBS += -L../libmypaint -l libmypaint
-macx: LIBS += -L$$OUT_PWD/../libmypaint/ -llibmypaint \
-              $$OUT_PWD/libmypaint/libmypaint-2.0.0.dylib
+else:!macx:unix: LIBS += -L$$PWD/../libmypaint/ -l libmypaint \
+                   $$PWD/../libmypaint/libmypaint.so
+macx: LIBS += $$PWD/../libmypaint/libmypaint.dylib
 
 INCLUDEPATH += $$PWD/../libmypaint
 DEPENDPATH += $$PWD/../libmypaint
-
-#win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += ../libmypaint/release/liblibmypaint.a
-#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../libmypaint/debug/liblibmypaint.a
-#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += ../libmypaint/release/libmypaint.lib
-#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../libmypaint/debug/libmypaint.lib
-#else:unix: PRE_TARGETDEPS += ../libmypaint/liblibmypaint.a
-
