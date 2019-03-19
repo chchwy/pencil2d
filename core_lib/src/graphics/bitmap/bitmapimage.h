@@ -53,6 +53,7 @@ public:
     void moveTopLeft(QPointF point) { moveTopLeft(point.toPoint()); }
     void transform(QRect rectangle, bool smoothTransform);
     void transform(QRectF rectangle, bool smoothTransform) { transform(rectangle.toRect(), smoothTransform); }
+    void transform(QTransform transform, bool smoothTransform);
     BitmapImage transformed(QRect selection, QTransform transform, bool smoothTransform);
     BitmapImage transformed(QRect rectangle, bool smoothTransform);
     BitmapImage transformed(QRectF rectangle, bool smoothTransform) { return transformed(rectangle.toRect(), smoothTransform); }
@@ -79,19 +80,20 @@ public:
     void drawEllipse(QRectF rectangle, QPen pen, QBrush brush, QPainter::CompositionMode cm, bool antialiasing);
     void drawPath(QPainterPath path, QPen pen, QBrush brush, QPainter::CompositionMode cm, bool antialiasing);
 
-    QPoint topLeft() { autoCrop(); return mBounds.topLeft(); }
-    QPoint topRight() { autoCrop(); return mBounds.topRight(); }
-    QPoint bottomLeft() { autoCrop(); return mBounds.bottomLeft(); }
-    QPoint bottomRight() { autoCrop(); return mBounds.bottomRight(); }
-    int left() { autoCrop(); return mBounds.left(); }
-    int right() { autoCrop(); return mBounds.right(); }
-    int top() { autoCrop(); return mBounds.top(); }
-    int bottom() { autoCrop(); return mBounds.bottom(); }
-    int width() { autoCrop(); return mBounds.width(); }
-    int height() { autoCrop(); return mBounds.height(); }
-    QSize size() { autoCrop(); return mBounds.size(); }
+    QPoint topLeft() { return mBounds.topLeft(); }
+    QPoint topRight() { return mBounds.topRight(); }
+    QPoint bottomLeft() { return mBounds.bottomLeft(); }
+    QPoint bottomRight() { return mBounds.bottomRight(); }
+    int left() { return mBounds.left(); }
+    int right() { return mBounds.right(); }
+    int top() { return mBounds.top(); }
+    int bottom() { return mBounds.bottom(); }
+    int width() { return mBounds.width(); }
+    int height() { return mBounds.height(); }
+    QSize size() { return mBounds.size(); }
 
-    QRect& bounds() { autoCrop(); return mBounds; }
+    QRect& bounds() { return mBounds; }
+    void setBounds(QRect bounds) { mBounds = bounds; }
 
     /** Determines if the BitmapImage is minimally bounded.
      *

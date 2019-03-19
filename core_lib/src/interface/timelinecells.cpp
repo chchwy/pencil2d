@@ -456,6 +456,8 @@ void TimeLineCells::resizeEvent(QResizeEvent* event)
 
 void TimeLineCells::mousePressEvent(QMouseEvent* event)
 {
+    mEditor->startPreviewMode();
+
     int frameNumber = getFrameNumber(event->pos().x());
     int layerNumber = getLayerNumber(event->pos().y());
     mFromLayer = mToLayer = layerNumber;
@@ -656,6 +658,8 @@ void TimeLineCells::mouseMoveEvent(QMouseEvent* event)
 void TimeLineCells::mouseReleaseEvent(QMouseEvent* event)
 {
     if (event->button() != primaryButton) return;
+
+    mEditor->endPreviewMode();
 
     primaryButton = Qt::NoButton;
     mEndY = mStartY;

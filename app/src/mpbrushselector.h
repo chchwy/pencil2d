@@ -8,31 +8,38 @@
 #ifndef MPBRUSHSELECTOR_H
 #define MPBRUSHSELECTOR_H
 
-#include <QTabWidget>
+//#include <QTabWidget>
 #include <QMap>
 #include <QString>
 
+#include "basedockwidget.h"
+
 class QListWidgetItem;
+class QTabWidget;
+
 
 // MPBrushSelector is a TabWidget showing the various brushes (display the small screenshots)
 // it allows the user to select it and emit a signal.
 // NOTE : The order is not properly kept as I did not realize the file order.conf
 //        was containing this information. Will be fixed soon.
 //
-class MPBrushSelector : public QTabWidget
+class MPBrushSelector : public BaseDockWidget
 {
 
   Q_OBJECT
 public:
-  MPBrushSelector( const QString& brushLibPath, QWidget* p_parent = 0 );
+  MPBrushSelector( const QString& brushLibPath, QWidget* parent = 0 );
 
   bool isValid() { return !m_brushLib.isEmpty(); }
+
+  void initUI() override;
+  void updateUI() override;
 
 public slots:
   void selectBrush(QString brushName = QString()); // Give the brush name (no extension) i.e. : "classic/blend+paint"
 
 signals:
-  void brushSelected (const QByteArray& content);
+  void brushSelected (QString toolName, QString brushName, const QByteArray& content);
 
 protected:
   QMap<QString, QStringList> m_brushLib;
@@ -40,6 +47,9 @@ protected:
 
 protected slots:
   void itemClicked ( QListWidgetItem *);
+
+private:
+  QTabWidget* mTabWidget;
 
 };
 

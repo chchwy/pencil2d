@@ -261,7 +261,7 @@ void PencilTool::drawStroke()
 
         int rad = qRound(brushWidth) / 2 + 2;
 
-        mScribbleArea->paintBitmapBufferRect(rect);
+//        mScribbleArea->paintBitmapBufferRect(rect);
         mScribbleArea->refreshBitmap(rect, rad);
     }
     else if (layer->type() == Layer::VECTOR)

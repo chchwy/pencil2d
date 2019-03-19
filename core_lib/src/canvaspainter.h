@@ -29,6 +29,14 @@ class Layer;
 class BitmapImage;
 class ViewManager;
 
+enum class RENDER_LEVEL
+{
+    ALL,
+    BACK_ONLY,
+    CURRENT_LAYER_ONLY,
+    TOP_ONLY
+};
+
 struct CanvasPainterOptions
 {
     bool  bPrevOnionSkin = false;
@@ -69,14 +77,21 @@ public:
     void ignoreTransformedSelection();
     QRect getCameraRect();
 
-    void paint(const Object* object, int layer, int frame, QRect rect);
+    void paint(const Object* object, int layer, int frame, QRect rect, bool quick );
+    void paintFrameAtLayer(QPixmap &image, Object* object, int layer, int frame);
     void renderGrid(QPainter& painter);
 
+    void initPaint(const Object *object, int layer, int frame, bool quick, QPainter& painter);
+    void paintBackgroundToLayer(Object *object, int layer, int frame, QRect rect, bool quick);
+    void paintLayer(Object *object, int layer, int frame, QRect rect, bool quick);
+    void paintTopToLayer(Object *object, int layer, int frame, QRect rect, bool quick);
+
 private:
-    void paintBackground();
+    void paintBackground(QPainter& painter);
     void paintOnionSkin(QPainter& painter);
 
-    void paintCurrentFrame(QPainter& painter);
+    void paintCurrentFrame(QPainter& painter, RENDER_LEVEL renderLevel);
+    void paintCurrentFrameAtLayer(QPainter& painter, int layerIndex);
 
     void paintBitmapFrame(QPainter&, Layer* layer, int nFrame, bool colorize, bool useLastKeyFrame);
     void paintVectorFrame(QPainter&, Layer* layer, int nFrame, bool colorize, bool useLastKeyFrame);

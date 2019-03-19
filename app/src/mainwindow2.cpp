@@ -69,6 +69,9 @@ GNU General Public License for more details.
 #include "shortcutfilter.h"
 #include "app_util.h"
 
+// mypaint interface
+#include "mpbrushselector.h"
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define S__GIT_TIMESTAMP TOSTRING(GIT_TIMESTAMP)
@@ -160,6 +163,8 @@ void MainWindow2::createDockWidgets()
     mToolBox = new ToolBoxWidget(this);
     mToolBox->setObjectName("ToolBox");
 
+    mBrushSelectorWidget = new MPBrushSelector(":brushes", NULL);
+
     /*
     mTimeline2 = new Timeline2;
     mTimeline2->setObjectName( "Timeline2" );
@@ -173,7 +178,10 @@ void MainWindow2::createDockWidgets()
         << mColorPalette
         << mDisplayOptionWidget
         << mToolOptions
-        << mToolBox;
+        << mToolBox
+        << mBrushSelectorWidget;
+
+    mBrushSelectorWidget->show();
 
     mStartIcon = QIcon(":icons/controls/play.png");
     mStopIcon = QIcon(":icons/controls/stop.png");
@@ -197,6 +205,7 @@ void MainWindow2::createDockWidgets()
     addDockWidget(Qt::LeftDockWidgetArea, mToolOptions);
     addDockWidget(Qt::LeftDockWidgetArea, mDisplayOptionWidget);
     addDockWidget(Qt::BottomDockWidgetArea, mTimeLine);
+    addDockWidget(Qt::RightDockWidgetArea, mBrushSelectorWidget);
     setDockNestingEnabled(true);
 
     /*
@@ -213,6 +222,7 @@ void MainWindow2::createDockWidgets()
     makeConnections(mEditor, mColorInspector);
     makeConnections(mEditor, mColorPalette);
     makeConnections(mEditor, mToolOptions);
+    makeConnections(mEditor, mBrushSelectorWidget);
 
     for (BaseDockWidget* w : mDockWidgets)
     {
@@ -1286,14 +1296,28 @@ void MainWindow2::makeConnections(Editor* editor, ColorInspector* colorInspector
 
 void MainWindow2::makeConnections(Editor* editor, ScribbleArea* scribbleArea)
 {
+
+    // TODO: add this
+//    connect( editor->tools(), &ToolManager::toolChanged, editor, &Editor::setCurrentTool );
+
+    connect( editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::showCurrentFrame );
+    connect( editor->layers(), &LayerManager::currentLayerChanged, scribbleArea, &ScribbleArea::updateAllFrames );
+
+//    connect( editor, &Editor::toggleOnionPrev, scribbleArea, &ScribbleArea::toggleOnionPrev );
+//    connect( editor, &Editor::toggleOnionNext, scribbleArea, &ScribbleArea::toggleOnionNext );
+//    connect( editor, &Editor::toggleMultiLayerOnionSkin, scribbleArea, &ScribbleArea::toggleMultiLayerOnionSkin );
+
+//    connect( editor, &Editor::selectAll, scribbleArea, &ScribbleArea::selectAll );
+
+    connect( editor->view(), &ViewManager::viewChanged, scribbleArea, &ScribbleArea::updateAllFrames );
     connect(editor->tools(), &ToolManager::toolChanged, scribbleArea, &ScribbleArea::setCurrentTool);
     connect(editor->tools(), &ToolManager::toolPropertyChanged, scribbleArea, &ScribbleArea::updateToolCursor);
     connect(editor->layers(), &LayerManager::currentLayerChanged, scribbleArea, &ScribbleArea::updateAllFrames);
     connect(editor->layers(), &LayerManager::layerDeleted, scribbleArea, &ScribbleArea::updateAllFrames);
 
-    connect(editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::updateFrame);
+//    connect(editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::updateFrame);
 
-    connect(editor->view(), &ViewManager::viewChanged, scribbleArea, &ScribbleArea::updateAllFrames);
+//    connect(editor->view(), &ViewManager::viewChanged, scribbleArea, &ScribbleArea::updateAllFrames);
     //connect( editor->preference(), &PreferenceManager::preferenceChanged, scribbleArea, &ScribbleArea::onPreferencedChanged );
 }
 
@@ -1350,6 +1374,11 @@ void MainWindow2::makeConnections(Editor* pEditor, ColorPaletteWidget* pColorPal
 
     connect(pColorManager, &ColorManager::colorChanged, pColorPalette, &ColorPaletteWidget::setColor);
     connect(pColorManager, &ColorManager::colorNumberChanged, pColorPalette, &ColorPaletteWidget::selectColorNumber);
+}
+
+void MainWindow2::makeConnections(Editor* editor, MPBrushSelector* brushSelector)
+{
+    connect(brushSelector, &MPBrushSelector::brushSelected, editor, &Editor::loadBrush);
 }
 
 void MainWindow2::bindActionWithSetting(QAction* action, SETTING setting)

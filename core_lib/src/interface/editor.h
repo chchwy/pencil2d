@@ -158,6 +158,12 @@ public: //slots
     void dontAskAutoSave(bool b) { mAutosaveNerverAskAgain = b; }
     bool autoSaveNeverAskAgain() { return mAutosaveNerverAskAgain; }
 
+    void startPreviewMode();
+    void endPreviewMode();
+
+    // mypaint
+    void loadBrush(QString toolName, QString brushName, const QByteArray &content);
+
 protected:
     // Need to move to somewhere...
     void dragEnterEvent(QDragEnterEvent*);

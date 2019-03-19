@@ -26,6 +26,9 @@ GNU General Public License for more details.
 
 
 
+// TODO: rendering not working
+// keep looking through feeeef's git log..
+// something must be missing -.-
 CanvasPainter::CanvasPainter(QObject* parent) : QObject(parent)
 , mLog("CanvasRenderer")
 {
@@ -69,41 +72,144 @@ void CanvasPainter::ignoreTransformedSelection()
     mRenderTransform = false;
 }
 
-void CanvasPainter::paint(const Object* object, int layer, int frame, QRect rect)
+
+void CanvasPainter::initPaint(const Object *object, int layer, int frame, bool quick, QPainter& painter)
 {
-    Q_ASSERT(object);
+    Q_ASSERT( object );
     mObject = object;
 
     mCurrentLayerIndex = layer;
     mFrameNumber = frame;
 
-    //QRectF mappedInvCanvas = mViewInverse.mapRect(QRectF(mCanvas->rect()));
-    //QSizeF croppedPainter = QSizeF(mappedInvCanvas.size());
-    //QRectF aligned = QRectF(QPointF(mappedInvCanvas.topLeft()), croppedPainter);
-    QPainter painter(mCanvas);
+    // Clear Canvas
+    mCanvas->fill( Qt::transparent );
 
-    painter.setWorldMatrixEnabled(true);
-    painter.setWorldTransform(mViewTransform);
+    // Init painter
+    painter.begin(mCanvas);
+    painter.setWorldTransform( mViewTransform );
 
-    Q_UNUSED(rect);
-
-    paintBackground();
-    paintOnionSkin(painter);
-
-    //painter.setClipRect(aligned); // this aligned rect is valid only for bitmap images.
-    paintCurrentFrame(painter);
-    paintCameraBorder(painter);
-
-    // post effects
-    if (mOptions.bAxis)
-    {
-        paintAxis(painter);
+    if (!quick) {
+        painter.setRenderHint( QPainter::SmoothPixmapTransform, mOptions.bAntiAlias );
+        painter.setRenderHint( QPainter::Antialiasing, true );
     }
+    else {
+        painter.setRenderHint( QPainter::SmoothPixmapTransform, false );
+        painter.setRenderHint( QPainter::Antialiasing, false );
+    }
+
+    painter.setWorldMatrixEnabled( true );
 }
 
-void CanvasPainter::paintBackground()
+void CanvasPainter::paint(const Object* object, int layer, int frame, QRect rect, bool quick )
 {
-    mCanvas->fill(Qt::transparent);
+    Q_UNUSED(rect);
+
+    // Paint Canvas
+    QPainter painter;
+    initPaint(object, layer, frame, quick, painter);
+
+    paintBackground( painter );
+
+    if (!quick) {
+        paintOnionSkin( painter );
+    }
+
+    paintCurrentFrame( painter, RENDER_LEVEL::ALL );
+    paintCameraBorder( painter );
+
+    // post effects
+    if ( mOptions.bAxis )
+    {
+        paintAxis( painter );
+    }
+
+    if ( mOptions.bGrid )
+    {
+        paintGrid( painter );
+    }
+    painter.end();
+}
+
+void CanvasPainter::paintTopToLayer(Object *object, int layer, int frame, QRect rect, bool quick)
+{
+    Q_UNUSED(rect);
+
+    // Paint Canvas
+    QPainter painter;
+    initPaint(object, layer, frame, quick, painter);
+
+    paintCurrentFrame( painter, RENDER_LEVEL::TOP_ONLY );
+    paintCameraBorder( painter );
+
+    // post effects
+    if ( mOptions.bAxis )
+    {
+        paintAxis( painter );
+    }
+
+    if ( mOptions.bGrid )
+    {
+        paintGrid( painter );
+    }
+    painter.end();
+}
+
+void CanvasPainter::paintBackgroundToLayer(Object *object, int layer, int frame, QRect rect, bool quick)
+{
+    Q_UNUSED(rect);
+
+    // Paint Canvas
+    QPainter painter;
+    initPaint(object, layer, frame, quick, painter);
+
+    paintBackground(painter);
+
+    if (!quick) {
+        paintOnionSkin( painter );
+    }
+
+    paintCurrentFrame( painter, RENDER_LEVEL::BACK_ONLY );
+
+    painter.end();
+}
+
+
+void CanvasPainter::paintLayer(Object *object, int layer, int frame, QRect rect, bool quick)
+{
+    Q_UNUSED(rect);
+
+    // Paint Canvas
+    QPainter painter;
+    initPaint(object, layer, frame, quick, painter);
+
+    paintCurrentFrame( painter, RENDER_LEVEL::CURRENT_LAYER_ONLY );
+
+    painter.end();
+}
+
+void CanvasPainter::paintFrameAtLayer(QPixmap &image, Object* object, int layer, int frame)
+{
+    Q_ASSERT( object );
+    mObject = object;
+
+    mCurrentLayerIndex = layer;
+    mFrameNumber = frame;
+
+    image.fill( Qt::transparent );
+
+    QPainter painter;
+    painter.begin(&image);
+    painter.setWorldTransform( mViewTransform );
+
+    paintCurrentFrameAtLayer(painter, layer);
+
+    painter.end();
+}
+
+void CanvasPainter::paintBackground(QPainter& painter)
+{
+    Q_UNUSED(painter);
+//    mCanvas->fill(Qt::transparent);
 }
 
 void CanvasPainter::paintOnionSkin(QPainter& painter)
@@ -207,6 +313,8 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter,
         return;
     }
 
+//    QImage* pImage = new QImage( mCanvas->size(), QImage::Format_ARGB32_Premultiplied );
+
     paintedImage->loadFile(); // Critical! force the BitmapImage to load the image
     //qCDebug(mLog) << "Paint Image Size:" << paintedImage->image()->size();
 
@@ -240,10 +348,13 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter,
         paintTransformedSelection(painter);
     }
 
+    qDebug() << paintToImage.bounds();
     painter.setWorldMatrixEnabled(true);
-
-    prescale(&paintToImage);
-    paintToImage.paintImage(painter, mScaledBitmap, mScaledBitmap.rect(), paintToImage.bounds());
+//    painter.drawRect(paintToImage.bounds());
+//    qDebug() << painter.transform();
+//    paintToImage.setBounds(QRect(mCanvas->rect().topLeft(), paintToImage.size()));
+    paintToImage.paintImage(painter);
+//    paintToImage.paintImage()
 }
 
 
@@ -350,26 +461,38 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
     }
 }
 
-void CanvasPainter::paintCurrentFrame(QPainter& painter)
+void CanvasPainter::paintCurrentFrame(QPainter& painter, RENDER_LEVEL renderLevel)
 {
     //bool isCamera = mObject->getLayer(mCurrentLayerIndex)->type() == Layer::CAMERA;
     painter.setOpacity(1.0);
 
+    int layerIndex = mCurrentLayerIndex;
     for (int i = 0; i < mObject->getLayerCount(); ++i)
     {
-        Layer* layer = mObject->getLayer(i);
-
-        if (layer->visible() == false)
-            continue;
-
-        if (i == mCurrentLayerIndex || mOptions.nShowAllLayers > 0)
+        if ( renderLevel == RENDER_LEVEL::ALL ||
+             ((renderLevel == RENDER_LEVEL::BACK_ONLY) && (i < layerIndex)) ||
+             ((renderLevel == RENDER_LEVEL::CURRENT_LAYER_ONLY) && (i == layerIndex)) ||
+             ((renderLevel == RENDER_LEVEL::TOP_ONLY) && (i > layerIndex)) )
         {
-            switch (layer->type())
-            {
-            case Layer::BITMAP: { paintBitmapFrame(painter, layer, mFrameNumber, false, true); break; }
-            case Layer::VECTOR: { paintVectorFrame(painter, layer, mFrameNumber, false, true); break; }
-            default: break;
-            }
+            paintCurrentFrameAtLayer(painter, i);
+        }
+    }
+}
+
+void CanvasPainter::paintCurrentFrameAtLayer(QPainter& painter, int layerIndex)
+{
+    Layer* layer = mObject->getLayer(layerIndex);
+
+//    if (layer->visible() == false)
+//        continue;
+
+    if (layerIndex == mCurrentLayerIndex || mOptions.nShowAllLayers > 0)
+    {
+        switch (layer->type())
+        {
+        case Layer::BITMAP: { paintBitmapFrame(painter, layer, mFrameNumber, false, true); break; }
+        case Layer::VECTOR: { paintVectorFrame(painter, layer, mFrameNumber, false, true); break; }
+        default: break;
         }
     }
 }

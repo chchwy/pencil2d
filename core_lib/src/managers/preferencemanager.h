@@ -103,6 +103,9 @@ public:
     QString getString(SETTING option);
     int     getInt(SETTING option);
 
+    void set(QString option, QString value);
+    QString get(QString option);
+
 Q_SIGNALS:
     void optionChanged(SETTING e);
 

@@ -305,7 +305,7 @@ void SmudgeTool::drawStroke()
                 mLastBrushPoint = targetPoint;
             }
             sourcePoint = targetPoint;
-            mScribbleArea->paintBitmapBufferRect(rect);
+//            mScribbleArea->paintBitmapBufferRect(rect);
             mScribbleArea->refreshBitmap(rect, rad);
         }
     }
@@ -333,7 +333,7 @@ void SmudgeTool::drawStroke()
                 mLastBrushPoint = targetPoint;
             }
             sourcePoint = targetPoint;
-            mScribbleArea->paintBitmapBufferRect(rect);
+//            mScribbleArea->paintBitmapBufferRect(rect);
             mScribbleArea->refreshBitmap(rect, rad);
         }
     }

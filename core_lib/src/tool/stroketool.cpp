@@ -48,6 +48,8 @@ void StrokeTool::startStroke()
         mScribbleArea->handleDrawingOnEmptyFrame();
     }
 
+    mScribbleArea->startStroke();
+
     mFirstDraw = true;
     mLastPixel = getCurrentPixel();
 
@@ -95,16 +97,19 @@ void StrokeTool::endStroke()
     mStrokePressures.clear();
 
     enableCoalescing();
+
+    mScribbleArea->endStroke();
 }
 
 void StrokeTool::drawStroke()
 {
     QPointF pixel = getCurrentPixel();
-    if (pixel != mLastPixel || !mFirstDraw)
+
+    mScribbleArea->strokeTo(pixel, mCurrentPressure, mCurrentXTilt,  mCurrentYTilt);
+    if ( pixel != mLastPixel || !mFirstDraw )
     {
-        // get last pixel before interpolation initializes
-        QPointF startStrokes = strokeManager()->interpolateStart(getLastPixel());
-        mStrokePoints << mEditor->view()->mapScreenToCanvas(startStrokes);
+        mLastPixel = pixel;
+        mStrokePoints << mEditor->view()->mapScreenToCanvas( pixel );
         mStrokePressures << strokeManager()->getPressure();
     }
     else

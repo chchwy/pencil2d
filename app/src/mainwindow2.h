@@ -43,6 +43,8 @@ class ActionCommands;
 class ImportImageSeqDialog;
 class BackupElement;
 
+class MPBrushSelector;
+
 
 
 namespace Ui
@@ -128,6 +130,7 @@ private:
     void makeConnections(Editor*, TimeLine*);
     void makeConnections(Editor*, DisplayOptionWidget*);
     void makeConnections(Editor*, ToolOptionWidget*);
+    void makeConnections(Editor*, MPBrushSelector*);
 
     void bindActionWithSetting(QAction*, SETTING);
 
@@ -143,6 +146,7 @@ private:
     //PreviewWidget*      mPreview = nullptr;
     TimeLine*             mTimeLine = nullptr; // be public temporary
     ColorInspector*       mColorInspector = nullptr;
+    MPBrushSelector* mBrushSelectorWidget = nullptr;
 
     // backup
     BackupElement* mBackupAtSave = nullptr;

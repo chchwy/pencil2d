@@ -36,7 +36,7 @@ public:
     void pointerPressEvent(PointerEvent*) override;
     void pointerReleaseEvent(PointerEvent*) override;
 
-    void drawStroke();
+//    void drawStroke();
     void paintVectorStroke();
     void paintBitmapStroke();
     void paintAt(QPointF point);

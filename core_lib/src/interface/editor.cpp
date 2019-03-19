@@ -861,6 +861,16 @@ void Editor::updateCurrentFrame()
     mScribbleArea->updateCurrentFrame();
 }
 
+void Editor::startPreviewMode()
+{
+    mScribbleArea->switchToPreviewMode();
+}
+
+void Editor::endPreviewMode()
+{
+    mScribbleArea->switchToDrawingMode();
+}
+
 void Editor::setCurrentLayerIndex(int i)
 {
     mCurrentLayerIndex = i;
@@ -1000,4 +1010,10 @@ void Editor::prepareSave()
 void Editor::clearCurrentFrame()
 {
     mScribbleArea->clearImage();
+}
+
+void Editor::loadBrush(QString toolName, QString brushName, const QByteArray &content)
+{
+    mPreferenceManager->set("LastBrushFor_"+toolName, brushName);
+    mScribbleArea->loadMPBrush(content);
 }

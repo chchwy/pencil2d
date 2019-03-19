@@ -29,6 +29,8 @@ GNU General Public License for more details.
 #include <QPoint>
 #include <QWidget>
 #include <QPixmapCache>
+#include <QGraphicsScene>
+#include <QGraphicsView>
 
 #include "movemode.h"
 #include "log.h"
@@ -47,7 +49,12 @@ class PointerEvent;
 class BitmapImage;
 class VectorImage;
 
-class ScribbleArea : public QWidget
+class MPHandler;
+class MPSurface;
+class MPTile;
+class QGraphicsPixmapItem;
+
+class ScribbleArea : public QGraphicsView
 {
     Q_OBJECT
 
@@ -137,6 +144,13 @@ public:
 
     void manageSelectionOrigin(QPointF currentPoint, QPointF originPoint);
 
+    void updateBackground();
+    void showCurrentFrame();
+
+    // mypaint
+    void loadMPBrush(const QByteArray &content);
+    QGraphicsPixmapItem* getTileFromPos(QPoint point);
+
 signals:
     void modification(int);
     void multiLayerOnionSkinChanged(bool);
@@ -161,6 +175,10 @@ public slots:
 
     void showLayerNotVisibleWarning();
 
+    void newTileCreated(MPSurface* surface, MPTile* tile);
+    void existingTileUpdated(MPSurface* surface, MPTile* tile);
+    void updateTile(MPSurface* surface, MPTile* tile);
+
 
 protected:
     void tabletEvent(QTabletEvent*) override;
@@ -171,10 +189,14 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
     void keyReleaseEvent(QKeyEvent*) override;
-    void paintEvent(QPaintEvent*) override;
+//    void paintEvent(QPaintEvent*) override;
     void resizeEvent(QResizeEvent*) override;
 
 public:
+    void startStroke();
+    void strokeTo(QPointF point, float pressure, float xtilt, float ytilt);
+    void endStroke();
+
     void drawPolyline(QPainterPath path, QPen pen, bool useAA);
     void drawLine(QPointF P1, QPointF P2, QPen pen, QPainter::CompositionMode cm);
     void drawPath(QPainterPath path, QPen pen, QBrush brush, QPainter::CompositionMode cm);
@@ -185,7 +207,7 @@ public:
     void liquifyBrush(BitmapImage *bmiSource_, QPointF srcPoint_, QPointF thePoint_, qreal brushWidth_, qreal offset_, qreal opacity_);
 
     void paintBitmapBuffer();
-    void paintBitmapBufferRect(const QRect& rect);
+//    void paintBitmapBufferRect(const QRect& rect);
     void paintCanvasCursor(QPainter& painter);
     void clearBitmapBuffer();
     void refreshBitmap(const QRectF& rect, int rad);
@@ -198,6 +220,9 @@ public:
 
     void updateCanvasCursor();
 
+    void switchToPreviewMode();
+    void switchToDrawingMode();
+
     /// Call this when starting to use a paint tool. Checks whether we are drawing
     /// on an empty frame, and if so, takes action according to use preference.
     void handleDrawingOnEmptyFrame();
@@ -208,11 +233,25 @@ public:
     QPixmap mTransCursImg;
 
     QPointF getTransformOffset() { return mOffset; }
-
 private:
-    void drawCanvas(int frame, QRect rect);
+//    void drawCanvas(int frame, QRect rect);
     void settingUpdated(SETTING setting);
     void paintSelectionVisuals(QPainter& painter);
+
+    void drawCanvasBack(int frame, QRect rect);
+    void drawCanvas(int frame, QRect rect);
+    void drawCanvasLayer(int frame, QRect rect);
+    void drawCanvasTop(int frame, QRect rect);
+
+    void applyBackgroundShadow(QPainter& painter);
+
+    CanvasPainterOptions getRenderOptions();
+    void loadFullCanvas();
+    void loadBackCanvas();
+    void loadTiles();
+    void loadTopCanvas();
+
+    QString getCachedFrameKey(int frame);
 
     BitmapImage* currentBitmapImage(Layer* layer) const;
     VectorImage* currentVectorImage(Layer* layer) const;
@@ -283,6 +322,25 @@ private:
     QRectF mDebugRect;
     QLoggingCategory mLog;
     std::deque<clock_t> mDebugTimeQue;
+
+    // mypaint
+    MPHandler* mMyPaint = nullptr;
+    QHash<QString, QGraphicsPixmapItem*> mTiles;
+    QGraphicsScene mScene;
+
+    QGraphicsPixmapItem* mCanvasItem;
+    QGraphicsPixmapItem* mBackgroundItem;
+    QGraphicsPixmapItem* mCanvasBackItem;
+    QGraphicsPixmapItem* mCanvasTopItem;
+
+    QPixmap mCanvasBack;
+    QPixmap mCanvasLayer;
+    QPixmap mCanvasTop;
+
+    bool isInPreviewMode = false;
+    bool mNeedQuickUpdate = false;
+
+
 };
 
 #endif

@@ -26,6 +26,8 @@ BitmapImage::BitmapImage()
 {
     mImage = std::make_shared<QImage>(); // create null image
     mBounds = QRect(0, 0, 0, 0);
+    mEnableAutoCrop = false;
+
 }
 
 BitmapImage::BitmapImage(const BitmapImage& a) : KeyFrame(a)
@@ -34,6 +36,7 @@ BitmapImage::BitmapImage(const BitmapImage& a) : KeyFrame(a)
     mMinBound = a.mMinBound;
     mEnableAutoCrop = a.mEnableAutoCrop;
     mImage = std::make_shared<QImage>(*a.mImage);
+    mEnableAutoCrop = false;
 }
 
 BitmapImage::BitmapImage(const QRect& rectangle, const QColor& colour)
@@ -42,6 +45,7 @@ BitmapImage::BitmapImage(const QRect& rectangle, const QColor& colour)
     mImage = std::make_shared<QImage>(mBounds.size(), QImage::Format_ARGB32_Premultiplied);
     mImage->fill(colour.rgba());
     mMinBound = false;
+    mEnableAutoCrop = false;
 }
 
 BitmapImage::BitmapImage(const QPoint& topLeft, const QImage& image)
@@ -49,6 +53,7 @@ BitmapImage::BitmapImage(const QPoint& topLeft, const QImage& image)
     mBounds = QRect(topLeft, image.size());
     mMinBound = true;
     mImage = std::make_shared<QImage>(image);
+    mEnableAutoCrop = false;
 }
 
 BitmapImage::BitmapImage(const QPoint& topLeft, const QString& path)
@@ -59,6 +64,7 @@ BitmapImage::BitmapImage(const QPoint& topLeft, const QString& path)
     mBounds = QRect(topLeft, QSize(0, 0));
     mMinBound = true;
     setModified(false);
+    mEnableAutoCrop = false;
 }
 
 BitmapImage::~BitmapImage()
@@ -70,6 +76,8 @@ void BitmapImage::setImage(QImage* img)
     Q_CHECK_PTR(img);
     mImage.reset(img);
     mMinBound = false;
+    mEnableAutoCrop = false;
+    mBounds = img->rect();
 
     modification();
 }
@@ -165,6 +173,24 @@ void BitmapImage::moveTopLeft(QPoint point)
     mBounds.moveTopLeft(point);
     // Size is unchanged so there is no need to update mBounds
     modification();
+}
+
+void BitmapImage::transform(QTransform transform, bool smoothTransform)
+{
+    QRectF transformedRect = transform.mapRect(mBounds);
+    mBounds = transformedRect.toRect();
+
+    QImage* newImage;
+
+    if (smoothTransform) {
+        newImage = new QImage(mImage->transformed(transform, Qt::SmoothTransformation));
+    }
+    else {
+        newImage = new QImage(mImage->transformed(transform));
+    }
+
+    mImage = std::shared_ptr<QImage>(newImage);
+
 }
 
 void BitmapImage::transform(QRect newBoundaries, bool smoothTransform)

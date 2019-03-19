@@ -181,7 +181,7 @@ void EraserTool::paintAt(QPointF point)
         int rad = qRound(brushWidth) / 2 + 2;
 
         //continuously update buffer to update stroke behind grid.
-        mScribbleArea->paintBitmapBufferRect(rect);
+//        mScribbleArea->paintBitmapBufferRect(rect);
 
         mScribbleArea->refreshBitmap(rect, rad);
     }
@@ -242,7 +242,7 @@ void EraserTool::drawStroke()
         int rad = qRound(brushWidth) / 2 + 2;
 
         // continuously update buffer to update stroke behind grid.
-        mScribbleArea->paintBitmapBufferRect(rect);
+//        mScribbleArea->paintBitmapBufferRect(rect);
 
         mScribbleArea->refreshBitmap(rect, rad);
     }

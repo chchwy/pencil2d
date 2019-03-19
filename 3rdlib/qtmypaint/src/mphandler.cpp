@@ -145,7 +145,7 @@ MPHandler::strokeTo(float x, float y, float pressure, float xtilt, float ytilt)
 {
     float dtime = 1.0/10;
     mypaint_surface_begin_atomic((MyPaintSurface *)m_surface);
-    mypaint_brush_stroke_to(m_brush->brush, (MyPaintSurface *)m_surface, x, y, pressure, xtilt, ytilt, dtime, 1.0, 1.0, .0);
+    mypaint_brush_stroke_to(m_brush->brush, (MyPaintSurface *)m_surface, x, y, pressure, xtilt, ytilt, dtime/*, 1.0, 1.0, .0*/);
     MyPaintRectangle roi;
     mypaint_surface_end_atomic((MyPaintSurface *)m_surface, &roi);
 }

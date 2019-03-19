@@ -9,17 +9,28 @@
 
 #include <QDir>
 #include <QListWidget>
+#include <QTabWidget>
+#include <QLayout>
+
+#include <QDebug>
 
 #define BRUSH_CONTENT_EXT ".myb"
 #define BRUSH_PREVIEW_EXT "_prev.png"
 #define BRUSH_LIST        "brushes.conf"
 #define ICON_SZ           64
 
-MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *p_parent):
-  QTabWidget   (p_parent),
-  m_brushesPath(brushLibPath)
+MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *parent)
+    : BaseDockWidget(parent),
+      m_brushesPath(brushLibPath)
 {
+    setWindowTitle(tr("Brush Selector", "Window title of mypaint brush selector"));
+
+    mTabWidget = new QTabWidget(parent);
+
+    setWidget(mTabWidget);
+
     // First, we parse the "order.conf" file to fill m_brushLib
+    qDebug() << brushLibPath;
     QFile fileOrder(brushLibPath + QDir::separator() + BRUSH_LIST);
     if (fileOrder.open(QIODevice::ReadOnly))
     {
@@ -62,7 +73,7 @@ MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *p_parent)
             p_lWdgt->setIconSize        (QSize(ICON_SZ,ICON_SZ));
             connect(p_lWdgt, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(itemClicked(QListWidgetItem*)));
             // Add this ListWidget to the TabWidget:
-            addTab(p_lWdgt, caption);
+            mTabWidget->addTab(p_lWdgt, caption);
             // Populate the ListWidget with brushes (and their preview):
             for (int n = 0 ; n < subList.count() ; n++)
             {
@@ -77,6 +88,16 @@ MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *p_parent)
     }
 }
 
+void MPBrushSelector::initUI()
+{
+
+}
+
+void MPBrushSelector::updateUI()
+{
+
+}
+
 void MPBrushSelector::itemClicked(QListWidgetItem *p_item)
 {
     QListWidget* p_lWdgt = p_item->listWidget();
@@ -84,20 +105,22 @@ void MPBrushSelector::itemClicked(QListWidgetItem *p_item)
     {
         QString caption;
         // first of all, we will deselect all other items in other panels :
-        for (int p = 0 ; p < count() ; p++)
+        for (int p = 0 ; p < mTabWidget->count() ; p++)
         {
-            QListWidget* p_lWdgt2 = dynamic_cast<QListWidget*>(widget(p));
-            if (p_lWdgt2 != p_lWdgt) p_lWdgt2->clearSelection(); else caption = tabText(p);
+            QListWidget* p_lWdgt2 = dynamic_cast<QListWidget*>(mTabWidget->widget(p));
+            if (p_lWdgt2 != p_lWdgt) p_lWdgt2->clearSelection(); else caption = mTabWidget->tabText(p);
         }
         // fine, let's read this one and emit the content to any receiver:
         const QStringList subList = m_brushLib.value(caption);
+        QString brushName (subList.at(p_item->type()));
+
         QFile f( m_brushesPath + QDir::separator() + subList.at(p_item->type()) + BRUSH_CONTENT_EXT );
         //    qDebug(f.fileName().toAscii());
         if (f.open( QIODevice::ReadOnly ))
         {
             QByteArray content = f.readAll();
             content.append( (char)0 );
-            emit brushSelected(content); // Read the whole file and broadcast is as a char* buffer
+            emit brushSelected(caption, brushName, content); // Read the whole file and broadcast is as a char* buffer
         }
     }
 }
@@ -108,11 +131,11 @@ void MPBrushSelector::selectBrush (QString brushName)
     QListWidget*      p_page = NULL;
     QListWidgetItem * p_item = NULL;
     // We search for the brush requested :
-    for (int page = count()-1 ; page >= 0 && !p_item ; page--)
+    for (int page = mTabWidget->count()-1 ; page >= 0 && !p_item ; page--)
     {
         // reverse loop so we leave it with first page
-        p_page = dynamic_cast<QListWidget*>(widget(page));
-        QString caption = tabText(page);
+        p_page = dynamic_cast<QListWidget*>(mTabWidget->widget(page));
+        QString caption = mTabWidget->tabText(page);
         const QStringList subList = m_brushLib.value(caption);
         if (!brushName.isEmpty()) for (int idx = 0 ; idx < subList.count() ; idx++)
         {
@@ -124,7 +147,7 @@ void MPBrushSelector::selectBrush (QString brushName)
     // Update GUI + load the brush (if any)
     if (p_item)
     {
-        setCurrentWidget(p_page);
+        mTabWidget->setCurrentWidget(p_page);
         p_page->setCurrentItem (p_item);
         itemClicked(p_item);
     }
