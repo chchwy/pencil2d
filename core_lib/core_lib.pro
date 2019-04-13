@@ -31,6 +31,7 @@ INCLUDEPATH += src \
 
 # Input
 HEADERS +=  \
+    src/graphics/bitmap/bitmapsurface.h \
     src/graphics/bitmap/bitmapimage.h \
     src/graphics/vector/bezierarea.h \
     src/graphics/vector/beziercurve.h \
@@ -98,10 +99,13 @@ HEADERS +=  \
     src/activeframepool.h \
     src/external/platformhandler.h \
     src/external/macosx/macosxnative.h \
-    src/util/pointerevent.h
+    src/util/pointerevent.h \
+    src/graphics/bitmap/bitmapsurface.h
 
 
-SOURCES +=  src/graphics/bitmap/bitmapimage.cpp \
+SOURCES += \
+    src/graphics/bitmap/bitmapsurface.cpp \
+    src/graphics/bitmap/bitmapimage.cpp \
     src/graphics/vector/bezierarea.cpp \
     src/graphics/vector/beziercurve.cpp \
     src/graphics/vector/colourref.cpp \

@@ -44,6 +44,8 @@ GNU General Public License for more details.
 #include "mpsurface.h"
 #include "mptile.h"
 
+#include "BitmapSurface.h"
+
 
 ScribbleArea::ScribbleArea(QWidget* parent) : QGraphicsView(parent),
 mLog("ScribbleArea")
@@ -300,7 +302,20 @@ void ScribbleArea::showCurrentFrame()
 
     QPixmap currentImage = QPixmap(mCanvas.size());
     mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
-    mCanvasPainter.paintFrameAtLayer(currentImage, mEditor->object(), mEditor->layers()->currentLayerIndex(), frame );
+
+//    QHashIterator<QString, QGraphicsPixmapItem*> i(mTiles);
+//    while (i.hasNext()) {
+//        i.next();
+//        QGraphicsPixmapItem* item = i.value();
+//        if (item)
+//        {
+//            QGraphicsPixmapItem* item = new QGraphicsPixmapItem(i.value());
+//            QPixmap tilePix = item->pixmap();
+//            item->setPos(i.value()->pos());
+            mCanvasPainter.paintFrameAtLayer(currentImage, mEditor->object(), mEditor->layers()->currentLayerIndex(), frame );
+//            surfaceScene.addItem(item);
+//        }
+//    }
 
     mMyPaint->clearSurface();
     mMyPaint->loadImage(currentImage.toImage(), mEditor->view()->getView());
@@ -1138,9 +1153,12 @@ void ScribbleArea::paintBitmapBuffer()
             break;
         }
 
+        BitmapSurface* bitmap = new BitmapSurface();
 
+        QImage* strokeImage = new QImage(mMyPaint->renderImage(mEditor->view()->getView()));
 
-//        QImage* strokeImage = new QImage(mMyPaint->renderImage(mEditor->view()->getView()));
+        bitmap->createPiecesFromImage(*strokeImage);
+
 //            mMyPaint->renderImage(mEditor->view()->getView());
 //        QRect rect = mEditor->view()->mapScreenToCanvas(strokeImage->rect()).toRect();
 
@@ -1149,6 +1167,16 @@ void ScribbleArea::paintBitmapBuffer()
 
 //        targetImage->paste(mBufferImg, cm);
     }
+
+//    BitmapSurface* bitmap = new BitmapSurface();
+
+//    for (QGraphicsPixmapItem* item : mTiles.values()) {
+
+//        QRect tileRect = QRect(QPoint(item->x(),item->y()),QSize(item->boundingRect().width(), item->boundingRect().height()));
+//        bitmap->addBitmapPiece(item->pixmap(), tileRect);
+
+//    }
+//    bitmap->paintWholeImage("/Users/CandyFace/Desktop/glued.png");
 
     drawCanvas(frameNumber, this->rect());
 
@@ -1691,7 +1719,7 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
     QTransform v = mEditor->view()->getView();
     QTransform t;
 
-    qDebug() << surface->size();
+//    qDebug() << surface->size();
 
     t.translate(v.dx()*0.5, v.dy()*0.5);
     t.scale(mEditor->view()->scaling(), mEditor->view()->scaling());
@@ -1699,8 +1727,8 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 
     QPointF pos = t.map(tile->pos());
 
-    qDebug() << "mapped tile pos: " << pos;
-    qDebug() << "tile pos: " << tile->pos();
+//    qDebug() << "mapped tile pos: " << pos;
+//    qDebug() << "tile pos: " << tile->pos();
 
     QGraphicsPixmapItem *item = getTileFromPos(pos);
     item->setTransform(t);
@@ -1747,7 +1775,6 @@ QGraphicsPixmapItem *ScribbleArea::getTileFromPos(QPointF point)
         QGraphicsPixmapItem *item = new QGraphicsPixmapItem(emptyImage);
         item->setPos(point);
 //        item->setZValue(30);
-
         mScene.addItem(item);
         mTiles.insert(posString, item);
 

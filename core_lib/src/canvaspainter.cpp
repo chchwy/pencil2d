@@ -195,8 +195,6 @@ void CanvasPainter::paintFrameAtLayer(QPixmap &image, Object* object, int layer,
     mCurrentLayerIndex = layer;
     mFrameNumber = frame;
 
-    image.fill( Qt::transparent );
-
     QPainter painter;
     painter.begin(&image);
     painter.setWorldTransform( mViewTransform );

@@ -134,7 +134,7 @@ QImage MPHandler::renderImage(QTransform transform)
 
 void MPHandler::loadImage(const QImage &image, QTransform transform)
 {
-    m_surface->loadImage(image, transform);
+    m_surface->loadImage(image);
 }
 
 void MPHandler::loadBrush(const QByteArray &content)

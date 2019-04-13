@@ -124,8 +124,7 @@ void MPSurface::setOnClearedSurface(MPOnUpdateSurfaceFunction onClearedSurfaceFu
     this->onClearedSurfaceFunction = onClearedSurfaceFunction;
 }
 
-static QTransform testTransform;
-void MPSurface::loadImage(const QImage &image, QTransform transform)
+void MPSurface::loadImage(const QImage &image)
 {
     QSize tileSize = QSize(MYPAINT_TILE_SIZE, MYPAINT_TILE_SIZE);
 
@@ -155,7 +154,6 @@ void MPSurface::loadImage(const QImage &image, QTransform transform)
 
                 MPTile *tile = getTileFromIdx(idx);
                 tile->setImage(tileImage);
-//                tile->setTransform(transform);
 
                 this->onUpdateTileFunction(this, tile);
             }

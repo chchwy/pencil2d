@@ -88,7 +88,7 @@ public:
     void clear();
     QImage renderImage();
 
-    void loadImage(const QImage &image, QTransform transform);
+    void loadImage(const QImage &image);
 
 private:
     void resetNullTile();
