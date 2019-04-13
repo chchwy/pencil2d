@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #include <cmath>
 #include <QMessageBox>
 #include <QPixmapCache>
+#include <QVBoxLayout>
 
 #include "pointerevent.h"
 #include "beziercurve.h"
@@ -67,14 +68,19 @@ bool ScribbleArea::init()
     mDoubleClickTimer = new QTimer(this);
     mMyPaint = MPHandler::handler();
 
+    mScene.setBackgroundBrush(Qt::red);
+
     connect(mMyPaint, SIGNAL(newTile(MPSurface*, MPTile*)), this, SLOT(newTileCreated(MPSurface*, MPTile*)));
     connect(mMyPaint, SIGNAL(updateTile(MPSurface*, MPTile*)), this, SLOT(existingTileUpdated(MPSurface*, MPTile*)));
 
     mScene.setSceneRect(this->rect());
     setScene(&mScene);
-    setAlignment((Qt::AlignLeft | Qt::AlignTop));
+    setAlignment((Qt::AlignTop | Qt::AlignLeft));
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setOptimizationFlags(QGraphicsView::DontSavePainterState);
+    setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
+//    setTransformationAnchor(AnchorViewCenter);
 
     connect(mPrefs, &PreferenceManager::optionChanged, this, &ScribbleArea::settingUpdated);
     connect(mDoubleClickTimer, &QTimer::timeout, this, &ScribbleArea::handleDoubleClick);
@@ -297,7 +303,7 @@ void ScribbleArea::showCurrentFrame()
     mCanvasPainter.paintFrameAtLayer(currentImage, mEditor->object(), mEditor->layers()->currentLayerIndex(), frame );
 
     mMyPaint->clearSurface();
-    mMyPaint->loadImage(currentImage.toImage());
+    mMyPaint->loadImage(currentImage.toImage(), mEditor->view()->getView());
 
 
     // We retrieve the entire canvas from the cache;
@@ -449,7 +455,6 @@ CanvasPainterOptions ScribbleArea::getRenderOptions()
     o.scaling = mEditor->view()->scaling();
     o.onionWhilePlayback = mPrefs->getInt(SETTING::ONION_WHILE_PLAYBACK);
     o.isPlaying = mEditor->playback()->isPlaying() ? true : false;
-    mCanvasPainter.setOptions(o);
 
     return o;
 }
@@ -462,8 +467,6 @@ void ScribbleArea::drawCanvasBack(int frame, QRect rect)
     mCanvasPainter.setCanvas(&mCanvasBack);
     mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
     mCanvasPainter.paintBackgroundToLayer(object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate);
-
-    return;
 }
 
 void ScribbleArea::drawCanvasLayer( int frame, QRect rect )
@@ -474,8 +477,6 @@ void ScribbleArea::drawCanvasLayer( int frame, QRect rect )
     mCanvasPainter.setCanvas( &mCanvasLayer );
     mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
     mCanvasPainter.paintLayer( object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate );
-
-    return;
 }
 
 void ScribbleArea::drawCanvasTop( int frame, QRect rect )
@@ -486,8 +487,6 @@ void ScribbleArea::drawCanvasTop( int frame, QRect rect )
     mCanvasPainter.setCanvas( &mCanvasTop );
     mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
     mCanvasPainter.paintTopToLayer( object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate );
-
-    return;
 }
 
 
@@ -729,6 +728,25 @@ void ScribbleArea::wheelEvent(QWheelEvent* event)
             mEditor->view()->scaleUp();
         }
     }
+
+    // update mypaint surface to be equal to new canvas size
+//    QTransform v = mEditor->view()->getViewInverse();
+//    QTransform t;
+//    t.translate(v.dx()*0.5, v.dy()*0.5);
+//    t.scale(mEditor->view()->scaling(), mEditor->view()->scaling());
+//    t.translate(-v.dx()*0.5, -v.dy()*0.5);
+//    QRect mappedRect = v.mapRect(this->rect());
+
+//    if (mMyPaint->surfaceSize() != mappedRect.size()) {
+//        mMyPaint->setSurfaceSize(mappedRect.size());
+//    }
+//    QTransform scale = QTransform::fromScale(mEditor->view()->scaling(),mEditor->view()->scaling());
+//    QTransform center = QTransform::fromTranslate(this->rect().width()*0.5,this->rect().height()*0.5);
+//    this->setTransformationAnchor(AnchorViewCenter);
+//    setTransform(mEditor->view()->getView());
+//    qDebug() << mEditor->view()->getView();
+//    qDebug() << "currentPixel :" << currentTool()->getCurrentPixel();
+//    qDebug() << "currentPixel mpd from scene: " <<mapFromScene(currentTool()->getCurrentPixel());
     updateCanvasCursor();
     event->accept();
 }
@@ -1028,11 +1046,17 @@ void ScribbleArea::resizeEvent(QResizeEvent* event)
     mCanvasTop = QPixmap( newSize );
     mCanvasTop.fill(Qt::transparent);
 
+
+//    QTransform v = mEditor->view()->getViewInverse();
+//    QRect mappedRect = v.mapRect(this->rect());
+//    mMyPaint->setSurfaceSize(mappedRect.size());
     mMyPaint->setSurfaceSize(newSize);
+
+//    this->setStyl
 
     QWidget::resizeEvent( event );
 
-//    this->setStyleSheet("background-color:yellow;");
+    this->setStyleSheet("background-color:blue;");
 
     mEditor->view()->setCanvasSize( newSize );
 
@@ -1097,12 +1121,11 @@ void ScribbleArea::paintBitmapBuffer()
     BitmapImage* targetImage = currentBitmapImage(layer);
     if (targetImage != nullptr)
     {
-        QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver;
+        // We use source here because mypaint contains the same image as target image..
+        QPainter::CompositionMode cm = QPainter::CompositionMode_Source;
         switch (currentTool()->type())
         {
         case ERASER:
-//            cm = QPainter::CompositionMode_DestinationOut;
-//            break;
         case BRUSH:
         case PEN:
         case PENCIL:
@@ -1115,76 +1138,86 @@ void ScribbleArea::paintBitmapBuffer()
             break;
         }
 
-        QTransform view = mEditor->view()->getViewInverse();
-        QImage* strokeImage = new QImage(mMyPaint->renderImage());
 
-        mBufferImg->setImage(strokeImage);
-//        mBufferImg->transform(view, true);
 
-        targetImage->clear();
-        targetImage->paste(mBufferImg, cm);
+//        QImage* strokeImage = new QImage(mMyPaint->renderImage(mEditor->view()->getView()));
+//            mMyPaint->renderImage(mEditor->view()->getView());
+//        QRect rect = mEditor->view()->mapScreenToCanvas(strokeImage->rect()).toRect();
+
+//        mBufferImg->setImage(strokeImage);
+//        mBufferImg->transform(rect, false);
+
+//        targetImage->paste(mBufferImg, cm);
     }
 
-//    QRect rect = mEditor->view()->getView().mapRect( mBufferImg->bounds() );
-
-    mBufferImg->clear();
-
     drawCanvas(frameNumber, this->rect());
-    qDebug() << this->rect();
 
     // Update the cache for the last key-frame.
-//    auto lastKeyFramePosition = mEditor->layers()->LastFrameAtFrame(frameNumber);
-//    QPixmapCache::remove(mPixmapCacheKeys[lastKeyFramePosition]);
-//    mPixmapCacheKeys[lastKeyFramePosition] = QPixmapCache::Key();
+    auto lastKeyFramePosition = mEditor->layers()->LastFrameAtFrame(frameNumber);
+    QPixmapCache::remove(mPixmapCacheKeys[lastKeyFramePosition]);
+    mPixmapCacheKeys[lastKeyFramePosition] = QPixmapCache::Key();
+
+
+    mBufferImg->clear();
+//    mMyPaint->clearSurface();
+    clearSurfaceBuffer();
+
     layer->setModified(frameNumber, true);
     emit modification(frameNumber);
-
 }
 
-//void ScribbleArea::paintBitmapBufferRect(const QRect& rect)
-//{
+void ScribbleArea::paintBitmapBufferRect(const QRect& rect)
+{
 //    if (allowSmudging() || mEditor->playback()->isPlaying())
 //    {
-//        Layer* layer = mEditor->layers()->currentLayer();
-//        Q_ASSERT(layer);
+        Layer* layer = mEditor->layers()->currentLayer();
+        Q_ASSERT(layer);
 
-//        BitmapImage* targetImage = currentBitmapImage(layer);
+        BitmapImage* targetImage = currentBitmapImage(layer);
 
-//        if (targetImage != nullptr)
-//        {
-//            QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver;
-//            switch (currentTool()->type())
-//            {
-//            case ERASER:
-//                cm = QPainter::CompositionMode_DestinationOut;
-//                break;
-//            case BRUSH:
-//            case PEN:
-//            case PENCIL:
-//                if (getTool(currentTool()->type())->properties.preserveAlpha)
-//                {
-//                    cm = QPainter::CompositionMode_SourceAtop;
-//                }
-//                break;
-//            default: //nothing
-//                break;
-//            }
-//            targetImage->paste(mBufferImg, cm);
-//        }
+        if (targetImage != nullptr)
+        {
+            QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver;
+            switch (currentTool()->type())
+            {
+            case ERASER:
+                cm = QPainter::CompositionMode_DestinationOut;
+                break;
+            case BRUSH:
+            case PEN:
+            case PENCIL:
+                if (getTool(currentTool()->type())->properties.preserveAlpha)
+                {
+                    cm = QPainter::CompositionMode_SourceAtop;
+                }
+                break;
+            default: //nothing
+                break;
+            }
+            targetImage->paste(mBufferImg, cm);
 
-//        // Clear the buffer
-//        mBufferImg->clear();
+//            QImage* strokeImage = new QImage(mMyPaint->renderImage(mEditor->view()->getView()));
 
-//        int frameNumber = mEditor->currentFrame();
-//        layer->setModified(frameNumber, true);
+//            QRect rect = mEditor->view()->mapScreenToCanvas(strokeImage->rect()).toRect();
 
-//        QPixmapCache::remove(mPixmapCacheKeys[frameNumber]);
-//        mPixmapCacheKeys[frameNumber] = QPixmapCache::Key();
+//            mBufferImg->setImage(strokeImage);
+//            mBufferImg->transform(rect, false);
+//            drawCanvas(1, this->rect());
+//            mCanvasPainter.paintBuffer(mBufferImg);
+        }
+
+        // Clear the buffer
+        mBufferImg->clear();
+
+        int frameNumber = mEditor->currentFrame();
+        layer->setModified(frameNumber, true);
+
+        QPixmapCache::remove(mPixmapCacheKeys[frameNumber]);
+        mPixmapCacheKeys[frameNumber] = QPixmapCache::Key();
 
 //        drawCanvas(frameNumber, rect.adjusted(-1, -1, 1, 1));
-//        update(rect);
 //    }
-//}
+}
 
 void ScribbleArea::clearBitmapBuffer()
 {
@@ -1637,14 +1670,70 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 {
     Q_UNUSED(surface);
 
-    QPoint pos = tile->pos().toPoint();
+    QMatrix matrix;
+//    QTransform t = mEditor->view()->getView();
+
+//    qDebug() << surface->size();
+
+//    qDebug() << t;
+//    qDebug() << pos;
+//    QTransform mCentre = QTransform::fromTranslate(surface->size().width() / 2.f, surface->size().height() / 2.f);
+//    t = t * mCentre;
+//    matrix.setMatrix(t.m11(),t.m12(),
+//                     t.m21(), t.m22(),
+//                     t.dx()-surface->size().width()/2, t.dy()-surface->size().height()/2);
+
+//    mapToScene(
+//    t2.setMatrix(t.m11(),t.m12(),t.m13(),t.m21(),t.m22(),t.m23(),t.m31(),t.m32(),t.m33());
+
+//    qDebug() << "canvas t: " << QPoint(t.dx(), t.dy());
+//    qDebug() << matrix;
+    QTransform v = mEditor->view()->getView();
+    QTransform t;
+
+    qDebug() << surface->size();
+
+    t.translate(v.dx()*0.5, v.dy()*0.5);
+    t.scale(mEditor->view()->scaling(), mEditor->view()->scaling());
+    t.translate(-v.dx()*0.5, -v.dy()*0.5);
+
+    QPointF pos = t.map(tile->pos());
+
+    qDebug() << "mapped tile pos: " << pos;
+    qDebug() << "tile pos: " << tile->pos();
 
     QGraphicsPixmapItem *item = getTileFromPos(pos);
-
+    item->setTransform(t);
     item->setPixmap(QPixmap::fromImage(tile->image()));
 }
 
-QGraphicsPixmapItem *ScribbleArea::getTileFromPos(QPoint point)
+void ScribbleArea::clearSurfaceBuffer()
+{
+    QMutableHashIterator<QString, QGraphicsPixmapItem*> i(mTiles);
+    while (i.hasNext()) {
+        i.next();
+        QGraphicsPixmapItem *tile = i.value();
+        if (tile)
+        {
+            // Clear the content of the tile
+            //
+//            tile->clear();
+
+            // Removes blank tile from the scene for output optimization
+            //
+            // A tile without a scene is not re-created but onNewTile is
+            // called when this tile is to be shown again.
+            //
+            QGraphicsScene* scene = tile->scene();
+            if (scene) {
+                scene->removeItem(tile);
+                i.remove();
+            }
+        }
+    }
+}
+
+QGraphicsPixmapItem *ScribbleArea::getTileFromPos(QPointF point)
 {
 
     QString posString = QString::number(point.x())+"_"+QString::number(point.y());
@@ -1656,10 +1745,10 @@ QGraphicsPixmapItem *ScribbleArea::getTileFromPos(QPoint point)
         emptyImage.fill(Qt::transparent);
 
         QGraphicsPixmapItem *item = new QGraphicsPixmapItem(emptyImage);
-        item->setPos(point.x(), point.y());
+        item->setPos(point);
+//        item->setZValue(30);
 
         mScene.addItem(item);
-        item->setZValue(30);
         mTiles.insert(posString, item);
 
         return item;
@@ -1675,9 +1764,22 @@ void ScribbleArea::startStroke()
     mMyPaint->startStroke();
 }
 
+void ScribbleArea::setBrushWidth(float width)
+{
+    mMyPaint->setBrushWidth(width);
+}
+
 void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float ytilt)
 {
-    mMyPaint->strokeTo(point.x(), point.y(), pressure, xtilt, ytilt);
+//    QMatrix matrix;
+    QTransform v = mEditor->view()->getView();
+    QTransform t;
+
+    QPointF cp = currentTool()->getCurrentPoint();
+    point = QPoint(cp.x()+this->rect().width()/2,cp.y()+this->rect().height()/2);
+        qDebug() << "stroke to point:" << point;
+
+    mMyPaint->strokeTo(point.x(), point.y(), pressure, xtilt, ytilt, mEditor->view()->scaling());
 }
 
 void ScribbleArea::endStroke()

@@ -58,7 +58,7 @@ public:
     typedef void (*MPOnUpdateFunction) (MPHandler *handler, MPSurface *surface, MPTile *tile);
 
     void startStroke();
-    void strokeTo(float x, float y, float pressure, float xtilt, float ytilt);
+    void strokeTo(float x, float y, float pressure, float xtilt, float ytilt, float viewZoom);
     void strokeTo(float x, float y);
     void endStroke();
 
@@ -66,6 +66,7 @@ public:
 
     void setBrushColor(QColor newColor);
     void setBrushValue(MyPaintBrushSetting setting, float value);
+    void setBrushWidth(float width);
 
     void requestUpdateTile(MPSurface *surface, MPTile *tile);
     void hasNewTile(MPSurface *surface, MPTile *tile);
@@ -75,9 +76,9 @@ public:
     QSize surfaceSize();
 
     void clearSurface();
-    QImage renderImage();
+    QImage renderImage(QTransform transform);
 
-    void loadImage(const QImage &image);
+    void loadImage(const QImage &image, QTransform transform);
 
 
 public slots:

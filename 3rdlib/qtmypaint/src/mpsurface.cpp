@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "mpsurface.h"
+#include "qdebug.h"
 
 static void freeTiledSurface(MyPaintSurface *surface)
 {
@@ -52,10 +53,21 @@ static void onTileRequestStart(MyPaintTiledSurface *tiled_surface, MyPaintTileRe
     const int ty = request->ty;
     uint16_t *tile_pointer = NULL;
 
-    if (tx >= self->getTilesWidth() || ty >= self->getTilesHeight() || tx < 0 || ty < 0) {
+    if (tx > self->getTilesWidth()) {
+        self->setTilesWidth(tx);
+    }
+
+    if (ty > self->getTilesHeight()) {
+        self->setTilesHeight(ty);
+    }
+
+    if (self->getTilesWidth() == 0 || self->getTilesHeight() == 0) {
+
+        qDebug() << "tile is null";
         // Give it a tile which we will ignore writes to
         tile_pointer = self->null_tile;
     } else {
+        qDebug() << "get tile from index";
         MPTile* tile = self->getTileFromIdx(QPoint(tx,ty));
         tile_pointer = tile ? tile->Bits(false) : NULL;
     }
@@ -112,7 +124,8 @@ void MPSurface::setOnClearedSurface(MPOnUpdateSurfaceFunction onClearedSurfaceFu
     this->onClearedSurfaceFunction = onClearedSurfaceFunction;
 }
 
-void MPSurface::loadImage(const QImage &image)
+static QTransform testTransform;
+void MPSurface::loadImage(const QImage &image, QTransform transform)
 {
     QSize tileSize = QSize(MYPAINT_TILE_SIZE, MYPAINT_TILE_SIZE);
 
@@ -142,6 +155,7 @@ void MPSurface::loadImage(const QImage &image)
 
                 MPTile *tile = getTileFromIdx(idx);
                 tile->setImage(tileImage);
+//                tile->setTransform(transform);
 
                 this->onUpdateTileFunction(this, tile);
             }

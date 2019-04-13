@@ -49,6 +49,8 @@ public:
     void clear();
     void setImage(const QImage &image);
 
+        QTransform transform;
+
 private:
 
     uint16_t  t_pixels [k_tile_dim][k_tile_dim][4];

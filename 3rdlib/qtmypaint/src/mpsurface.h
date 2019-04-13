@@ -59,6 +59,9 @@ public:
     int getWidth();
     int getHeight();
 
+    void setTilesWidth(int newWidth) { tiles_width = newWidth; }
+    void setTilesHeight(int newHeight) { tiles_height = newHeight; }
+
     enum { k_center = 50, k_max = 2*k_center};
 
     MPTile* getTileFromPos(const QPoint& pos);
@@ -85,7 +88,7 @@ public:
     void clear();
     QImage renderImage();
 
-    void loadImage(const QImage &image);
+    void loadImage(const QImage &image, QTransform transform);
 
 private:
     void resetNullTile();

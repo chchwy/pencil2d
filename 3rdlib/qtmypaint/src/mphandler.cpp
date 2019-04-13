@@ -26,6 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "mphandler.h"
 
+#include <qdebug.h>
+
 extern "C" {
 #include "mypaint-brush.h"
 #include "mypaint-surface.h"
@@ -124,15 +126,15 @@ void MPHandler::clearSurface()
     m_surface->clear();
 }
 
-QImage MPHandler::renderImage()
+QImage MPHandler::renderImage(QTransform transform)
 {
     QImage image = m_surface->renderImage();
     return image;
 }
 
-void MPHandler::loadImage(const QImage &image)
+void MPHandler::loadImage(const QImage &image, QTransform transform)
 {
-    m_surface->loadImage(image);
+    m_surface->loadImage(image, transform);
 }
 
 void MPHandler::loadBrush(const QByteArray &content)
@@ -140,8 +142,13 @@ void MPHandler::loadBrush(const QByteArray &content)
     m_brush->load(content);
 }
 
+void MPHandler::setBrushWidth(float width)
+{
+    m_brush->setWidth(width);
+}
+
 void
-MPHandler::strokeTo(float x, float y, float pressure, float xtilt, float ytilt)
+MPHandler::strokeTo(float x, float y, float pressure, float xtilt, float ytilt, float viewZoom)
 {
     float dtime = 1.0/10;
     mypaint_surface_begin_atomic((MyPaintSurface *)m_surface);
@@ -163,7 +170,7 @@ MPHandler::strokeTo(float x, float y)
     float pressure = 1.0;
     float xtilt = 0.0;
     float ytilt = 0.0;
-    strokeTo(x, y, pressure, xtilt, ytilt);
+    strokeTo(x, y, pressure, xtilt, ytilt, 1.0);
 }
 
 void

@@ -82,6 +82,8 @@ void BrushTool::setWidth(const qreal width)
 {
     // Set current property
     properties.width = width;
+    mCurrentWidth = width;
+        mScribbleArea->setBrushWidth(mCurrentWidth);
 
     // Update settings
     QSettings settings(PENCIL2D, PENCIL2D);
@@ -176,6 +178,7 @@ void BrushTool::pointerMoveEvent(PointerEvent* event)
     {
         mCurrentPressure = strokeManager()->getPressure();
         drawStroke();
+//        mScribbleArea->paintBitmapBufferRect(QRect());
         if (properties.stabilizerLevel != strokeManager()->getStabilizerLevel())
             strokeManager()->setStabilizerLevel(properties.stabilizerLevel);
     }

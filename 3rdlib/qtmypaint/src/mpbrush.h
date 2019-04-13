@@ -48,6 +48,7 @@ public:
     QColor getColor();
 
     void setColor(QColor newColor);
+    void setWidth(const float width);
 
     float getValue(MyPaintBrushSetting setting);
     void setValue(MyPaintBrushSetting setting, float value);

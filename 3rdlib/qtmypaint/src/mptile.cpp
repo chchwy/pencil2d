@@ -7,6 +7,7 @@
  */
 
 #include "mptile.h"
+#include "qdebug.h"
 
 MPTile::MPTile(QGraphicsItem * parent) : QGraphicsItem(parent), m_cache_img(k_tile_dim, k_tile_dim, QImage::Format_ARGB32_Premultiplied)
 {
@@ -46,9 +47,24 @@ void MPTile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
+    qDebug() << "is painting tile";
+
+    QBrush b = painter->brush();
+//    painter->setTransform();
+//    painter->setBrush(Qt::gray);
+
+//    qDebug() << transform;
+//    painter->
+//    painter->setTransform(transform);
+//    painter->drawRect(13, 13, 97, 57);
+//    painter->drawEllipse(10,10,10,10);
+
+//    painter->fillRect(boundingRect(), Qt::blue);
+
     if (!m_cache_valid) 
         updateCache(); // We need to transfer the uint16_t table to the QImage cache
     painter->drawImage(QPoint(), m_cache_img, m_cache_img.rect());
+    painter->resetTransform();
 }
 
 uint16_t* MPTile::Bits(bool readOnly)
@@ -68,6 +84,7 @@ void MPTile::drawPoint(uint x, uint y, uint16_t r, uint16_t g, uint16_t b, uint1
     t_pixels[y][x][k_blue ] = b;
     t_pixels[y][x][k_alpha] = a;
 }
+
 
 // Time to transfer the pixels from the uint16 to 32 bits cache before repaint...
 //

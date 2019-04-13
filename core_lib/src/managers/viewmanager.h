@@ -40,6 +40,7 @@ public:
 
     QTransform getView();
     QTransform getViewInverse();
+    QTransform getCameraView() { return mView; }
     void resetView();
 
     QPointF mapCanvasToScreen(QPointF p);

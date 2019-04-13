@@ -74,7 +74,7 @@ BitmapImage::~BitmapImage()
 void BitmapImage::setImage(QImage* img)
 {
     Q_CHECK_PTR(img);
-    mImage.reset(img);
+    mImage = std::shared_ptr<QImage>(img);
     mMinBound = false;
     mEnableAutoCrop = false;
     mBounds = img->rect();

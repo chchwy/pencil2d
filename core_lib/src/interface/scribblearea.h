@@ -54,6 +54,35 @@ class MPSurface;
 class MPTile;
 class QGraphicsPixmapItem;
 
+
+//class ScribbleArea;
+//class Editor;
+//class GraphicsView : public QGraphicsView
+//{
+
+//    friend class ScribbleArea;
+
+//    Q_OBJECT
+//public:
+//    GraphicsView(ScribbleArea* scribblearea, Editor* editor) : QGraphicsView(),
+//        mScribble(scribblearea),
+//        mEditor(editor) {}
+
+//protected:
+//    void wheelEvent(QWheelEvent *) override;
+
+//private:
+
+////    void startStroke();
+////    void strokeTo(QPointF point, float pressure, float xtilt, float ytilt);
+////    void setBrushWidth(float width);
+////    void endStroke();
+
+//    ScribbleArea* mScribble;
+//    Editor* mEditor;
+//};
+
+
 class ScribbleArea : public QGraphicsView
 {
     Q_OBJECT
@@ -149,7 +178,8 @@ public:
 
     // mypaint
     void loadMPBrush(const QByteArray &content);
-    QGraphicsPixmapItem* getTileFromPos(QPoint point);
+    QGraphicsPixmapItem* getTileFromPos(QPointF point);
+    void clearSurfaceBuffer();
 
 signals:
     void modification(int);
@@ -195,6 +225,7 @@ protected:
 public:
     void startStroke();
     void strokeTo(QPointF point, float pressure, float xtilt, float ytilt);
+    void setBrushWidth(float width);
     void endStroke();
 
     void drawPolyline(QPainterPath path, QPen pen, bool useAA);
@@ -207,7 +238,7 @@ public:
     void liquifyBrush(BitmapImage *bmiSource_, QPointF srcPoint_, QPointF thePoint_, qreal brushWidth_, qreal offset_, qreal opacity_);
 
     void paintBitmapBuffer();
-//    void paintBitmapBufferRect(const QRect& rect);
+    void paintBitmapBufferRect(const QRect& rect);
     void paintCanvasCursor(QPainter& painter);
     void clearBitmapBuffer();
     void refreshBitmap(const QRectF& rect, int rad);
@@ -233,6 +264,8 @@ public:
     QPixmap mTransCursImg;
 
     QPointF getTransformOffset() { return mOffset; }
+
+    MPHandler* mMyPaint = nullptr;
 private:
 //    void drawCanvas(int frame, QRect rect);
     void settingUpdated(SETTING setting);
@@ -324,9 +357,10 @@ private:
     std::deque<clock_t> mDebugTimeQue;
 
     // mypaint
-    MPHandler* mMyPaint = nullptr;
     QHash<QString, QGraphicsPixmapItem*> mTiles;
     QGraphicsScene mScene;
+
+//    GraphicsView *mGraphicsView;
 
     QGraphicsPixmapItem* mCanvasItem;
     QGraphicsPixmapItem* mBackgroundItem;
@@ -339,8 +373,6 @@ private:
 
     bool isInPreviewMode = false;
     bool mNeedQuickUpdate = false;
-
-
 };
 
 #endif

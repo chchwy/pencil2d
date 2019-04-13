@@ -25,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "mpbrush.h"
+#include <QDebug>
 
 MPBrush::MPBrush()
 {
@@ -98,6 +99,15 @@ void MPBrush::setColor(QColor newColor)
     setValue(MYPAINT_BRUSH_SETTING_COLOR_H, h);
     setValue(MYPAINT_BRUSH_SETTING_COLOR_S, s);
     setValue(MYPAINT_BRUSH_SETTING_COLOR_V, v);
+}
+
+void MPBrush::setWidth(const float size)
+{
+    qDebug() << size;
+//    float newSize = size *;
+//    qreal normalizedValue = -2.f  + ((5.f-(-2.f))/(200.f-1.f)) * (size-1.f);
+//    qDebug() << normalizedValue;
+    setValue(MYPAINT_BRUSH_SETTING_RADIUS_LOGARITHMIC, size);
 }
 
 float MPBrush::getValue(MyPaintBrushSetting setting)
