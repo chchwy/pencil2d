@@ -13,6 +13,7 @@
 #include <QString>
 
 #include "basedockwidget.h"
+#include "pencildef.h"
 
 class QListWidgetItem;
 class QTabWidget;
@@ -31,12 +32,14 @@ public:
   MPBrushSelector( const QString& brushLibPath, QWidget* parent = 0 );
 
   bool isValid() { return !m_brushLib.isEmpty(); }
+  void loadToolBrushes(QString toolName);
 
   void initUI() override;
   void updateUI() override;
 
 public slots:
   void selectBrush(QString brushName = QString()); // Give the brush name (no extension) i.e. : "classic/blend+paint"
+  void typeChanged(ToolType);
 
 signals:
   void brushSelected (QString toolName, QString brushName, const QByteArray& content);
@@ -49,7 +52,16 @@ protected slots:
   void itemClicked ( QListWidgetItem *);
 
 private:
+
+  void populateList();
+  bool anyBrushSelected();
+
   QTabWidget* mTabWidget;
+
+  const QString BRUSH_CONTENT_EXT = ".myb";
+  const QString BRUSH_PREVIEW_EXT = "_prev.png";
+  const QString BRUSH_LIST = "brushes.conf";
+  const int ICON_SZ =64;
 
 };
 

@@ -5,6 +5,7 @@
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
  */
+
 #include "mpbrushselector.h"
 
 #include <QDir>
@@ -12,12 +13,9 @@
 #include <QTabWidget>
 #include <QLayout>
 
-#include <QDebug>
+#include <QSettings>
 
-#define BRUSH_CONTENT_EXT ".myb"
-#define BRUSH_PREVIEW_EXT "_prev.png"
-#define BRUSH_LIST        "brushes.conf"
-#define ICON_SZ           64
+#include <QDebug>
 
 MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *parent)
     : BaseDockWidget(parent),
@@ -28,63 +26,34 @@ MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *parent)
     mTabWidget = new QTabWidget(parent);
 
     setWidget(mTabWidget);
+    mTabWidget->tabBar()->hide();
 
     // First, we parse the "order.conf" file to fill m_brushLib
-    qDebug() << brushLibPath;
     QFile fileOrder(brushLibPath + QDir::separator() + BRUSH_LIST);
     if (fileOrder.open(QIODevice::ReadOnly))
     {
-        // Decode the order info. This code replace the auto-parse code (commented below)
-        // Note about encoding : we consider this is ASCII file (UTF8 would be safer
-        // but this is libMyPaint dev team decision)
-        QString     currentGroup; // no group for now.
+        QString currentGroup;
         QStringList brushesGroup;
         while (!fileOrder.atEnd())
         {
-            QString line ( fileOrder.readLine().trimmed() ); // Get a line without begin/end extra space chars
-            if (line.isEmpty() || line.startsWith("#")) continue; // empty line or starting with # are ignored
-            if (line.startsWith("Group:")) // brushes below this line are owned by this group:
+            QString line ( fileOrder.readLine().trimmed() );
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            if (line.startsWith("Group:"))
             {
                 // first, we store the last brushesGroup (if any). Note that declaring 2 groups with the same name is wrong (only the last one will be visible)
                 if (!currentGroup.isEmpty() && !brushesGroup.isEmpty()) m_brushLib.insert(currentGroup, brushesGroup);
-                // Now, we prepare to get the brushes for this new group:
+
                 currentGroup = line.section(':',1).trimmed(); // Get the name after the first ':' separator
                 brushesGroup.clear();
                 continue;
             }
-            // Ok, line contains a (partial) file path. Let's check that the file exists before we include it:
+
             if (QFileInfo(brushLibPath + QDir::separator() + line + BRUSH_CONTENT_EXT).isReadable()) brushesGroup << line;
         }
-        // last group :
+
         if (!currentGroup.isEmpty() && !brushesGroup.isEmpty()) m_brushLib.insert(currentGroup, brushesGroup);
 
-        // Now we create a QListWidget (displaying icons) for each stringList
-        foreach (const QString &caption, m_brushLib.keys())
-        {
-            const QStringList subList = m_brushLib.value(caption);
-            if (subList.isEmpty()) continue; // this should not happen...
-            QListWidget* p_lWdgt = new QListWidget();
-            p_lWdgt->setUniformItemSizes(true);
-            p_lWdgt->setViewMode        (QListView::IconMode);
-            p_lWdgt->setResizeMode      (QListView::Adjust);
-            p_lWdgt->setMovement        (QListView::Static);
-            p_lWdgt->setFlow            (QListView::LeftToRight);
-            p_lWdgt->setSelectionMode   (QAbstractItemView::SingleSelection);
-            p_lWdgt->setIconSize        (QSize(ICON_SZ,ICON_SZ));
-            connect(p_lWdgt, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(itemClicked(QListWidgetItem*)));
-            // Add this ListWidget to the TabWidget:
-            mTabWidget->addTab(p_lWdgt, caption);
-            // Populate the ListWidget with brushes (and their preview):
-            for (int n = 0 ; n < subList.count() ; n++)
-            {
-                QString name (subList[n]);
-                QIcon preview(m_brushesPath + QDir::separator() + name + BRUSH_PREVIEW_EXT);
-                QListWidgetItem* p_item = new QListWidgetItem(preview, QString(), p_lWdgt, n); // no need to show the name as it is already visible in preview
-                //p_item->setIconSize(QSize(128,128));
-                p_item->setToolTip(QString("%1 in \"%2\".").arg(name).arg(caption));
-            }
-        }
-        // for now, no brush is selected. Expecting some order from owner...
+        populateList();
     }
 }
 
@@ -98,57 +67,190 @@ void MPBrushSelector::updateUI()
 
 }
 
-void MPBrushSelector::itemClicked(QListWidgetItem *p_item)
+void MPBrushSelector::populateList()
 {
-    QListWidget* p_lWdgt = p_item->listWidget();
-    if (p_lWdgt)
+    foreach (const QString &caption, m_brushLib.keys())
     {
-        QString caption;
+        const QStringList subList = m_brushLib.value(caption);
+        if (subList.isEmpty()) continue; // this should not happen...
+        QListWidget* listWidget = new QListWidget();
+        listWidget->setUniformItemSizes(true);
+        listWidget->setViewMode        (QListView::IconMode);
+        listWidget->setResizeMode      (QListView::Adjust);
+        listWidget->setMovement        (QListView::Static);
+        listWidget->setFlow            (QListView::LeftToRight);
+        listWidget->setSelectionMode   (QAbstractItemView::SingleSelection);
+        listWidget->setIconSize        (QSize(ICON_SZ,ICON_SZ));
+        connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(itemClicked(QListWidgetItem*)));
+
+        mTabWidget->addTab(listWidget, caption);
+        for (int n = 0 ; n < subList.count() ; n++)
+        {
+            QString name (subList.at(n));
+            QIcon preview(m_brushesPath + QDir::separator() + name + BRUSH_PREVIEW_EXT);
+            QListWidgetItem* p_item = new QListWidgetItem(preview, QString(), listWidget, n); // no need to show the name as it is already visible in preview
+            p_item->setToolTip(QString("%1 in \"%2\".").arg(name).arg(caption));
+        }
+    }
+    QListWidget* emptyWidget = new QListWidget();
+
+    mTabWidget->addTab(emptyWidget, "");
+}
+
+void MPBrushSelector::itemClicked(QListWidgetItem *itemWidget)
+{
+    QListWidget* listWidget = itemWidget->listWidget();
+    if (listWidget)
+    {
+        QString toolName;
         // first of all, we will deselect all other items in other panels :
         for (int p = 0 ; p < mTabWidget->count() ; p++)
         {
-            QListWidget* p_lWdgt2 = dynamic_cast<QListWidget*>(mTabWidget->widget(p));
-            if (p_lWdgt2 != p_lWdgt) p_lWdgt2->clearSelection(); else caption = mTabWidget->tabText(p);
+            QListWidget* otherListWidget = dynamic_cast<QListWidget*>(mTabWidget->widget(p));
+            if (otherListWidget != listWidget)
+            {
+                otherListWidget->clearSelection();
+            }
+            else
+            {
+                toolName = mTabWidget->tabText(p);
+            }
+
         }
         // fine, let's read this one and emit the content to any receiver:
-        const QStringList subList = m_brushLib.value(caption);
-        QString brushName (subList.at(p_item->type()));
+        const QStringList subList = m_brushLib.value(toolName);
+        QString brushName (subList.at(itemWidget->type()));
 
-        QFile f( m_brushesPath + QDir::separator() + subList.at(p_item->type()) + BRUSH_CONTENT_EXT );
-        //    qDebug(f.fileName().toAscii());
+        QFile f( m_brushesPath + QDir::separator() + subList.at(itemWidget->type()) + BRUSH_CONTENT_EXT );
         if (f.open( QIODevice::ReadOnly ))
         {
             QByteArray content = f.readAll();
             content.append( (char)0 );
-            emit brushSelected(caption, brushName, content); // Read the whole file and broadcast is as a char* buffer
+            emit brushSelected(toolName, brushName, content); // Read the whole file and broadcast is as a char* buffer
         }
     }
+}
+
+void MPBrushSelector::loadToolBrushes(QString toolName)
+{
+    // first of all, we will deselect all other items in other panels :
+    bool foundSelection = false;
+
+    for (int i = 0 ; i < mTabWidget->count() ; i++)
+    {
+        QString caption = mTabWidget->tabText(i);
+
+        if (caption == toolName) {
+            mTabWidget->setCurrentIndex(i);
+            foundSelection = true;
+        }
+    }
+    // If there is no tab matching the current tool,
+    // we select the last one (empty)
+    if (!foundSelection) {
+        mTabWidget->setCurrentIndex(mTabWidget->count() - 1);
+    }
+
+    const QStringList subList = m_brushLib.value(toolName);
+
+    // TODO: select last known brush type for the tab...
+    if (!subList.isEmpty()) {
+
+        QString lastUsed;
+        if (toolName != "empty") {
+            QSettings settings(PENCIL2D, PENCIL2D);
+            lastUsed = settings.value("LastBrushFor_"+toolName).toString();
+            selectBrush(lastUsed);
+        }
+
+        if (!anyBrushSelected() && lastUsed.isEmpty()) {
+            QString brushName (subList.at(0));
+            selectBrush(brushName);
+        } else {}
+    }
+}
+
+void MPBrushSelector::typeChanged(ToolType eToolMode)
+{
+    QString toolName = "";
+    switch ( eToolMode )
+    {
+    case ToolType::PENCIL:
+        toolName = "pencil";
+        break;
+    case ToolType::ERASER:
+        toolName = "eraser";
+        break;
+    case ToolType::PEN:
+        toolName = "pen";
+        break;
+    case ToolType::BRUSH:
+        toolName = "brush";
+        break;
+    case ToolType::SMUDGE:
+        toolName = "smudge";
+        break;
+    default:
+        toolName = "empty";
+        break;
+    }
+
+    loadToolBrushes(toolName);
 }
 
 void MPBrushSelector::selectBrush (QString brushName)
 {
     if (!isValid()) return;
-    QListWidget*      p_page = NULL;
-    QListWidgetItem * p_item = NULL;
-    // We search for the brush requested :
-    for (int page = mTabWidget->count()-1 ; page >= 0 && !p_item ; page--)
+    QListWidget* listWidget = nullptr;
+    QListWidgetItem* itemWidget = nullptr;
+
+    for (int page = mTabWidget->count()-1 ; page >= 0 && !itemWidget ; page--)
     {
         // reverse loop so we leave it with first page
-        p_page = dynamic_cast<QListWidget*>(mTabWidget->widget(page));
+        listWidget = dynamic_cast<QListWidget*>(mTabWidget->widget(page));
         QString caption = mTabWidget->tabText(page);
         const QStringList subList = m_brushLib.value(caption);
-        if (!brushName.isEmpty()) for (int idx = 0 ; idx < subList.count() ; idx++)
+        if (brushName.isEmpty()) { break; }
+
+        for (int idx = 0; idx < subList.count(); idx++)
         {
-            if (subList.at(idx) == brushName) { p_item = p_page->item(idx); break; }
+            if (subList.at(idx) == brushName) {
+                itemWidget = listWidget->item(idx);
+                break;
+            }
         }
     }
     // default one : we use the first tab page & the first item available:
-    if (!p_item && p_page && p_page->count()) p_item = p_page->item(0);
-    // Update GUI + load the brush (if any)
-    if (p_item)
+    if (!itemWidget && listWidget && listWidget->count())
     {
-        mTabWidget->setCurrentWidget(p_page);
-        p_page->setCurrentItem (p_item);
-        itemClicked(p_item);
+        itemWidget = listWidget->item(0);
     }
+
+    // Update GUI + load the brush (if any)
+    if (itemWidget)
+    {
+        mTabWidget->setCurrentWidget(listWidget);
+        listWidget->setCurrentItem (itemWidget);
+        itemClicked(itemWidget);
+    }
+}
+
+bool MPBrushSelector::anyBrushSelected()
+{
+    QListWidgetItem* item = nullptr;
+
+    int currentTabIndex = mTabWidget->currentIndex();
+    QListWidget* listWidget = static_cast<QListWidget*>(mTabWidget->widget(currentTabIndex));
+    QString caption = mTabWidget->tabText(currentTabIndex);
+    const QStringList subList = m_brushLib.value(caption);
+
+    for (int idx = 0; idx < subList.count(); idx++)
+    {
+        item = listWidget->item(idx);
+        if (item->isSelected()) {
+            return true;
+        }
+    }
+
+    return false;
 }

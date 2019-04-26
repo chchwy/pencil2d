@@ -131,6 +131,7 @@ private:
     void makeConnections(Editor*, DisplayOptionWidget*);
     void makeConnections(Editor*, ToolOptionWidget*);
     void makeConnections(Editor*, MPBrushSelector*);
+//    void makeConnections(ToolManager* viewmanager, MPBrushSelector* brushSelector) {
 
     void bindActionWithSetting(QAction*, SETTING);
 
