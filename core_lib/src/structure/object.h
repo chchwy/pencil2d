@@ -30,6 +30,7 @@ GNU General Public License for more details.
 class QProgressDialog;
 class QFile;
 class LayerBitmap;
+class LayerBitmapSurface;
 class LayerVector;
 class LayerCamera;
 class LayerSound;
@@ -106,6 +107,7 @@ public:
     void loadDefaultPalette();
 
     LayerBitmap* addNewBitmapLayer();
+    LayerBitmapSurface* addNewBitmapSurfaceLayer();
     LayerVector* addNewVectorLayer();
     LayerSound* addNewSoundLayer();
     LayerCamera* addNewCameraLayer();

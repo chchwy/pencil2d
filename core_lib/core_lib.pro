@@ -100,7 +100,8 @@ HEADERS +=  \
     src/external/platformhandler.h \
     src/external/macosx/macosxnative.h \
     src/util/pointerevent.h \
-    src/graphics/bitmap/bitmapsurface.h
+    src/graphics/bitmap/bitmapsurface.h \
+    src/structure/layerbitmapsurface.h
 
 
 SOURCES += \
@@ -165,7 +166,8 @@ SOURCES += \
     src/miniz.cpp \
     src/qminiz.cpp \
     src/activeframepool.cpp \
-    src/util/pointerevent.cpp
+    src/util/pointerevent.cpp \
+    src/structure/layerbitmapsurface.cpp
 
 FORMS += \
     ui/camerapropertiesdialog.ui

@@ -50,6 +50,8 @@ protected:
     int mCurrentXTilt;
     int mCurrentYTilt;
 
+    bool isBrushDab = false;
+
     /// Whether to enable the "drawing on empty frame" preference.
     /// If true, then the user preference is honored.
     /// If false, then the stroke is drawn on the previous key-frame (i.e. the

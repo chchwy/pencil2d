@@ -601,10 +601,10 @@ Status ActionCommands::addNewBitmapLayer()
     bool ok;
     QString text = QInputDialog::getText(nullptr, tr("Layer Properties"),
                                          tr("Layer name:"), QLineEdit::Normal,
-                                         nameSuggest(tr("Bitmap Layer")), &ok);
+                                         nameSuggest(tr("BitmapSurface Layer")), &ok);
     if (ok && !text.isEmpty())
     {
-        mEditor->layers()->createBitmapLayer(text);
+        mEditor->layers()->createBitmapSurfaceLayer(text);
     }
     return Status::OK;
 }

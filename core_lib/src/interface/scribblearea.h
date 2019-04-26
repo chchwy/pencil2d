@@ -47,6 +47,7 @@ class Editor;
 class BaseTool;
 class PointerEvent;
 class BitmapImage;
+class BitmapSurface;
 class VectorImage;
 
 class MPHandler;
@@ -54,40 +55,11 @@ class MPSurface;
 class MPTile;
 class QGraphicsPixmapItem;
 
-
-//class ScribbleArea;
-//class Editor;
-//class GraphicsView : public QGraphicsView
-//{
-
-//    friend class ScribbleArea;
-
-//    Q_OBJECT
-//public:
-//    GraphicsView(ScribbleArea* scribblearea, Editor* editor) : QGraphicsView(),
-//        mScribble(scribblearea),
-//        mEditor(editor) {}
-
-//protected:
-//    void wheelEvent(QWheelEvent *) override;
-
-//private:
-
-////    void startStroke();
-////    void strokeTo(QPointF point, float pressure, float xtilt, float ytilt);
-////    void setBrushWidth(float width);
-////    void endStroke();
-
-//    ScribbleArea* mScribble;
-//    Editor* mEditor;
-//};
-
-
-class ScribbleArea : public QGraphicsView
+class ScribbleArea : public QWidget
 {
     Q_OBJECT
 
-        friend class MoveTool;
+    friend class MoveTool;
     friend class EditTool;
     friend class SmudgeTool;
     friend class BucketTool;
@@ -100,6 +72,8 @@ public:
     void setEditor(Editor* e) { mEditor = e; }
     StrokeManager* getStrokeManager() const { return mStrokeManager.get(); }
     Editor* editor() const { return mEditor; }
+
+
 
     void deleteSelection();
     void setSelection(QRectF rect);
@@ -178,7 +152,7 @@ public:
 
     // mypaint
     void loadMPBrush(const QByteArray &content);
-    QGraphicsPixmapItem* getTileFromPos(QPointF point);
+    MPTile* getTileFromPos(QPointF point);
     void clearSurfaceBuffer();
 
 signals:
@@ -205,9 +179,13 @@ public slots:
 
     void showLayerNotVisibleWarning();
 
+    void updateDirtyTiles();
+    void refreshSurface();
+
     void newTileCreated(MPSurface* surface, MPTile* tile);
     void existingTileUpdated(MPSurface* surface, MPTile* tile);
     void updateTile(MPSurface* surface, MPTile* tile);
+    void onClearedSurface(MPSurface* surface);
 
 
 protected:
@@ -219,7 +197,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
     void keyReleaseEvent(QKeyEvent*) override;
-//    void paintEvent(QPaintEvent*) override;
+    void paintEvent(QPaintEvent*) override;
     void resizeEvent(QResizeEvent*) override;
 
 public:
@@ -231,9 +209,9 @@ public:
     void drawPolyline(QPainterPath path, QPen pen, bool useAA);
     void drawLine(QPointF P1, QPointF P2, QPen pen, QPainter::CompositionMode cm);
     void drawPath(QPainterPath path, QPen pen, QBrush brush, QPainter::CompositionMode cm);
-    void drawPen(QPointF thePoint, qreal brushWidth, QColor fillColour, bool useAA = true);
-    void drawPencil(QPointF thePoint, qreal brushWidth, qreal fixedBrushFeather, QColor fillColour, qreal opacity);
-    void drawBrush(QPointF thePoint, qreal brushWidth, qreal offset, QColor fillColour, qreal opacity, bool usingFeather = true, int useAA = 0);
+//    void drawPen(QPointF thePoint, qreal brushWidth, QColor fillColour, bool useAA = true);
+//    void drawPencil(QPointF thePoint, qreal brushWidth, qreal fixedBrushFeather, QColor fillColour, qreal opacity);
+//    void drawBrush(QPointF thePoint, qreal brushWidth, qreal offset, QColor fillColour, qreal opacity, bool usingFeather = true, int useAA = 0);
     void blurBrush(BitmapImage *bmiSource_, QPointF srcPoint_, QPointF thePoint_, qreal brushWidth_, qreal offset_, qreal opacity_);
     void liquifyBrush(BitmapImage *bmiSource_, QPointF srcPoint_, QPointF thePoint_, qreal brushWidth_, qreal offset_, qreal opacity_);
 
@@ -288,6 +266,7 @@ private:
 
     BitmapImage* currentBitmapImage(Layer* layer) const;
     VectorImage* currentVectorImage(Layer* layer) const;
+    BitmapSurface* currentBitmapSurfaceImage(Layer* layer) const;
 
     MoveMode mMoveMode = MoveMode::NONE;
     ToolType mPrevTemporalToolType = ERASER;
@@ -357,7 +336,7 @@ private:
     std::deque<clock_t> mDebugTimeQue;
 
     // mypaint
-    QHash<QString, QGraphicsPixmapItem*> mTiles;
+    QHash<QString, MPTile*> mTiles;
     QGraphicsScene mScene;
 
 //    GraphicsView *mGraphicsView;

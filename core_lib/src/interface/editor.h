@@ -22,6 +22,7 @@ GNU General Public License for more details.
 #include <QObject>
 #include <QList>
 #include "pencilerror.h"
+#include "basetool.h"
 
 
 class QDragEnterEvent;
@@ -71,7 +72,7 @@ public:
     ToolManager*       tools() const { return mToolManager; }
     LayerManager*      layers() const { return mLayerManager; }
     PlaybackManager*   playback() const { return mPlaybackManager; }
-    ViewManager*       view() const { return mViewManager; }
+    ViewManager*        view() const { return mViewManager; }
     PreferenceManager* preference() const { return mPreferenceManager; }
     SoundManager*      sound() const { return mSoundManager; }
 

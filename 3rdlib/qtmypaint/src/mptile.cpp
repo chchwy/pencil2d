@@ -15,6 +15,12 @@ MPTile::MPTile(QGraphicsItem * parent) : QGraphicsItem(parent), m_cache_img(k_ti
     clear(); //Default tiles are transparent
 }
 
+MPTile::MPTile(QPixmap& pixmap)
+{
+    m_cache_img = pixmap.toImage();
+    setCacheMode(QGraphicsItem::NoCache);
+}
+
 MPTile::~MPTile()
 {
 }
@@ -47,7 +53,7 @@ void MPTile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    qDebug() << "is painting tile";
+//    qDebug() << "is painting tile";
 
     QBrush b = painter->brush();
 //    painter->setTransform();
@@ -132,4 +138,5 @@ void MPTile::clear()
     memset(t_pixels, 0, sizeof(t_pixels)); // Tile is transparent
     m_cache_img.fill( QColor(Qt::transparent) ); // image cache is transparent too, and aligned to the pixel table:
     m_cache_valid = true;
+    m_dirty = false;
 }

@@ -82,6 +82,9 @@ public:
 
     void updateViewTransforms();
 
+    bool transformUpdated() { return mHasTransformed; }
+    void transformUpdatedState(bool updated) { mHasTransformed = updated; }
+
     Q_SIGNAL void viewChanged();
     Q_SIGNAL void viewFlipped();
 
@@ -102,6 +105,7 @@ private:
 
     bool mIsFlipHorizontal = false;
     bool mIsFlipVertical = false;
+    bool mHasTransformed = false;
 
     LayerCamera* mCameraLayer = nullptr;
 };

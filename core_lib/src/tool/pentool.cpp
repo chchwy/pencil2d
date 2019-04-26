@@ -135,7 +135,7 @@ void PenTool::pointerMoveEvent(PointerEvent* event)
 
 void PenTool::pointerReleaseEvent(PointerEvent*)
 {
-    mEditor->backup(typeName());
+//    mEditor->backup(typeName());
 
     Layer* layer = mEditor->layers()->currentLayer();
 
@@ -161,23 +161,23 @@ void PenTool::paintAt(QPointF point)
 {
     //qDebug() << "Made a single dab at " << point;
 
-    Layer* layer = mEditor->layers()->currentLayer();
-    if (layer->type() == Layer::BITMAP)
-    {
-        qreal pressure = (properties.pressure) ? mCurrentPressure : 1.0;
-        qreal brushWidth = properties.width * pressure;
-        mCurrentWidth = brushWidth;
+//    Layer* layer = mEditor->layers()->currentLayer();
+//    if (layer->type() == Layer::BITMAP)
+//    {
+//        qreal pressure = (properties.pressure) ? mCurrentPressure : 1.0;
+//        qreal brushWidth = properties.width * pressure;
+//        mCurrentWidth = brushWidth;
 
-        mScribbleArea->drawPen(point,
-                               brushWidth,
-                               mEditor->color()->frontColor(),
-                               properties.useAA);
+//        mScribbleArea->drawPen(point,
+//                               brushWidth,
+//                               mEditor->color()->frontColor(),
+//                               properties.useAA);
 
-        int rad = qRound(brushWidth) / 2 + 2;
+//        int rad = qRound(brushWidth) / 2 + 2;
 
-        BlitRect rect(point.toPoint());
-        mScribbleArea->refreshBitmap(rect, rad);
-    }
+//        BlitRect rect(point.toPoint());
+//        mScribbleArea->refreshBitmap(rect, rad);
+//    }
 }
 
 void PenTool::drawStroke()
@@ -189,47 +189,47 @@ void PenTool::drawStroke()
 
     if (layer->type() == Layer::BITMAP)
     {
-        for (int i = 0; i < p.size(); i++)
-        {
-            p[i] = mEditor->view()->mapScreenToCanvas(p[i]);
-        }
+//        for (int i = 0; i < p.size(); i++)
+//        {
+//            p[i] = mEditor->view()->mapScreenToCanvas(p[i]);
+//        }
 
-        qreal pressure = (properties.pressure) ? mCurrentPressure : 1.0;
-        qreal brushWidth = properties.width * pressure;
-        mCurrentWidth = brushWidth;
+//        qreal pressure = (properties.pressure) ? mCurrentPressure : 1.0;
+//        qreal brushWidth = properties.width * pressure;
+//        mCurrentWidth = brushWidth;
 
-        // TODO: Make popup widget for less important properties,
-        // Eg. stepsize should be a slider.. will have fixed (0.3) value for now.
-        qreal brushStep = (0.5 * brushWidth);
-        brushStep = qMax(1.0, brushStep);
+//        // TODO: Make popup widget for less important properties,
+//        // Eg. stepsize should be a slider.. will have fixed (0.3) value for now.
+//        qreal brushStep = (0.5 * brushWidth);
+//        brushStep = qMax(1.0, brushStep);
 
-        BlitRect rect;
+//        BlitRect rect;
 
-        QPointF a = mLastBrushPoint;
-        QPointF b = getCurrentPoint();
+//        QPointF a = mLastBrushPoint;
+//        QPointF b = getCurrentPoint();
 
-        qreal distance = 4 * QLineF(b, a).length();
-        int steps = qRound(distance / brushStep);
+//        qreal distance = 4 * QLineF(b, a).length();
+//        int steps = qRound(distance / brushStep);
 
-        for (int i = 0; i < steps; i++)
-        {
-            QPointF point = mLastBrushPoint + (i + 1) * brushStep * (getCurrentPoint() - mLastBrushPoint) / distance;
-            rect.extend(point.toPoint());
-            mScribbleArea->drawPen(point,
-                                   brushWidth,
-                                   mEditor->color()->frontColor(),
-                                   properties.useAA);
+//        for (int i = 0; i < steps; i++)
+//        {
+//            QPointF point = mLastBrushPoint + (i + 1) * brushStep * (getCurrentPoint() - mLastBrushPoint) / distance;
+//            rect.extend(point.toPoint());
+//            mScribbleArea->drawPen(point,
+//                                   brushWidth,
+//                                   mEditor->color()->frontColor(),
+//                                   properties.useAA);
 
-            if (i == (steps - 1))
-            {
-                mLastBrushPoint = getCurrentPoint();
-            }
-        }
+//            if (i == (steps - 1))
+//            {
+//                mLastBrushPoint = getCurrentPoint();
+//            }
+//        }
 
-        int rad = qRound(brushWidth) / 2 + 2;
+//        int rad = qRound(brushWidth) / 2 + 2;
 
-//        mScribbleArea->paintBitmapBufferRect(rect);
-        mScribbleArea->refreshBitmap(rect, rad);
+////        mScribbleArea->paintBitmapBufferRect(rect);
+//        mScribbleArea->refreshBitmap(rect, rad);
     }
     else if (layer->type() == Layer::VECTOR)
     {
@@ -256,9 +256,9 @@ void PenTool::drawStroke()
 
 void PenTool::paintBitmapStroke()
 {
-    mScribbleArea->paintBitmapBuffer();
-    mScribbleArea->setAllDirty();
-    mScribbleArea->clearBitmapBuffer();
+//    mScribbleArea->paintBitmapBuffer();
+//    mScribbleArea->setAllDirty();
+//    mScribbleArea->clearBitmapBuffer();
 }
 
 void PenTool::paintVectorStroke(Layer* layer)

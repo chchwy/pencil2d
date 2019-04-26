@@ -30,6 +30,7 @@ class MPTile : public QGraphicsItem
 public:
 
     MPTile (QGraphicsItem * parent = NULL);
+    MPTile (QPixmap& pixmap);
     ~MPTile();
 
     enum { k_tile_dim = 64 };
@@ -49,13 +50,17 @@ public:
     void clear();
     void setImage(const QImage &image);
 
-        QTransform transform;
+    QTransform transform;
+
+    bool isDirty() { return m_dirty; }
+    void setDirty(bool dirty) { m_dirty = dirty; }
 
 private:
 
     uint16_t  t_pixels [k_tile_dim][k_tile_dim][4];
     QImage    m_cache_img;
     bool      m_cache_valid;
+    bool m_dirty = false;
 };
 
 #endif // TILE_H

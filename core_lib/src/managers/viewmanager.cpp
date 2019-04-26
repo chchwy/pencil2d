@@ -157,6 +157,7 @@ void ViewManager::translate(float dx, float dy)
     if (mCurrentCamera)
     {
         mCurrentCamera->translate(dx, dy);
+        mHasTransformed = true;
         updateViewTransforms();
 
         Q_EMIT viewChanged();
@@ -182,6 +183,7 @@ void ViewManager::rotate(float degree)
     if (mCurrentCamera)
     {
         mCurrentCamera->rotate(degree);
+        mHasTransformed = true;
         updateViewTransforms();
 
         Q_EMIT viewChanged();
@@ -274,6 +276,7 @@ void ViewManager::scale(float scaleValue)
     if (mCurrentCamera)
     {
         mCurrentCamera->scale(scaleValue);
+        mHasTransformed = true;
         updateViewTransforms();
 
         Q_EMIT viewChanged();

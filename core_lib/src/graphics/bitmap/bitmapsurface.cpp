@@ -10,62 +10,49 @@ BitmapSurface::BitmapSurface()
     for (std::shared_ptr<QPixmap> pix : mPixmaps) {
         pix = std::make_shared<QPixmap>(); // create null image
         pix->fill(Qt::transparent);
-
     }
 
-    for (QRect rect : mBoundingRects) {
-        rect = QRect(0, 0, 0, 0);
-    }
+    mBounds = QRect(0,0,0,0);
 }
 
-BitmapSurface::BitmapSurface(BitmapSurface& pieces) :
+BitmapSurface::BitmapSurface(BitmapSurface& pieces) : KeyFrame (pieces),
     mPixmaps(pieces.mPixmaps),
-    mBoundingRects(pieces.mBoundingRects),
-    mCombinedSize(pieces.mCombinedSize)
+    mBounds(pieces.mBounds)
 {
 }
 
-const QRect BitmapSurface::getBoundingRectAtIndex(int index)
+BitmapSurface::~BitmapSurface()
 {
-    return mBoundingRects.at(index);
 }
 
-const QPixmap BitmapSurface::getPixmapAtIndex(const int index)
+BitmapSurface* BitmapSurface::clone()
 {
-    return *getPixmapAt(index);
+    return new BitmapSurface(*this);
 }
 
-const QSize BitmapSurface::size()
+void BitmapSurface::loadFile()
 {
-    return mCombinedSize;
+//    if (mImage == nullptr)
+//    {
+//        mImage = std::make_shared<QImage>(fileName());
+//        mBounds.setSize(mImage->size());
+//        mMinBound = false;
+//    }
 }
 
-void BitmapSurface::createPiecesFromImage(QImage& image)
+void BitmapSurface::unloadFile()
 {
-    int nbTilesOnWidth = ceil((float)image.width() / (float)TILESIZE.width());
-    int nbTilesOnHeight = ceil((float)image.height() / (float)TILESIZE.height());
-
-    QPixmap paintTo(TILESIZE);
-    paintTo.fill(Qt::transparent);
-    mPixmaps = QVector<std::shared_ptr< QPixmap >>();
-    mCombinedSize = image.size();
-    for (int h=0; h < nbTilesOnHeight; h++) {
-        for (int w=0; w < nbTilesOnWidth; w++) {
-            QPoint idx(w, h);
-            QPoint tilePos = getTilePos(idx);
-
-            QRect tileRect = QRect(tilePos, TILESIZE);
-            QImage tileImage = getSubImageFromImage(image, tileRect);
-
-            QPainter painter(&paintTo);
-            painter.drawImage(QPoint(), tileImage);
-            painter.end();
-
-            mPixmaps.append(std::make_shared<QPixmap>(paintTo));
-            mBoundingRects.append(tileRect);
-        }
-    }
+//    if (isModified() == false)
+//    {
+//        mImage.reset();
+//    }
 }
+
+bool BitmapSurface::isLoaded()
+{
+    return (!mPixmaps.isEmpty());
+}
+
 
 bool BitmapSurface::isTransparent(QImage& image)
 {
@@ -85,7 +72,61 @@ bool BitmapSurface::isTransparent(QImage& image)
     return true;
 }
 
-QImage BitmapSurface::getSubImageFromImage(QImage& image, QRect rect)
+void BitmapSurface::createPiecesFromImage(QString& path, QPoint& topLeft)
+{
+    QImage image(path);
+    createPiecesFromImage(image, topLeft);
+}
+
+void BitmapSurface::addBitmapPiece(const QPixmap& pixmap, const QPoint& pos)
+{
+    mPixmaps.append(std::make_shared<QPixmap>(pixmap));
+    mTilePositions.append(pos);
+
+    extendBoundaries(QRect(pos, pixmap.size()));
+}
+
+void BitmapSurface::extendBoundaries(QRect rect)
+{
+    if (mBounds.left() > rect.left()) { mBounds.setLeft(rect.left()); }
+    if (mBounds.right() < rect.right()) { mBounds.setRight(rect.right()); }
+    if (mBounds.top() > rect.top()) { mBounds.setTop(rect.top()); }
+    if (mBounds.bottom() < rect.bottom()) { mBounds.setBottom(rect.bottom()); }
+}
+
+void BitmapSurface::createPiecesFromImage(QImage& image, QPoint& topLeft)
+{
+    int nbTilesOnWidth = ceil((float)image.width() / (float)TILESIZE.width());
+    int nbTilesOnHeight = ceil((float)image.height() / (float)TILESIZE.height());
+
+    QPixmap paintTo(TILESIZE);
+    paintTo.fill(Qt::transparent);
+    mPixmaps = QVector<std::shared_ptr< QPixmap >>();
+    mBounds = QRect(topLeft, image.size());
+
+    for (int h=0; h < nbTilesOnHeight; h++) {
+        for (int w=0; w < nbTilesOnWidth; w++) {
+            QPoint idx(w, h);
+            QPoint tilePos = getTilePos(idx);
+
+            QRect tileRect = QRect(tilePos, TILESIZE);
+            QImage tileImage = getSubImageFromImage(image, tileRect);
+
+            QPainter painter(&paintTo);
+            painter.drawImage(QPoint(), tileImage);
+            painter.end();
+
+            mPixmaps.append(std::make_shared<QPixmap>(paintTo));
+        }
+    }
+}
+
+const QPixmap BitmapSurface::getPixmapAtIndex(const int& index)
+{
+    return *getPixmapAt(index);
+}
+
+QImage BitmapSurface::getSubImageFromImage(QImage& image, QRect& rect)
 {
     size_t offset = rect.x() * image.depth() / 8 + rect.y() * image.bytesPerLine();
     return QImage(image.bits() + offset,
@@ -95,26 +136,35 @@ QImage BitmapSurface::getSubImageFromImage(QImage& image, QRect rect)
                   image.format());
 }
 
-void BitmapSurface::addBitmapPiece(const QPixmap& pixmap, const QRect& rect)
+QImage BitmapSurface::surfaceAsImage()
 {
-    mPixmaps.append(std::make_shared<QPixmap>(pixmap));
-    mBoundingRects.append(rect);
-    mCombinedSize += rect.size();
-}
-
-void BitmapSurface::paintWholeImage(QString path)
-{
-    QPixmap paintedImage(mCombinedSize);
+    QImage paintedImage(mBounds.size(), QImage::Format_ARGB32_Premultiplied);
     paintedImage.fill(Qt::transparent);
+
     QPainter painter(&paintedImage);
+    painter.translate(-mBounds.topLeft());
+
     for (int i = 0; i < mPixmaps.count(); i++)
     {
-        const QPixmap& pix = *mPixmaps.at(i);
-        const QRect& rect = mBoundingRects.at(i);
-        painter.drawPixmap(rect, pix);
+        const QPixmap pix = *mPixmaps.at(i);
+        const QPoint pos = mTilePositions.at(i);
+        painter.drawPixmap(pos, pix);
     }
     painter.end();
-    paintedImage.save(path);
+    return paintedImage;
+}
+
+Status BitmapSurface::writeFile(const QString& filename)
+{
+    if (mPixmaps.isEmpty()) {
+        return Status::FAIL;
+    }
+
+    if (std::shared_ptr<QPixmap>(pix) = mPixmaps.first()) {
+        bool b = surfaceAsImage().save(filename);
+        return (b) ? Status::OK : Status::FAIL;
+    }
+    return Status::FAIL;
 }
 
 

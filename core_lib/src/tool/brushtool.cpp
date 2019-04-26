@@ -178,7 +178,6 @@ void BrushTool::pointerMoveEvent(PointerEvent* event)
     {
         mCurrentPressure = strokeManager()->getPressure();
         drawStroke();
-//        mScribbleArea->paintBitmapBufferRect(QRect());
         if (properties.stabilizerLevel != strokeManager()->getStabilizerLevel())
             strokeManager()->setStabilizerLevel(properties.stabilizerLevel);
     }
@@ -187,17 +186,11 @@ void BrushTool::pointerMoveEvent(PointerEvent* event)
 void BrushTool::pointerReleaseEvent(PointerEvent*)
 {
     Layer* layer = mEditor->layers()->currentLayer();
-    mEditor->backup(typeName());
+//    mEditor->backup(typeName());
 
     qreal distance = QLineF(getCurrentPoint(), mMouseDownPoint).length();
-    if (distance < 1)
-    {
-        paintAt(mMouseDownPoint);
-    }
-    else
-    {
-        drawStroke();
-    }
+    if (distance < 1) { isBrushDab = true; } else { isBrushDab = false; }
+    drawStroke();
 
     if (layer->type() == Layer::BITMAP)
         paintBitmapStroke();
@@ -211,26 +204,27 @@ void BrushTool::pointerReleaseEvent(PointerEvent*)
 void BrushTool::paintAt(QPointF point)
 {
     //qDebug() << "Made a single dab at " << point;
-    Layer* layer = mEditor->layers()->currentLayer();
-    if (layer->type() == Layer::BITMAP)
-    {
-        qreal pressure = (properties.pressure) ? mCurrentPressure : 1.0;
-        qreal opacity = (properties.pressure) ? (mCurrentPressure * 0.5) : 1.0;
-        qreal brushWidth = properties.width * pressure;
-        mCurrentWidth = brushWidth;
+    StrokeTool::drawStroke();
+//    Layer* layer = mEditor->layers()->currentLayer();
+//    if (layer->type() == Layer::BITMAP)
+//    {
+//        qreal pressure = (properties.pressure) ? mCurrentPressure : 1.0;
+//        qreal opacity = (properties.pressure) ? (mCurrentPressure * 0.5) : 1.0;
+//        qreal brushWidth = properties.width * pressure;
+//        mCurrentWidth = brushWidth;
 
-        BlitRect rect(point.toPoint());
-        mScribbleArea->drawBrush(point,
-                                 brushWidth,
-                                 properties.feather,
-                                 mEditor->color()->frontColor(),
-                                 opacity,
-                                 properties.useFeather,
-                                 properties.useAA);
+//        BlitRect rect(point.toPoint());
+//        mScribbleArea->drawBrush(point,
+//                                 brushWidth,
+//                                 properties.feather,
+//                                 mEditor->color()->frontColor(),
+//                                 opacity,
+//                                 properties.useFeather,
+//                                 properties.useAA);
 
-        int rad = qRound(brushWidth) / 2 + 2;
-        mScribbleArea->refreshBitmap(rect, rad);
-    }
+//        int rad = qRound(brushWidth) / 2 + 2;
+//        mScribbleArea->refreshBitmap(rect, rad);
+//    }
 }
 
 //void BrushTool::drawStroke()
@@ -328,9 +322,9 @@ void BrushTool::paintAt(QPointF point)
 
 void BrushTool::paintBitmapStroke()
 {
-    mScribbleArea->paintBitmapBuffer();
-    mScribbleArea->setAllDirty();
-    mScribbleArea->clearBitmapBuffer();
+//    mScribbleArea->paintBitmapBuffer();
+//    mScribbleArea->setAllDirty();
+//    mScribbleArea->clearBitmapBuffer();
 }
 
 // This function uses the points from DrawStroke

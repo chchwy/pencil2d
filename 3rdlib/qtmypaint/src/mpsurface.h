@@ -77,6 +77,7 @@ public:
     void setOnUpdateTile(MPOnUpdateTileFunction onUpdateTileFunction);
     void setOnNewTile(MPOnUpdateTileFunction onNewTileFunction);
     void setOnClearedSurface(MPOnUpdateSurfaceFunction onNewTileFunction);
+    void refreshSurface();
 
     MPOnUpdateTileFunction onUpdateTileFunction;
     MPOnUpdateTileFunction onNewTileFunction;

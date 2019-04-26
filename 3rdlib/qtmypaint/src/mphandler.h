@@ -71,6 +71,7 @@ public:
     void requestUpdateTile(MPSurface *surface, MPTile *tile);
     void hasNewTile(MPSurface *surface, MPTile *tile);
     void hasClearedSurface(MPSurface *surface);
+    void refreshSurface();
 
     void setSurfaceSize(QSize size);
     QSize surfaceSize();

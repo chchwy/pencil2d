@@ -136,7 +136,7 @@ void EraserTool::pointerMoveEvent(PointerEvent* event)
 
 void EraserTool::pointerReleaseEvent(PointerEvent*)
 {
-    mEditor->backup(typeName());
+//    mEditor->backup(typeName());
 
     qreal distance = QLineF(getCurrentPoint(), mMouseDownPoint).length();
     if (distance < 1)
@@ -147,44 +147,44 @@ void EraserTool::pointerReleaseEvent(PointerEvent*)
     {
         drawStroke();
     }
-    removeVectorPaint();
+//    removeVectorPaint();
     endStroke();
 }
 
 // draw a single paint dab at the given location
 void EraserTool::paintAt(QPointF point)
 {
-    Layer* layer = mEditor->layers()->currentLayer();
-    if (layer->type() == Layer::BITMAP)
-    {
-        qreal opacity = 1.0;
-        mCurrentWidth = properties.width;
-        if (properties.pressure == true)
-        {
-            opacity = strokeManager()->getPressure();
-            mCurrentWidth = (mCurrentWidth + (strokeManager()->getPressure() * mCurrentWidth)) * 0.5;
-        }
+//    Layer* layer = mEditor->layers()->currentLayer();
+//    if (layer->type() == Layer::BITMAP)
+//    {
+//        qreal opacity = 1.0;
+//        mCurrentWidth = properties.width;
+//        if (properties.pressure == true)
+//        {
+//            opacity = strokeManager()->getPressure();
+//            mCurrentWidth = (mCurrentWidth + (strokeManager()->getPressure() * mCurrentWidth)) * 0.5;
+//        }
 
-        qreal brushWidth = mCurrentWidth;
+//        qreal brushWidth = mCurrentWidth;
 
-        BlitRect rect;
+//        BlitRect rect;
 
-        rect.extend(point.toPoint());
-        mScribbleArea->drawBrush(point,
-                                 brushWidth,
-                                 properties.feather,
-                                 QColor(255, 255, 255, 255),
-                                 opacity,
-                                 properties.useFeather,
-                                 properties.useAA);
+//        rect.extend(point.toPoint());
+//        mScribbleArea->drawBrush(point,
+//                                 brushWidth,
+//                                 properties.feather,
+//                                 QColor(255, 255, 255, 255),
+//                                 opacity,
+//                                 properties.useFeather,
+//                                 properties.useAA);
 
-        int rad = qRound(brushWidth) / 2 + 2;
+//        int rad = qRound(brushWidth) / 2 + 2;
 
-        //continuously update buffer to update stroke behind grid.
-//        mScribbleArea->paintBitmapBufferRect(rect);
+//        //continuously update buffer to update stroke behind grid.
+////        mScribbleArea->paintBitmapBufferRect(rect);
 
-        mScribbleArea->refreshBitmap(rect, rad);
-    }
+//        mScribbleArea->refreshBitmap(rect, rad);
+//    }
 }
 
 void EraserTool::drawStroke()
@@ -196,55 +196,55 @@ void EraserTool::drawStroke()
 
     if (layer->type() == Layer::BITMAP)
     {
-        for (auto & i : p)
-        {
-            i = mEditor->view()->mapScreenToCanvas(i);
-        }
+//        for (auto & i : p)
+//        {
+//            i = mEditor->view()->mapScreenToCanvas(i);
+//        }
 
-        qreal opacity = 1.0;
-        mCurrentWidth = properties.width;
-        if (properties.pressure)
-        {
-            opacity = strokeManager()->getPressure();
-            mCurrentWidth = (mCurrentWidth + (strokeManager()->getPressure() * mCurrentWidth)) * 0.5;
-        }
+//        qreal opacity = 1.0;
+//        mCurrentWidth = properties.width;
+//        if (properties.pressure)
+//        {
+//            opacity = strokeManager()->getPressure();
+//            mCurrentWidth = (mCurrentWidth + (strokeManager()->getPressure() * mCurrentWidth)) * 0.5;
+//        }
 
-        qreal brushWidth = mCurrentWidth;
-        qreal brushStep = (0.5 * brushWidth) - ((properties.feather / 100.0) * brushWidth * 0.5);
-        brushStep = qMax(1.0, brushStep);
+//        qreal brushWidth = mCurrentWidth;
+//        qreal brushStep = (0.5 * brushWidth) - ((properties.feather / 100.0) * brushWidth * 0.5);
+//        brushStep = qMax(1.0, brushStep);
 
-        BlitRect rect;
+//        BlitRect rect;
 
-        QPointF a = mLastBrushPoint;
-        QPointF b = getCurrentPoint();
+//        QPointF a = mLastBrushPoint;
+//        QPointF b = getCurrentPoint();
 
-        qreal distance = 4 * QLineF(b, a).length();
-        int steps = qRound(distance) / brushStep;
+//        qreal distance = 4 * QLineF(b, a).length();
+//        int steps = qRound(distance) / brushStep;
 
-        for (int i = 0; i < steps; i++)
-        {
-            QPointF point = mLastBrushPoint + (i + 1) * (brushStep)* (b - mLastBrushPoint) / distance;
-            rect.extend(point.toPoint());
-            mScribbleArea->drawBrush(point,
-                                     brushWidth,
-                                     properties.feather,
-                                     QColor(255, 255, 255, 255),
-                                     opacity,
-                                     properties.useFeather,
-                                     properties.useAA);
+//        for (int i = 0; i < steps; i++)
+//        {
+//            QPointF point = mLastBrushPoint + (i + 1) * (brushStep)* (b - mLastBrushPoint) / distance;
+//            rect.extend(point.toPoint());
+//            mScribbleArea->drawBrush(point,
+//                                     brushWidth,
+//                                     properties.feather,
+//                                     QColor(255, 255, 255, 255),
+//                                     opacity,
+//                                     properties.useFeather,
+//                                     properties.useAA);
 
-            if (i == (steps - 1))
-            {
-                mLastBrushPoint = point;
-            }
-        }
+//            if (i == (steps - 1))
+//            {
+//                mLastBrushPoint = point;
+//            }
+//        }
 
-        int rad = qRound(brushWidth) / 2 + 2;
+//        int rad = qRound(brushWidth) / 2 + 2;
 
-        // continuously update buffer to update stroke behind grid.
-//        mScribbleArea->paintBitmapBufferRect(rect);
+//        // continuously update buffer to update stroke behind grid.
+////        mScribbleArea->paintBitmapBufferRect(rect);
 
-        mScribbleArea->refreshBitmap(rect, rad);
+//        mScribbleArea->refreshBitmap(rect, rad);
     }
     else if (layer->type() == Layer::VECTOR)
     {

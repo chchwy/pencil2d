@@ -28,6 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "mpsurface.h"
 #include "qdebug.h"
 
+#include "qrect.h"
+
 static void freeTiledSurface(MyPaintSurface *surface)
 {
     MPSurface *self = (MPSurface *)surface;
@@ -310,6 +312,13 @@ bool MPSurface::isFullyTransparent(QImage image)
         }
     }
     return true;
+}
+
+void MPSurface::refreshSurface()
+{
+    for (MPTile* tile : m_Tiles) {
+        this->onUpdateTileFunction(this, tile);
+    }
 }
 
 MPTile* MPSurface::getTileFromPos(const QPoint& pos)

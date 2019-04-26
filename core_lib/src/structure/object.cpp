@@ -27,6 +27,7 @@ GNU General Public License for more details.
 #include "layervector.h"
 #include "layersound.h"
 #include "layercamera.h"
+#include "layerbitmapsurface.h"
 
 #include "util.h"
 #include "editor.h"
@@ -114,6 +115,15 @@ LayerBitmap* Object::addNewBitmapLayer()
     layerBitmap->addNewKeyFrameAt(1);
 
     return layerBitmap;
+}
+
+LayerBitmapSurface* Object::addNewBitmapSurfaceLayer()
+{
+    LayerBitmapSurface* surfaceLayer = new LayerBitmapSurface(this);
+    mLayers.append(surfaceLayer);
+
+    surfaceLayer->addNewKeyFrameAt(1);
+    return surfaceLayer;
 }
 
 LayerVector* Object::addNewVectorLayer()

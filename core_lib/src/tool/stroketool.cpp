@@ -106,6 +106,11 @@ void StrokeTool::drawStroke()
     QPointF pixel = getCurrentPixel();
 
     mScribbleArea->strokeTo(pixel, mCurrentPressure, mCurrentXTilt,  mCurrentYTilt);
+    if (isBrushDab) { // FIXME: doesn't work correctly... only works on some zoom levels??
+
+        QPoint offset = QPoint(pixel.x()+1,pixel.y()+1);
+        mScribbleArea->strokeTo(offset, mCurrentPressure, mCurrentXTilt,  mCurrentYTilt);
+    }
     if ( pixel != mLastPixel || !mFirstDraw )
     {
         mLastPixel = pixel;

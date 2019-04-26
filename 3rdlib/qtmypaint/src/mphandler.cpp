@@ -33,10 +33,6 @@ extern "C" {
 #include "mypaint-surface.h"
 }
 
-//#include "libmypaint.c"
-
-//#define HAVE_JSON_C;
-
 #define DEFAULT_BRUSHES_PATH ":brushes"
 
 bool MPHandler::instanceFlag = false;
@@ -119,6 +115,11 @@ void MPHandler::setSurfaceSize(QSize size)
 QSize MPHandler::surfaceSize()
 {
     return m_surface->size();
+}
+
+void MPHandler::refreshSurface()
+{
+    m_surface->refreshSurface();
 }
 
 void MPHandler::clearSurface()

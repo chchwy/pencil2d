@@ -24,6 +24,7 @@ GNU General Public License for more details.
 #include "layerbitmap.h"
 #include "layervector.h"
 #include "layercamera.h"
+#include "layerbitmapsurface.h"
 
 
 LayerManager::LayerManager(Editor* editor) : BaseManager(editor)
@@ -147,6 +148,16 @@ void LayerManager::gotoPreviouslayer()
 LayerBitmap* LayerManager::createBitmapLayer(const QString& strLayerName)
 {
     LayerBitmap* layer = object()->addNewBitmapLayer();
+    layer->setName(strLayerName);
+
+    Q_EMIT layerCountChanged(count());
+
+    return layer;
+}
+
+LayerBitmapSurface* LayerManager::createBitmapSurfaceLayer(const QString &strLayerName)
+{
+    LayerBitmapSurface* layer = object()->addNewBitmapSurfaceLayer();
     layer->setName(strLayerName);
 
     Q_EMIT layerCountChanged(count());
