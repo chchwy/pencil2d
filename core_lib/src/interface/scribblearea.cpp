@@ -872,8 +872,9 @@ void ScribbleArea::pointerMoveEvent(PointerEvent* event)
 
     // TODO: fix view doesn't update on drag....
     if (mEditor->view()->transformUpdated()) {
-        refreshSurface();
+//        refreshSurface();
         mEditor->view()->transformUpdatedState(false);
+        update();
     }
 
     if (event->buttons() & (Qt::LeftButton | Qt::RightButton))
@@ -2593,14 +2594,14 @@ void ScribbleArea::deleteSelection()
     }
 }
 
-void ScribbleArea::clearImage()
+void ScribbleArea::clearCanvas()
 {
     Layer* layer = mEditor->layers()->currentLayer();
     if (layer == nullptr) { return; }
 
     if (layer->type() == Layer::VECTOR)
     {
-        mEditor->backup(tr("Clear Image", "Undo step text"));
+//        mEditor->backup(tr("Clear Image", "Undo step text"));
 
         currentVectorImage(layer)->clear();
         mClosestCurves.clear();
@@ -2608,8 +2609,11 @@ void ScribbleArea::clearImage()
     }
     else if (layer->type() == Layer::BITMAP)
     {
-        mEditor->backup(tr("Clear Image", "Undo step text"));
-        currentBitmapImage(layer)->clear();
+//        mEditor->backup(tr("Clear Image", "Undo step text"));
+        currentBitmapSurfaceImage(layer)->clear();
+        mMyPaint->clearSurface();
+        refreshSurface();
+        update();
     }
     else
     {

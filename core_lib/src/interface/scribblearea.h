@@ -161,7 +161,7 @@ signals:
     void refreshPreview();
 
 public slots:
-    void clearImage();
+    void clearCanvas();
     void selectAll();
     void deselectAll();
 

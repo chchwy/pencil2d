@@ -154,6 +154,16 @@ QImage BitmapSurface::surfaceAsImage()
     return paintedImage;
 }
 
+void BitmapSurface::clear()
+{
+    mBounds = QRect();
+    for(int i = 0; i < mPixmaps.count(); i++) {
+        std::shared_ptr<QPixmap> pix = mPixmaps.at(i);
+        pix = std::shared_ptr<QPixmap>();
+    }
+    mPixmaps.clear();
+}
+
 Status BitmapSurface::writeFile(const QString& filename)
 {
     if (mPixmaps.isEmpty()) {

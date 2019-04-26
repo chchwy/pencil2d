@@ -40,14 +40,17 @@ public:
 
     void extendBoundaries(QRect rect);
 
+    void clear();
+
+    inline const QRect bounds() { return mBounds; }
+
+private:
+
     inline QPoint getTilePos(const QPoint& idx);
     inline QPoint getTileIndex(const QPoint& pos);
     inline QPointF getTileFIndex(const QPoint& pos);
-    inline const QRect bounds() { return mBounds; }
 
     const QSize TILESIZE = QSize(64,64);
-
-private:
 
     inline const std::shared_ptr<QPixmap> getPixmapAt(const int index) { return mPixmaps.at(index); }
 

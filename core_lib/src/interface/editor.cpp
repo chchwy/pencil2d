@@ -1009,7 +1009,7 @@ void Editor::prepareSave()
 
 void Editor::clearCurrentFrame()
 {
-    mScribbleArea->clearImage();
+    mScribbleArea->clearCanvas();
 }
 
 void Editor::loadBrush(QString toolName, QString brushName, const QByteArray &content)
