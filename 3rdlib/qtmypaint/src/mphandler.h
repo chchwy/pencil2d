@@ -80,6 +80,8 @@ public:
     QImage renderImage(QTransform transform);
 
     void loadImage(const QImage &image, QTransform transform);
+    void loadTiles(QVector<std::shared_ptr<QPixmap> > pixmaps, const QVector<QPoint>& pos);
+    void loadTile(const QPixmap& pixmap, const QPoint pos);
 
 
 public slots:

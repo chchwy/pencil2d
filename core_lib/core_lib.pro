@@ -6,7 +6,7 @@
 
 ! include( ../common.pri ) { error( Could not find the common.pri file! ) }
 
-QT += core widgets gui xml xmlpatterns multimedia svg
+QT += core widgets gui xml xmlpatterns multimedia svg concurrent
 
 TEMPLATE = lib
 CONFIG += qt staticlib

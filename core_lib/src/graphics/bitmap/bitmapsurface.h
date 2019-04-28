@@ -5,6 +5,8 @@
 #include <QRect>
 
 #include "keyframe.h"
+#include <QImage>
+#include <QFuture>
 
 class QPixmap;
 
@@ -23,7 +25,8 @@ public:
     void unloadFile() override;
 
     /// Takes the pieces of the surface and paints them accordingly to form the whole image.
-    QImage surfaceAsImage();
+    /// returns a future image, painted in async
+    QFuture<QImage> surfaceAsImage();
 
     Status writeFile(const QString& filename);
 
@@ -38,25 +41,37 @@ public:
     const QRect getBoundingRectAtIndex(const int& index);
     const QPixmap getPixmapAtIndex(const int& index);
 
-    void extendBoundaries(QRect rect);
-
-    void clear();
-
-    inline const QRect bounds() { return mBounds; }
-
-private:
-
+    const QPixmap getPixmapFromTilePos(const QPoint& pos);
     inline QPoint getTilePos(const QPoint& idx);
     inline QPoint getTileIndex(const QPoint& pos);
     inline QPointF getTileFIndex(const QPoint& pos);
 
-    const QSize TILESIZE = QSize(64,64);
+    void extendBoundaries(QRect rect);
+
+    void clear();
+
+    QVector<std::shared_ptr< QPixmap >> pixmaps();
+    QVector<QPoint> tilePositions();
+
+    inline const QRect bounds() { return mBounds; }
+
+    QImage surfaceImage() { return mCachedSurface; }
+
+    void renderSurfaceImage();
+
+public slots:
+    void setSurfaceFromFuture(int index);
+
+private:
 
     inline const std::shared_ptr<QPixmap> getPixmapAt(const int index) { return mPixmaps.at(index); }
+
+    const QSize TILESIZE = QSize(64,64);
 
     QVector<std::shared_ptr< QPixmap >> mPixmaps;
     QVector<QPoint> mTilePositions;
     QRect mBounds;
+    QImage mCachedSurface;
 };
 
 #endif // BitmapSurface_H

@@ -128,6 +128,7 @@ public:
     void updateAllFrames();
     void updateAllVectorLayersAtCurrentFrame();
     void updateAllVectorLayersAt(int frameNumber);
+    void didCreateNewFrame(int frame);
 
     void setModified(int layerNumber, int frameNumber);
     bool shouldUpdateAll() const { return mNeedUpdateAll; }
@@ -149,6 +150,16 @@ public:
 
     void updateBackground();
     void showCurrentFrame();
+    void updatePreviousFrame(int index);
+
+    /**
+     * @brief prepareForDrawing
+     * Used to get the current frame content into mypaint
+     */
+    void prepareForDrawing();
+
+    /// Used to load frame into mypaint. Should only be true if the user  scrubbed prior this
+    bool frameFirstLoad = false;
 
     // mypaint
     void loadMPBrush(const QByteArray &content);
@@ -316,6 +327,8 @@ private:
     bool mInstantTool = false; //whether or not using temporal tool
     bool mSomethingSelected = false;
 
+    bool isPainting = false;
+
     VectorSelection vectorSelection;
     QTransform selectionTransformation;
 
@@ -337,6 +350,7 @@ private:
 
     // mypaint
     QHash<QString, MPTile*> mTiles;
+    QHash<QString, MPTile*> mTempTiles;
     QGraphicsScene mScene;
 
 //    GraphicsView *mGraphicsView;

@@ -85,6 +85,7 @@ public:
     ScribbleArea* getScribbleArea() { return mScribbleArea; }
 
     int currentFrame();
+    int previousFrame();
     int fps();
 
     int  currentLayerIndex() { return mCurrentLayerIndex; }
@@ -114,6 +115,8 @@ Q_SIGNALS:
 
     void changeThinLinesButton(bool);
     void currentFrameChanged(int n);
+    void previousFrameChanged(int index);
+    void newFrameCreated(int index);
 
     void needSave();
 
@@ -121,6 +124,8 @@ public: //slots
     void clearCurrentFrame();
 
     void cut();
+
+    void setPreviousFrame(int index) { mLastTouchedFrame = index; }
 
     bool importImage(QString filePath);
     bool importGIF(QString filePath, int numOfImages = 0);
@@ -178,6 +183,7 @@ private:
     std::shared_ptr<Object> mObject = nullptr;
 
     int mFrame = 1; // current frame number.
+    int mLastTouchedFrame = 0;
     int mCurrentLayerIndex = 0; // the current layer to be edited/displayed
 
     ScribbleArea* mScribbleArea = nullptr;

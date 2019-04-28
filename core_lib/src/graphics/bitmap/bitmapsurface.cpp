@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QDebug>
 #include <QtMath>
+#include <QtConcurrent>
 
 BitmapSurface::BitmapSurface()
 {
@@ -86,6 +87,11 @@ void BitmapSurface::addBitmapPiece(const QPixmap& pixmap, const QPoint& pos)
     extendBoundaries(QRect(pos, pixmap.size()));
 }
 
+void BitmapSurface::renderSurfaceImage()
+{
+    mCachedSurface = surfaceAsImage();
+}
+
 void BitmapSurface::extendBoundaries(QRect rect)
 {
     if (mBounds.left() > rect.left()) { mBounds.setLeft(rect.left()); }
@@ -136,22 +142,44 @@ QImage BitmapSurface::getSubImageFromImage(QImage& image, QRect& rect)
                   image.format());
 }
 
-QImage BitmapSurface::surfaceAsImage()
+QFuture<QImage> BitmapSurface::surfaceAsImage()
 {
-    QImage paintedImage(mBounds.size(), QImage::Format_ARGB32_Premultiplied);
-    paintedImage.fill(Qt::transparent);
+    auto asyncPaint = [this]() {
+        QImage paintedImage(mBounds.size(), QImage::Format_ARGB32_Premultiplied);
+        paintedImage.fill(Qt::transparent);
 
-    QPainter painter(&paintedImage);
-    painter.translate(-mBounds.topLeft());
+        QPainter painter(&paintedImage);
+        painter.translate(-mBounds.topLeft());
 
-    for (int i = 0; i < mPixmaps.count(); i++)
-    {
-        const QPixmap pix = *mPixmaps.at(i);
-        const QPoint pos = mTilePositions.at(i);
-        painter.drawPixmap(pos, pix);
-    }
-    painter.end();
-    return paintedImage;
+        for (int i = 0; i < mPixmaps.count(); i++)
+        {
+            const QPixmap pix = *mPixmaps.at(i);
+            const QPoint pos = mTilePositions.at(i);
+            painter.drawPixmap(pos, pix);
+        }
+        painter.end();
+
+        return paintedImage;
+    };
+    return QtConcurrent::run(asyncPaint);
+}
+
+//void BitmapSurface::setSurfaceFromFuture(int index)
+//{
+//    mCachedSurface = mImageAssembler->resultAt(index);
+//}
+
+
+QVector<QPoint> BitmapSurface::tilePositions()
+{
+    if (mTilePositions.isEmpty()) { return QVector<QPoint>(); }
+    return mTilePositions;
+}
+
+QVector<std::shared_ptr< QPixmap >> BitmapSurface::pixmaps()
+{
+    if (mPixmaps.isEmpty()) { return QVector<std::shared_ptr< QPixmap >>(); }
+    return mPixmaps;
 }
 
 void BitmapSurface::clear()
@@ -171,12 +199,23 @@ Status BitmapSurface::writeFile(const QString& filename)
     }
 
     if (std::shared_ptr<QPixmap>(pix) = mPixmaps.first()) {
-        bool b = surfaceAsImage().save(filename);
+        bool b = mCachedSurface.save(filename);
         return (b) ? Status::OK : Status::FAIL;
     }
     return Status::FAIL;
 }
 
+const QPixmap BitmapSurface::getPixmapFromTilePos(const QPoint& pos)
+{
+    for (int i = 0; i < mPixmaps.count(); i++) {
+        const QPoint& tilePos = mTilePositions.at(i);
+
+        if (tilePos == pos) {
+            return *pixmaps().at(i).get();
+        }
+    }
+    return QPixmap();
+}
 
 inline QPoint BitmapSurface::getTilePos(const QPoint& idx)
 {

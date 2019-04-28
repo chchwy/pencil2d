@@ -206,7 +206,8 @@ void Object::createDefaultLayers()
     // default layers
     addNewCameraLayer();
     addNewVectorLayer();
-    addNewBitmapLayer();
+//    addNewBitmapLayer();
+    addNewBitmapSurfaceLayer();
 }
 
 int Object::getMaxLayerID()

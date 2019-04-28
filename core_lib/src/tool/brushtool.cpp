@@ -190,7 +190,6 @@ void BrushTool::pointerReleaseEvent(PointerEvent*)
 
     qreal distance = QLineF(getCurrentPoint(), mMouseDownPoint).length();
     if (distance < 1) { isBrushDab = true; } else { isBrushDab = false; }
-    drawStroke();
 
     if (layer->type() == Layer::BITMAP)
         paintBitmapStroke();
@@ -322,9 +321,9 @@ void BrushTool::paintAt(QPointF point)
 
 void BrushTool::paintBitmapStroke()
 {
-//    mScribbleArea->paintBitmapBuffer();
-//    mScribbleArea->setAllDirty();
-//    mScribbleArea->clearBitmapBuffer();
+    mScribbleArea->paintBitmapBuffer();
+    mScribbleArea->setAllDirty();
+    mScribbleArea->clearBitmapBuffer();
 }
 
 // This function uses the points from DrawStroke

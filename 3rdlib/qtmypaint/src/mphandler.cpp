@@ -138,6 +138,16 @@ void MPHandler::loadImage(const QImage &image, QTransform transform)
     m_surface->loadImage(image);
 }
 
+void MPHandler::loadTile(const QPixmap& pixmap, const QPoint pos)
+{
+    m_surface->loadTile(pixmap, pos);
+}
+
+void MPHandler::loadTiles(QVector<std::shared_ptr< QPixmap >> pixmaps, const QVector<QPoint>& pos)
+{
+    m_surface->loadTiles(pixmaps, pos);
+}
+
 void MPHandler::loadBrush(const QByteArray &content)
 {
     m_brush->load(content);

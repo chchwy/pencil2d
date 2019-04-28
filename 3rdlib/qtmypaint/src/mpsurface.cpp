@@ -126,6 +126,33 @@ void MPSurface::setOnClearedSurface(MPOnUpdateSurfaceFunction onClearedSurfaceFu
     this->onClearedSurfaceFunction = onClearedSurfaceFunction;
 }
 
+void MPSurface::loadTile(const QPixmap& pixmap, const QPoint& pos)
+{
+    MPTile* tile = getTileFromPos(pos);
+    tile->setImage(pixmap.toImage());
+    this->onUpdateTileFunction(this, tile);
+}
+
+void MPSurface::loadTiles(QVector<std::shared_ptr< QPixmap >> pixmaps, const QVector<QPoint>& positions)
+{
+    if (pixmaps.isEmpty()) { return; }
+
+    for (int i = 0; i < pixmaps.count(); i++) {
+
+        const QPixmap* pixmap = pixmaps.at(i).get();
+        const QPoint pos = positions.at(i);
+
+        // Optimization : Fully transparent (empty) tiles
+        // don't need to be created.
+        if (!isFullyTransparent(pixmap->toImage())) {
+
+            MPTile *tile = getTileFromPos(pos);
+            tile->setImage(pixmap->toImage());
+            this->onUpdateTileFunction(this, tile);
+        }
+    }
+}
+
 void MPSurface::loadImage(const QImage &image)
 {
     QSize tileSize = QSize(MYPAINT_TILE_SIZE, MYPAINT_TILE_SIZE);
@@ -152,8 +179,6 @@ void MPSurface::loadImage(const QImage &image)
             //
             if (!isFullyTransparent(tileImage)) {
 
-                nbTiles ++;
-
                 MPTile *tile = getTileFromIdx(idx);
                 tile->setImage(tileImage);
 
@@ -178,27 +203,23 @@ QSize MPSurface::size()
 
 void MPSurface::clear()
 {
-    QHashIterator<QPoint, MPTile*> i(m_Tiles);
-    while (i.hasNext()) {
-        i.next();
-        MPTile *tile = i.value();
-        if (tile)
-        {
-            // Clear the content of the tile
-            //
-            tile->clear();
+//    QHashIterator<QPoint, MPTile*> i(m_Tiles);
 
-            // Removes blank tile from the scene for output optimization
-            //
-            // A tile without a scene is not re-created but onNewTile is
-            // called when this tile is to be shown again.
-            //
-            QGraphicsScene* scene = tile->scene();
-            if (scene) {
-                scene->removeItem(tile);
-            }
-        }
+    if (!m_Tiles.isEmpty()) {
+        m_Tiles.clear();
     }
+
+//    while (i.hasNext()) {
+//        i.next();
+//        MPTile *tile = i.value();
+//        if (tile)
+//        {
+//            // Clear the content of the tile
+//            //
+//            tile->clear();
+//            m_Tiles.remove(i.key());
+//        }
+//    }
 
     this->onClearedSurfaceFunction(this);
 }

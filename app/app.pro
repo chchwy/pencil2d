@@ -6,7 +6,7 @@
 
 ! include( ../common.pri ) { error( Could not find the common.pri file! ) }
 
-QT += core widgets gui xml multimedia svg network
+QT += core widgets gui xml multimedia svg network concurrent
 
 TEMPLATE = app
 TARGET = pencil2d
