@@ -21,7 +21,9 @@ qtmypaint.subdir = 3rdlib/qtmypaint
 
 # what subproject depends on others
 app.depends      = core_lib
+app.depends      = qtmypaint
 tests.depends    = core_lib
+tests.depends    = qtmypaint
 core_lib.depends = qtmypaint
 
 TRANSLATIONS += translations/pencil.ts \
