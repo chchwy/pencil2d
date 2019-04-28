@@ -133,7 +133,7 @@ QImage MPHandler::renderImage(QTransform transform)
     return image;
 }
 
-void MPHandler::loadImage(const QImage &image, QTransform transform)
+void MPHandler::loadImage(const QImage &image)
 {
     m_surface->loadImage(image);
 }
