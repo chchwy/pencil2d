@@ -1557,15 +1557,15 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 
         int tilesUpdated = 0;
 
-
-        QHash<QString, MPTile*> test;
+        QHash<QString, MPTile*> tilesToBeRendered;
 
         if (isPainting) {
-            test = mTempTiles;
+            tilesToBeRendered = mTempTiles;
         } else {
-            test = mTiles;
+            tilesToBeRendered = mTiles;
         }
-        for (MPTile* item : test.values()) {
+
+        for (MPTile* item : tilesToBeRendered.values()) {
 
             QRectF tileRect = QRectF(item->pos(),QSize(item->boundingRect().width(), item->boundingRect().height()));
             tileRect = v.mapRect(tileRect);
@@ -1573,11 +1573,14 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
             QImage image = item->image();
 
             // TODO: move to prescale method
-            if (mEditor->view()->scaling() < 1.5) {
+            if (mEditor->view()->scaling() < 1.5f) {
                 painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing);
 
+                // Only prescale when the content is small enough, as it's performance intensive to upscale larger images.
+                if (mEditor->view()->scaling() < 0.5f) {
                 image = item->image().scaled(tileRect.size().toSize(),
                                                      Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                }
             }
 
 
