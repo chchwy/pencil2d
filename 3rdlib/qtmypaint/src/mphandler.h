@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MPHANDLER_H
 
 #include <QColor>
+#include <memory>
 
 extern "C" {
 #include "mypaint-brush.h"
