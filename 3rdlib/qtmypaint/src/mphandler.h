@@ -59,7 +59,7 @@ public:
     typedef void (*MPOnUpdateFunction) (MPHandler *handler, MPSurface *surface, MPTile *tile);
 
     void startStroke();
-    void strokeTo(float x, float y, float pressure, float xtilt, float ytilt, float viewZoom);
+    void strokeTo(float x, float y, float pressure, float xtilt, float ytilt, float dtime);
     void strokeTo(float x, float y);
     void endStroke();
 

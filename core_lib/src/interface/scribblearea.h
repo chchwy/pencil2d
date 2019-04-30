@@ -31,6 +31,7 @@ GNU General Public License for more details.
 #include <QPixmapCache>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QElapsedTimer>
 
 #include "movemode.h"
 #include "log.h"
@@ -273,6 +274,13 @@ private:
     void loadTiles();
     void loadTopCanvas();
 
+    /**
+     * @brief ScribbleArea::calculateDeltaTime
+     * calculates the number of seconds that has passed between the previous and current frame
+     * should be called from paintEvent
+     */
+    void calculateDeltaTime();
+
     QString getCachedFrameKey(int frame);
 
     BitmapImage* currentBitmapImage(Layer* layer) const;
@@ -366,6 +374,11 @@ private:
 
     bool isInPreviewMode = false;
     bool mNeedQuickUpdate = false;
+
+    QElapsedTimer deltaTimer;
+    int lastFrameTime;
+    int currentFrameTime;
+    float deltaTime = 0;
 };
 
 #endif

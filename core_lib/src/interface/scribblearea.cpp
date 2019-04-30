@@ -62,6 +62,7 @@ mLog("ScribbleArea")
 ScribbleArea::~ScribbleArea()
 {
     delete mBufferImg;
+    deltaTimer.invalidate();
 }
 
 bool ScribbleArea::init()
@@ -144,6 +145,7 @@ bool ScribbleArea::init()
     mPixmapCacheKeys.resize(std::max(nLength, 240));
 
     mNeedUpdateAll = false;
+    deltaTimer.start();
 
     return true;
 }
@@ -881,6 +883,9 @@ void ScribbleArea::tabletEvent(QTabletEvent *e)
 
 void ScribbleArea::pointerPressEvent(PointerEvent* event)
 {
+    // set deltatime per press to avoid last stroke bleeding...
+    deltaTime = 1.f;
+
     if (event->button() & Qt::LeftButton || event->button() & Qt::RightButton)
     {
         mOffset = getCurrentOffset();
@@ -1535,6 +1540,8 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 //    }
 
     QPainter painter(this);
+
+    calculateDeltaTime();
 
 //    // paints the canvas
 //    painter.setWorldMatrixEnabled(false);
@@ -2780,6 +2787,13 @@ void ScribbleArea::paletteColorChanged(QColor color)
 {
     mMyPaint->setBrushColor(color);
     updateAllVectorLayersAtCurrentFrame();
+}
+
+void ScribbleArea::calculateDeltaTime()
+{
+    lastFrameTime = currentFrameTime;
+    currentFrameTime = deltaTimer.nsecsElapsed();
+    deltaTime = (currentFrameTime - lastFrameTime)/1000000000.f;
 }
 
 
