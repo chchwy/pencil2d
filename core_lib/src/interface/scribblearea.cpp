@@ -1236,6 +1236,9 @@ void ScribbleArea::paintBitmapBuffer()
             mMyPaint->loadTile(tilePixmap, item->pos().toPoint());
         }
 
+        // clear temp tiles;
+        mTempTiles.clear();
+
         // render tiles to image for faster playback
         surfaceImage->renderSurfaceImage();
 //        surfaceImage->writeFile("/Users/CandyFace/Desktop/surfaceBuffer.png");
@@ -1585,23 +1588,22 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 
                 // Only prescale when the content is small enough, as it's performance intensive to upscale larger images.
                 if (mEditor->view()->scaling() < 0.5f) {
-                image = item->image().scaled(tileRect.size().toSize(),
+                image = image.scaled(tileRect.size().toSize(),
                                                      Qt::KeepAspectRatio, Qt::SmoothTransformation);
                 }
             }
-
 
             bool visualCanvasContainstiles = this->rect().adjusted(-tileRect.width(),
                                                                    -tileRect.width(),
                                                                    tileRect.width(),
                                                                    tileRect.width()).contains(tileRect.toRect());
             if (visualCanvasContainstiles) {
-                painter.drawPixmap(tileRect.toRect(), QPixmap::fromImage(image));
+                painter.drawImage(tileRect.toRect(), image);
                 tilesUpdated++;
             }
 
         }
-        qDebug() << "number of tiles updated: " << tilesUpdated;
+//        qDebug() << "number of tiles updated: " << tilesUpdated;
         painter.restore();
     }
 
@@ -1862,6 +1864,7 @@ void ScribbleArea::setGaussianGradient(QGradient &gradient, QColor colour, qreal
 void ScribbleArea::loadMPBrush(const QByteArray &content)
 {
     mMyPaint->loadBrush(content);
+    refreshSurface();
 }
 
 void ScribbleArea::newTileCreated(MPSurface *surface, MPTile *tile)
@@ -1931,7 +1934,7 @@ MPTile *ScribbleArea::getTileFromPos(QPointF point)
         return tile;
     }
     else {
-        qDebug() << "creating new tiles";
+//        qDebug() << "creating new tiles";
         QPixmap emptyImage = QPixmap(MYPAINT_TILE_SIZE, MYPAINT_TILE_SIZE);
         emptyImage.fill(Qt::transparent);
 
@@ -1969,6 +1972,8 @@ void ScribbleArea::startStroke()
     mMyPaint->startStroke();
     isPainting = true;
 
+    qDebug() << "start stroke";
+
 }
 
 void ScribbleArea::setBrushWidth(float width)
@@ -1976,22 +1981,33 @@ void ScribbleArea::setBrushWidth(float width)
     mMyPaint->setBrushWidth(width);
 }
 
+QElapsedTimer timer;
 void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float ytilt)
 {
+    timer.start();
     point = mEditor->view()->mapScreenToCanvas(point);
 
-    mMyPaint->strokeTo(point.x(), point.y(), pressure, xtilt, ytilt, mEditor->view()->scaling());
+    mMyPaint->strokeTo(point.x(), point.y(), pressure, xtilt, ytilt, deltaTime);
+    qDebug() << "stroke to: <<<< \n";
+    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
+    qDebug() << "seconds elapsed" << timer.elapsed();
 
     // update dirty region
     updateDirtyTiles();
+    qDebug() << "\n updated tiles: <<<<";
+    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
+    qDebug() << "seconds elapsed" << timer.elapsed();
 }
 
 void ScribbleArea::updateDirtyTiles()
 {
     QTransform v = mEditor->view()->getView();
-    // update only dirty tiles
-    for (MPTile* tile : mTempTiles) {
+    QHashIterator<QString, MPTile*> i(mTempTiles);
+    while (i.hasNext()) {
+        i.next();
+        MPTile* tile = i.value();
         if (tile->isDirty()) {
+
             QRectF mappedRect = v.mapRect(QRectF(tile->pos(), tile->boundingRect().size()));
             update(mappedRect.toRect());
             tile->setDirty(false);
@@ -2012,6 +2028,8 @@ void ScribbleArea::endStroke()
         mTempTiles.clear();
     }
     isPainting = false;
+    mMyPaint->endStroke();
+    qDebug() << "end stroke";
 }
 
 //void ScribbleArea::drawPen(QPointF thePoint, qreal brushWidth, QColor fillColour, bool useAA)

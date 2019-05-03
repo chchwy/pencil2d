@@ -174,14 +174,14 @@ void PencilTool::pointerReleaseEvent(PointerEvent*)
 {
 //    mEditor->backup(typeName());
     qreal distance = QLineF(getCurrentPoint(), mMouseDownPoint).length();
-    if (distance < 1)
-    {
-        paintAt(mMouseDownPoint);
-    }
-    else
-    {
-        drawStroke();
-    }
+//    if (distance < 1)
+//    {
+//        paintAt(mMouseDownPoint);
+//    }
+//    else
+//    {
+//        drawStroke();
+//    }
     
     Layer* layer = mEditor->layers()->currentLayer();
     if (layer->type() == Layer::BITMAP)
@@ -291,9 +291,9 @@ void PencilTool::drawStroke()
 
 void PencilTool::paintBitmapStroke()
 {
-//    mScribbleArea->paintBitmapBuffer();
-//    mScribbleArea->setAllDirty();
-//    mScribbleArea->clearBitmapBuffer();
+    mScribbleArea->paintBitmapBuffer();
+    mScribbleArea->setAllDirty();
+    mScribbleArea->clearBitmapBuffer();
 }
 
 void PencilTool::paintVectorStroke(Layer* layer)

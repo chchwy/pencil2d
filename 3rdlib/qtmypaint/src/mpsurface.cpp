@@ -69,7 +69,7 @@ static void onTileRequestStart(MyPaintTiledSurface *tiled_surface, MyPaintTileRe
         // Give it a tile which we will ignore writes to
         tile_pointer = self->null_tile;
     } else {
-        qDebug() << "get tile from index";
+//        qDebug() << "get tile from index";
         MPTile* tile = self->getTileFromIdx(QPoint(tx,ty));
         tile_pointer = tile ? tile->Bits(false) : NULL;
     }

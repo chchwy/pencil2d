@@ -29,8 +29,8 @@ class MPTile : public QGraphicsItem
 {
 public:
 
-    MPTile (QGraphicsItem * parent = NULL);
-    MPTile (QPixmap& pixmap);
+    explicit MPTile (QGraphicsItem * parent = NULL);
+    explicit MPTile (QPixmap& pixmap);
     ~MPTile();
 
     enum { k_tile_dim = 64 };

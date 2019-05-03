@@ -46,6 +46,7 @@ extern "C" {
 #define QTMYPAINT_SURFACE_HEIGHT 100
 #endif
 
+class QPixmap;
 
 class MPHandler : public QObject
 {
@@ -81,7 +82,7 @@ public:
     QImage renderImage(QTransform transform);
 
     void loadImage(const QImage &image);
-    void loadTiles(QVector<std::shared_ptr<QPixmap> > pixmaps, const QVector<QPoint>& pos);
+    void loadTiles(const QVector<std::shared_ptr<QPixmap> > pixmaps, const QVector<QPoint>& pos);
     void loadTile(const QPixmap& pixmap, const QPoint pos);
 
 

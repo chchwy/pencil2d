@@ -185,10 +185,6 @@ QVector<std::shared_ptr< QPixmap >> BitmapSurface::pixmaps()
 void BitmapSurface::clear()
 {
     mBounds = QRect();
-    for(int i = 0; i < mPixmaps.count(); i++) {
-        std::shared_ptr<QPixmap> pix = mPixmaps.at(i);
-        pix = std::shared_ptr<QPixmap>();
-    }
     mPixmaps.clear();
 }
 
@@ -198,7 +194,7 @@ Status BitmapSurface::writeFile(const QString& filename)
         return Status::FAIL;
     }
 
-    if (std::shared_ptr<QPixmap>(pix) = mPixmaps.first()) {
+    if (mPixmaps.first()) {
         bool b = mCachedSurface.save(filename);
         return (b) ? Status::OK : Status::FAIL;
     }

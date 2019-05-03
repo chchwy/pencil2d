@@ -26,6 +26,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "mphandler.h"
 
+#include <QVector>
+#include <QPixmap>
+
 #include <qdebug.h>
 
 extern "C" {
@@ -143,7 +146,7 @@ void MPHandler::loadTile(const QPixmap& pixmap, const QPoint pos)
     m_surface->loadTile(pixmap, pos);
 }
 
-void MPHandler::loadTiles(QVector<std::shared_ptr< QPixmap >> pixmaps, const QVector<QPoint>& pos)
+void MPHandler::loadTiles(const QVector<std::shared_ptr<QPixmap> > pixmaps, const QVector<QPoint>& pos)
 {
     m_surface->loadTiles(pixmaps, pos);
 }

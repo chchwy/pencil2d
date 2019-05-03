@@ -64,8 +64,7 @@ public slots:
 
 private:
 
-    inline const std::shared_ptr<QPixmap> getPixmapAt(const int index) { return mPixmaps.at(index); }
-
+    const std::shared_ptr<QPixmap> getPixmapAt(const int index) { return mPixmaps.at(index); }
     const QSize TILESIZE = QSize(64,64);
 
     QVector<std::shared_ptr< QPixmap >> mPixmaps;
