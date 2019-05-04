@@ -45,10 +45,9 @@ void CanvasPainter::setCanvas(QPixmap* canvas)
     mCanvas = canvas;
 }
 
-void CanvasPainter::setViewTransform(const QTransform view, const QTransform viewInverse)
+void CanvasPainter::setViewTransform(const QTransform view)
 {
     mViewTransform = view;
-    mViewInverse = viewInverse;
 }
 
 void CanvasPainter::setTransformedSelection(QRect selection, QTransform transform)

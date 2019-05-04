@@ -299,9 +299,23 @@ void ScribbleArea::prepareForDrawing()
     // should be used with caution, highly dependent on surface since.
     // if possible only load when frame changes.
     Layer* layer = mEditor->layers()->currentLayer();
-    BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
 
-    mMyPaint->loadTiles(surfaceImage->pixmaps(), surfaceImage->tilePositions());
+    switch(layer->type()) {
+        case Layer::BITMAP:
+        {
+            BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
+            mMyPaint->loadTiles(surfaceImage->pixmaps(), surfaceImage->tilePositions());
+            break;
+        }
+        case Layer::VECTOR:
+        {
+            Q_ASSERT("Not implemented for vector");
+            break;
+        }
+        default:
+            break;
+    }
+
 }
 
 void ScribbleArea::updatePreviousFrame(int index)
@@ -492,7 +506,7 @@ void ScribbleArea::drawCanvas( int frame, QRect rect )
 
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvas );
-    mCanvasPainter.setViewTransform( mEditor->view()->getView(), mEditor->view()->getViewInverse());
+    mCanvasPainter.setViewTransform( mEditor->view()->getView());
     mCanvasPainter.paint(object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate);
 
     // Cache current frame for faster render
@@ -542,7 +556,7 @@ void ScribbleArea::drawCanvasBack(int frame, QRect rect)
 
     mCanvasPainter.setOptions(getRenderOptions());
     mCanvasPainter.setCanvas(&mCanvasBack);
-    mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
+    mCanvasPainter.setViewTransform(mEditor->view()->getView());
     mCanvasPainter.paintBackgroundToLayer(object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate);
 }
 
@@ -552,7 +566,7 @@ void ScribbleArea::drawCanvasLayer( int frame, QRect rect )
 
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvasLayer );
-    mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
+    mCanvasPainter.setViewTransform(mEditor->view()->getView());
     mCanvasPainter.paintLayer( object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate );
 }
 
@@ -562,7 +576,7 @@ void ScribbleArea::drawCanvasTop( int frame, QRect rect )
 
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvasTop );
-    mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
+    mCanvasPainter.setViewTransform(mEditor->view()->getView());
     mCanvasPainter.paintTopToLayer( object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate );
 }
 
@@ -817,13 +831,10 @@ void ScribbleArea::wheelEvent(QWheelEvent* event)
         }
     }
 
-    if (mEditor->view()->transformUpdated()) {
-//        refreshSurface();
-    }
-    updateCanvasCursor();
     event->accept();
 
     update();
+    updateCanvasCursor();
 }
 
 void ScribbleArea::tabletEvent(QTabletEvent *e)
@@ -931,7 +942,6 @@ void ScribbleArea::pointerPressEvent(PointerEvent* event)
 
 void ScribbleArea::pointerMoveEvent(PointerEvent* event)
 {
-    updateCanvasCursor();
 
     // TODO: fix view doesn't update on drag....
     if (mEditor->view()->transformUpdated()) {
@@ -960,6 +970,7 @@ void ScribbleArea::pointerMoveEvent(PointerEvent* event)
         return;
     }
     currentTool()->pointerMoveEvent(event);
+//    updateCanvasCursor();
 }
 
 void ScribbleArea::pointerReleaseEvent(PointerEvent* event)
@@ -1228,73 +1239,21 @@ void ScribbleArea::paintBitmapBuffer()
         }
 
         // adds content from canvas and saves to surfaceimage
-        for (MPTile* item : mTempTiles.values()) {
+        for (MPTile* item : mBufferTiles.values()) {
             QPixmap tilePixmap = QPixmap::fromImage(item->image());
             surfaceImage->addBitmapPiece(QPixmap::fromImage(item->image()), item->pos().toPoint());
 
             // load the new tiles from buffer into mypaint
             mMyPaint->loadTile(tilePixmap, item->pos().toPoint());
         }
-
-        // clear temp tiles;
-        mTempTiles.clear();
+        mBufferTiles.clear();
 
         // render tiles to image for faster playback
         surfaceImage->renderSurfaceImage();
-//        surfaceImage->writeFile("/Users/CandyFace/Desktop/surfaceBuffer.png");
-
-        // add tiles to mypaint
-//        mMyPaint->clearSurface();
-//        mMyPaint->loadTiles(surfaceImage->pixmaps(), surfaceImage->tilePositions());
-//        surfaceImage->writeFile("/Users/CandyFace/Desktop/frame.png");
-
-//        BitmapSurface* bitmap = new BitmapSurface();
-
-//        QImage* strokeImage = new QImage(mMyPaint->renderImage(mEditor->view()->getView()));
-
-//            mMyPaint->renderImage(mEditor->view()->getView());
-//        QRect rect = mEditor->view()->mapScreenToCanvas(strokeImage->rect()).toRect();
-
-//        mBufferImg->setImage(strokeImage);
-//        mBufferImg->transform(rect, false);
-
-//        targetImage->paste(mBufferImg, cm);
     }
-
-//    BitmapSurface* bitmap = new BitmapSurface();
-
-//    for (MPTile* item : mTiles.values()) {
-
-//        QRect tileRect = QRect(QPoint(item->x(),item->y()),QSize(item->boundingRect().width(), item->boundingRect().height()));
-//        bitmap->addBitmapPiece(QPixmap::fromImage(item->image()), tileRect);
-//    }
-//    bitmap->writeFile("/Users/CandyFace/Desktop/glued.png");
-
-//    drawCanvas(frameNumber, this->rect());
-
-    // Update the cache for the last key-frame.
-//    auto lastKeyFramePosition = mEditor->layers()->LastFrameAtFrame(frameNumber);
-//    QPixmapCache::remove(mPixmapCacheKeys[lastKeyFramePosition]);
-//    mPixmapCacheKeys[lastKeyFramePosition] = QPixmapCache::Key();
-
-//    mMyPaint->clearSurface();
 
     refreshSurface();
     update();
-
-//    if (!mTiles.isEmpty()) {
-//        mTiles.clear();
-//    }
-
-//    Layer* layer = mEditor->layers()->currentLayer();
-//    BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
-//    mMyPaint->clearSurface();
-//    clearSurfaceBuffer();
-//    clearSurfaceBuffer();
-//    mMyPaint->refreshSurface();
-
-//    mMyPaint->refreshSurface();
-
 
     layer->setModified(frameNumber, true);
     emit modification(frameNumber);
@@ -1401,9 +1360,9 @@ void ScribbleArea::paintCanvasCursor(QPainter& painter)
     mTransformedCursorPos = view.map(mousePos);
 
     // reset matrix
-    view.reset();
+//    view.reset();
 
-    painter.setTransform(view);
+//    painter.setTransform(view);
     mCursorCenterPos.setX(centerCal);
     mCursorCenterPos.setY(centerCal);
 
@@ -1513,6 +1472,80 @@ void ScribbleArea::handleDrawingOnEmptyFrame()
     }
 }
 
+void ScribbleArea::paintCachedCanvas(QPainter& painter)
+{
+    ViewManager* vM = mEditor->view();
+
+    // TODO: consider storing layer and current surface for less look up
+    Layer* layer = mEditor->layers()->currentLayer();
+
+    switch (layer->type())
+    {
+        case Layer::BITMAP:
+        {
+            BitmapSurface* surface = currentBitmapSurfaceImage(layer);
+            QRectF mappedBounds = vM->mapCanvasToScreen(surface->bounds());
+            painter.drawImage(mappedBounds, surface->surfaceImage());
+        }
+        case Layer::VECTOR:
+        {
+            Q_ASSERT("Not yet implemented");
+            break;
+        }
+        default:
+        {
+            break;
+        }
+
+    }
+}
+
+void ScribbleArea::paintTiledCanvas(QPainter& painter)
+{
+    painter.setClipping(true);
+    painter.setClipRect(this->rect());
+
+    int tilesUpdated = 0;
+
+    QHash<QString, MPTile*> tilesToBeRendered;
+
+    if (mIsPainting) {
+        tilesToBeRendered = mTempTiles;
+    } else {
+        tilesToBeRendered = mTiles;
+    }
+
+    QTransform v = mEditor->view()->getView();
+    for (MPTile* item : tilesToBeRendered.values()) {
+
+        QRectF tileRect = QRectF(item->pos(),QSize(item->boundingRect().width(), item->boundingRect().height()));
+        tileRect = v.mapRect(tileRect);
+
+        QImage image = item->image();
+
+        // TODO: move to prescale method
+        if (mEditor->view()->scaling() < 1.5f) { // 150%
+            painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing);
+
+            // Only prescale when the content is small enough, as it's performance intensive to upscale larger images.
+            if (mEditor->view()->scaling() < 0.5f) { // 50%
+            image = image.scaled(tileRect.size().toSize(),
+                                                 Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            }
+        }
+
+        bool visualCanvasContainsTiles = this->rect().adjusted(-tileRect.width(),
+                                                               -tileRect.width(),
+                                                               tileRect.width(),
+                                                               tileRect.width()).contains(tileRect.toRect());
+        if (visualCanvasContainsTiles) {
+            painter.drawImage(tileRect.toRect(), image);
+            tilesUpdated++;
+        }
+
+    }
+}
+
 void ScribbleArea::paintEvent(QPaintEvent* event)
 {
 //    if (!mMouseInUse || currentTool()->type() == MOVE || currentTool()->type() == HAND || mMouseRightButtonInUse)
@@ -1549,63 +1582,26 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 //    // paints the canvas
 //    painter.setWorldMatrixEnabled(false);
 
-//     qDebug() << "did update";
-    QTransform v = mEditor->view()->getView();
     if (editor()->playback()->isPlaying()) {
 
-        // optimize playback by using saved surface image
-        // because the entire canvas has to be updated
-        Layer* layer = mEditor->layers()->currentLayer();
-        BitmapSurface* surface = currentBitmapSurfaceImage(layer);
-        QRect mappedBounds = v.mapRect(surface->bounds());
-        painter.drawImage(mappedBounds,surface->surfaceImage());
+        paintCachedCanvas(painter);
     } else {
         // otherwise paint tiles
-        painter.setClipping(true);
-        painter.setClipRect(this->rect());
-        painter.save();
-
-        int tilesUpdated = 0;
-
-        QHash<QString, MPTile*> tilesToBeRendered;
-
-        if (isPainting) {
-            tilesToBeRendered = mTempTiles;
-        } else {
-            tilesToBeRendered = mTiles;
-        }
-
-        for (MPTile* item : tilesToBeRendered.values()) {
-
-            QRectF tileRect = QRectF(item->pos(),QSize(item->boundingRect().width(), item->boundingRect().height()));
-            tileRect = v.mapRect(tileRect);
-
-            QImage image = item->image();
-
-            // TODO: move to prescale method
-            if (mEditor->view()->scaling() < 1.5f) {
-                painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing);
-
-                // Only prescale when the content is small enough, as it's performance intensive to upscale larger images.
-                if (mEditor->view()->scaling() < 0.5f) {
-                image = image.scaled(tileRect.size().toSize(),
-                                                     Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                }
-            }
-
-            bool visualCanvasContainstiles = this->rect().adjusted(-tileRect.width(),
-                                                                   -tileRect.width(),
-                                                                   tileRect.width(),
-                                                                   tileRect.width()).contains(tileRect.toRect());
-            if (visualCanvasContainstiles) {
-                painter.drawImage(tileRect.toRect(), image);
-                tilesUpdated++;
-            }
-
-        }
-//        qDebug() << "number of tiles updated: " << tilesUpdated;
-        painter.restore();
+        paintTiledCanvas(painter);
     }
+
+    paintCanvasCursor(painter);
+
+//    painter.setCompositionMode(-QPainter::CompositionMode_DestinationOut);
+//    updateCanvasCursor();
+
+//    mCanvasPainter.renderGrid(painter);
+
+    //        // paints the selection outline
+    //        if (mSomethingSelected && !myTempTransformedSelection.isNull())
+    //        {
+    //            paintSelectionVisuals(painter);
+    //        }
 
 //    painter.drawPixmap(QPoint(0, 0), mCanvas);
 //    painter.draw
@@ -1879,7 +1875,7 @@ void ScribbleArea::existingTileUpdated(MPSurface *surface, MPTile *tile)
 
 void ScribbleArea::onClearedSurface(MPSurface* surface)
 {
-    qDebug() << "surface cleared?";
+//    qDebug() << "surface cleared?";
 }
 
 void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
@@ -1924,9 +1920,6 @@ void ScribbleArea::clearSurfaceBuffer()
 MPTile *ScribbleArea::getTileFromPos(QPointF point)
 {
     QString posString = QString::number(point.x())+"_"+QString::number(point.y());
-//    if (mTempTiles.contains(posString)) {
-//        return mTempTiles.value(posString);
-//    }
     if (mTiles.contains(posString)) {
         MPTile* tile = mTiles.value(posString);
 
@@ -1940,8 +1933,6 @@ MPTile *ScribbleArea::getTileFromPos(QPointF point)
 
         MPTile *item = new MPTile(emptyImage);
         item->setPos(point);
-//        item->setZValue(30);
-//        mScene.addItem(item);
         mTiles.insert(posString, item);
         mTempTiles.insert(posString, item);
 
@@ -1970,7 +1961,7 @@ void ScribbleArea::startStroke()
         frameFirstLoad = false;
     }
     mMyPaint->startStroke();
-    isPainting = true;
+    mIsPainting = true;
 
     qDebug() << "start stroke";
 
@@ -2011,6 +2002,9 @@ void ScribbleArea::updateDirtyTiles()
             QRectF mappedRect = v.mapRect(QRectF(tile->pos(), tile->boundingRect().size()));
             update(mappedRect.toRect());
             tile->setDirty(false);
+            mBufferTiles.insert(i.key(), i.value());
+        } else {
+            mTempTiles.remove(i.key());
         }
     }
 }
@@ -2027,7 +2021,7 @@ void ScribbleArea::endStroke()
     if (!mTempTiles.isEmpty()) {
         mTempTiles.clear();
     }
-    isPainting = false;
+    mIsPainting = false;
     mMyPaint->endStroke();
     qDebug() << "end stroke";
 }

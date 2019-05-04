@@ -159,6 +159,20 @@ public:
      */
     void prepareForDrawing();
 
+    /**
+     * @brief paintCachedCanvas
+     * @param painter
+     * Used to paint the canvas with a cached surface for faster playback
+     */
+    void paintCachedCanvas(QPainter& painter);
+
+    /**
+     * @brief paintTiledCanvas
+     * @param painter
+     * Used to paint the canvas through the tiles backend, optimized for drawing.
+     */
+    void paintTiledCanvas(QPainter& painter);
+
     /// Used to load frame into mypaint. Should only be true if the user  scrubbed prior this
     bool frameFirstLoad = false;
 
@@ -335,7 +349,7 @@ private:
     bool mInstantTool = false; //whether or not using temporal tool
     bool mSomethingSelected = false;
 
-    bool isPainting = false;
+    bool mIsPainting = false;
 
     VectorSelection vectorSelection;
     QTransform selectionTransformation;
@@ -358,6 +372,7 @@ private:
 
     // mypaint
     QHash<QString, MPTile*> mTiles;
+    QHash<QString, MPTile*> mBufferTiles;
     QHash<QString, MPTile*> mTempTiles;
     QGraphicsScene mScene;
 
