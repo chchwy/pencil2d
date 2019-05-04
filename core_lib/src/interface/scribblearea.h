@@ -67,7 +67,7 @@ class ScribbleArea : public QWidget
 
 public:
     ScribbleArea(QWidget* parent);
-    ~ScribbleArea();
+    ~ScribbleArea() override;
 
     bool init();
     void setEditor(Editor* e) { mEditor = e; }
@@ -99,7 +99,6 @@ public:
     qreal myRotatedAngle = 0.0;
     QList<int> mClosestCurves;
 
-    bool areLayersSane() const;
     bool isLayerPaintable() const;
     bool allowSmudging();
 
