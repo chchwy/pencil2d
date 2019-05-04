@@ -115,6 +115,7 @@ private:
     void paintTransformedSelection(QPainter& painter);
     void paintGrid(QPainter& painter);
     void paintCameraBorder(QPainter& painter);
+    void paintCameraOutline(QPainter& painter);
     void paintAxis(QPainter& painter);
     void prescale(BitmapImage* bitmapImage);
     void prescaleSurface(QPainter& painter, QImage& image, const QRectF& rect);

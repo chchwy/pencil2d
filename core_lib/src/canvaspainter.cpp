@@ -115,7 +115,7 @@ void CanvasPainter::paint(QPainter& painter, const Object* object, int layerInde
 //    painter.drawRect(mCanvas->rect().adjusted(1,1,-1,-1));
 
     paintCurrentFrame( painter, RENDER_LEVEL::ALL );
-//    paintCameraBorder( painter );
+    paintCameraBorder( painter );
 
     // post effects
     paintPostEffects(painter);
@@ -660,6 +660,7 @@ void CanvasPainter::renderGrid(QPainter& painter)
 
 void CanvasPainter::paintCameraBorder(QPainter &painter)
 {
+    painter.save();
     LayerCamera* cameraLayer = nullptr;
     bool isCameraMode = false;
 
@@ -683,45 +684,47 @@ void CanvasPainter::paintCameraBorder(QPainter &painter)
 
     if (isCameraMode)
     {
-        painter.setWorldMatrixEnabled(false);
         QTransform center = QTransform::fromTranslate(viewRect.width() / 2.0, viewRect.height() / 2.0);
         boundingRect = viewRect.toAlignedRect();
         mCameraRect = center.mapRect(mCameraRect);
     }
     else
     {
+        painter.setWorldTransform(mViewTransform);
         painter.setWorldMatrixEnabled(true);
         QTransform viewInverse = mViewTransform.inverted();
-        boundingRect = viewInverse.mapRect(viewRect).toAlignedRect();
+        boundingRect = viewInverse.mapRect(viewRect.toRect());
 
         QTransform camTransform = cameraLayer->getViewAtFrame(mFrameNumber);
         mCameraRect = camTransform.inverted().mapRect(mCameraRect);
-
     }
 
     painter.setOpacity(1.0);
-    painter.setPen(Qt::NoPen);
     painter.setBrush(QColor(0, 0, 0, 80));
 
     QRegion rg1(boundingRect);
     QRegion rg2(mCameraRect);
     QRegion rg3 = rg1.subtracted(rg2);
-
     painter.setClipRegion(rg3);
     painter.drawRect(boundingRect);
 
-    /*
-    painter.setClipping(false);
+    paintCameraOutline(painter);
 
-    QPen pen( Qt::black,
+    painter.restore();
+}
+
+void CanvasPainter::paintCameraOutline(QPainter& painter)
+{
+    painter.setClipping(false);
+    QPen pen( QColor(49, 127, 158),
                 2,
-                Qt::SolidLine,
+                Qt::DashLine,
                 Qt::FlatCap,
                 Qt::MiterJoin );
+    pen.setCosmetic(true);
     painter.setPen( pen );
     painter.setBrush( Qt::NoBrush );
-    painter.drawRect( mCameraRect.adjusted( -1, -1, 1, 1) );
-    */
+    painter.drawRect( mCameraRect);
 }
 
 QRect CanvasPainter::getCameraRect()
