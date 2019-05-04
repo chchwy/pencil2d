@@ -504,10 +504,22 @@ void ScribbleArea::drawCanvas( int frame, QRect rect )
 {
     Object* object = mEditor->object();
 
+    QPainter painter(this);
+    painter.setClipping(true);
+    painter.setClipRect(this->rect());
+
+    QHash<QString, MPTile*> tilesToBeRendered;
+
+    if (mIsPainting) {
+        tilesToBeRendered = mTempTiles;
+    } else {
+        tilesToBeRendered = mTiles;
+    }
+
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvas );
     mCanvasPainter.setViewTransform( mEditor->view()->getView());
-    mCanvasPainter.paint(object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate);
+    mCanvasPainter.paint(painter, object, mEditor->layers()->currentLayerIndex(), frame, tilesToBeRendered.values());
 
     // Cache current frame for faster render
     //
@@ -519,31 +531,29 @@ void ScribbleArea::drawCanvas( int frame, QRect rect )
     }
 
     QPixmapCache::insert( cachedFrameKey, mCanvas );
-
-    return;
 }
 
 CanvasPainterOptions ScribbleArea::getRenderOptions()
 {
     CanvasPainterOptions o;
-    o.bPrevOnionSkin = mPrefs->isOn(SETTING::PREV_ONION);
-    o.bNextOnionSkin = mPrefs->isOn(SETTING::NEXT_ONION);
-    o.bColorizePrevOnion = mPrefs->isOn(SETTING::ONION_RED);
-    o.bColorizeNextOnion = mPrefs->isOn(SETTING::ONION_BLUE);
-    o.nPrevOnionSkinCount = mPrefs->getInt(SETTING::ONION_PREV_FRAMES_NUM);
-    o.nNextOnionSkinCount = mPrefs->getInt(SETTING::ONION_NEXT_FRAMES_NUM);
-    o.fOnionSkinMaxOpacity = mPrefs->getInt(SETTING::ONION_MAX_OPACITY);
-    o.fOnionSkinMinOpacity = mPrefs->getInt(SETTING::ONION_MIN_OPACITY);
-    o.bAntiAlias = mPrefs->isOn(SETTING::ANTIALIAS);
-    o.bGrid = mPrefs->isOn(SETTING::GRID);
-    o.nGridSizeW = mPrefs->getInt(SETTING::GRID_SIZE_W);
-    o.nGridSizeH = mPrefs->getInt(SETTING::GRID_SIZE_H);
-    o.bAxis = false;
-    o.bThinLines = mPrefs->isOn(SETTING::INVISIBLE_LINES);
-    o.bOutlines = mPrefs->isOn(SETTING::OUTLINES);
-    o.nShowAllLayers = mShowAllLayers;
-    o.bIsOnionAbsolute = (mPrefs->getString(SETTING::ONION_TYPE) == "absolute");
-    o.scaling = mEditor->view()->scaling();
+    o.prevOnionSkinEnabled = mPrefs->isOn(SETTING::PREV_ONION);
+    o.nextOnionSkinEnabled = mPrefs->isOn(SETTING::NEXT_ONION);
+    o.prevColoredOnionSkinEnabled = mPrefs->isOn(SETTING::ONION_RED);
+    o.nextColoredOnionSkinEnabled = mPrefs->isOn(SETTING::ONION_BLUE);
+    o.prevOnionSkinCount = mPrefs->getInt(SETTING::ONION_PREV_FRAMES_NUM);
+    o.nextOnionSkinCount = mPrefs->getInt(SETTING::ONION_NEXT_FRAMES_NUM);
+    o.onionSkinMaxOpacity = mPrefs->getInt(SETTING::ONION_MAX_OPACITY);
+    o.onionSkinMinOpacity = mPrefs->getInt(SETTING::ONION_MIN_OPACITY);
+    o.antiAliasingEnabled = mPrefs->isOn(SETTING::ANTIALIAS);
+    o.gridEnabld = mPrefs->isOn(SETTING::GRID);
+    o.gridSizeW = mPrefs->getInt(SETTING::GRID_SIZE_W);
+    o.gridSizeH = mPrefs->getInt(SETTING::GRID_SIZE_H);
+    o.axisEnabled = false;
+    o.vectorOptions.thinLinesEnabled = mPrefs->isOn(SETTING::INVISIBLE_LINES);
+    o.vectorOptions.outlineEnabled = mPrefs->isOn(SETTING::OUTLINES);
+    o.showLayersCount = mShowAllLayers;
+    o.onionSkinAbsoluteEnabled = (mPrefs->getString(SETTING::ONION_TYPE) == "absolute");
+    o.zoomLevel = mEditor->view()->scaling();
     o.onionWhilePlayback = mPrefs->getInt(SETTING::ONION_WHILE_PLAYBACK);
     o.isPlaying = mEditor->playback()->isPlaying() ? true : false;
 
@@ -1129,24 +1139,13 @@ void ScribbleArea::resizeEvent(QResizeEvent* event)
     mCanvasTop = QPixmap( newSize );
     mCanvasTop.fill(Qt::transparent);
 
-
-//    QTransform v = mEditor->view()->getViewInverse();
-//    QRect mappedRect = v.mapRect(this->rect());
-//    mMyPaint->setSurfaceSize(mappedRect.size());
     mMyPaint->setSurfaceSize(newSize);
-
-//    this->setStyl
+    mEditor->view()->setCanvasSize( newSize );
 
     QWidget::resizeEvent( event );
 
-//    this->setStyleSheet("background-color:blue;");
-
-    mEditor->view()->setCanvasSize( newSize );
-//    this->clearSurfaceBuffer();
-//    mMyPaint->clearSurface();
-
     updateBackground();
-    updateAllFrames();
+//    updateAllFrames();
 }
 
 bool ScribbleArea::isDoingAssistedToolAdjustment(Qt::KeyboardModifiers keyMod)
@@ -1468,52 +1467,46 @@ void ScribbleArea::paintCachedCanvas(QPainter& painter)
         }
 
     }
+
+//    drawCanvas(mEditor->currentFrame(), mCanvas.rect());
 }
 
 void ScribbleArea::paintTiledCanvas(QPainter& painter)
 {
-    painter.setClipping(true);
-    painter.setClipRect(this->rect());
-
     int tilesUpdated = 0;
 
-    QHash<QString, MPTile*> tilesToBeRendered;
 
-    if (mIsPainting) {
-        tilesToBeRendered = mTempTiles;
-    } else {
-        tilesToBeRendered = mTiles;
-    }
+    drawCanvas(mEditor->currentFrame(), mCanvas.rect());
 
-    QTransform v = mEditor->view()->getView();
-    for (MPTile* item : tilesToBeRendered.values()) {
+//    QTransform v = mEditor->view()->getView();
+//    for (MPTile* item : tilesToBeRendered.values()) {
 
-        QRectF tileRect = QRectF(item->pos(),QSize(item->boundingRect().width(), item->boundingRect().height()));
-        tileRect = v.mapRect(tileRect);
+//        QRectF tileRect = QRectF(item->pos(),QSize(item->boundingRect().width(), item->boundingRect().height()));
+//        tileRect = v.mapRect(tileRect);
 
-        QImage image = item->image();
+//        QImage image = item->image();
 
-        // TODO: move to prescale method
-        if (mEditor->view()->scaling() < 1.5f) { // 150%
-            painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing);
+//        // TODO: move to prescale method
+//        if (mEditor->view()->scaling() < 1.5f) { // 150%
+//            painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing);
 
-            // Only prescale when the content is small enough, as it's performance intensive to upscale larger images.
-            if (mEditor->view()->scaling() < 0.5f) { // 50%
-            image = image.scaled(tileRect.size().toSize(),
-                                                 Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            }
-        }
+//            // Only prescale when the content is small enough, as it's performance intensive to upscale larger images.
+//            if (mEditor->view()->scaling() < 0.5f) { // 50%
+//            image = image.scaled(tileRect.size().toSize(),
+//                                                 Qt::KeepAspectRatio, Qt::SmoothTransformation);
+//            }
+//        }
 
-        bool visualCanvasContainsTiles = this->rect().adjusted(-tileRect.width(),
-                                                               -tileRect.width(),
-                                                               tileRect.width(),
-                                                               tileRect.width()).contains(tileRect.toRect());
-        if (visualCanvasContainsTiles) {
-            painter.drawImage(tileRect.toRect(), image);
-            tilesUpdated++;
-        }
+//        bool visualCanvasContainsTiles = this->rect().adjusted(-tileRect.width(),
+//                                                               -tileRect.width(),
+//                                                               tileRect.width(),
+//                                                               tileRect.width()).contains(tileRect.toRect());
+//        if (visualCanvasContainsTiles) {
+//            painter.drawImage(tileRect.toRect(), image);
+//            tilesUpdated++;
+//        }
 
-    }
+//    }
 }
 
 void ScribbleArea::paintEvent(QPaintEvent* event)
@@ -1545,22 +1538,22 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 //        }
 //    }
 
-    QPainter painter(this);
-
     calculateDeltaTime();
 
 //    // paints the canvas
 //    painter.setWorldMatrixEnabled(false);
 
-    if (editor()->playback()->isPlaying()) {
+//    if (editor()->playback()->isPlaying()) {
 
-        paintCachedCanvas(painter);
-    } else {
-        // otherwise paint tiles
-        paintTiledCanvas(painter);
-    }
+//        paintCachedCanvas(painter);
+//    } else {
+//        // otherwise paint tiles
+//        paintTiledCanvas(painter);
+//    }
 
-    paintCanvasCursor(painter);
+    drawCanvas(mEditor->currentFrame(), this->rect());
+
+//    paintCanvasCursor(painter);
 
 //    painter.setCompositionMode(-QPainter::CompositionMode_DestinationOut);
 //    updateCanvasCursor();
