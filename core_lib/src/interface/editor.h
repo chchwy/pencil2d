@@ -38,6 +38,7 @@ class LayerManager;
 class PlaybackManager;
 class ViewManager;
 class PreferenceManager;
+class SelectionManager;
 class SoundManager;
 class ScribbleArea;
 class TimeLine;
@@ -58,6 +59,7 @@ class Editor : public QObject
         Q_PROPERTY(ViewManager*     view     READ view)
         Q_PROPERTY(PreferenceManager* preference READ preference)
         Q_PROPERTY(SoundManager*    sound    READ sound)
+        Q_PROPERTY(SelectionManager* select READ select)
 
 public:
     explicit Editor(QObject* parent = nullptr);
@@ -75,6 +77,7 @@ public:
     ViewManager*        view() const { return mViewManager; }
     PreferenceManager* preference() const { return mPreferenceManager; }
     SoundManager*      sound() const { return mSoundManager; }
+    SelectionManager* select() const { return mSelectionManager; }
 
     Object* object() const { return mObject.get(); }
     Status setObject(Object* object);
@@ -197,6 +200,7 @@ private:
     ViewManager*       mViewManager = nullptr;
     PreferenceManager* mPreferenceManager = nullptr;
     SoundManager*      mSoundManager = nullptr;
+    SelectionManager* mSelectionManager = nullptr;
 
     std::vector< BaseManager* > mAllManagers;
 

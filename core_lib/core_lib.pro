@@ -50,6 +50,7 @@ HEADERS +=  \
     src/interface/basedockwidget.h \
     src/interface/backgroundwidget.h \
     src/managers/basemanager.h \
+    src/managers/selectionmanager.h \
     src/managers/colormanager.h \
     src/managers/layermanager.h \
     src/managers/toolmanager.h \
@@ -101,7 +102,8 @@ HEADERS +=  \
     src/external/macosx/macosxnative.h \
     src/util/pointerevent.h \
     src/graphics/bitmap/bitmapsurface.h \
-    src/structure/layerbitmapsurface.h
+    src/structure/layerbitmapsurface.h \
+    src/transformpainter.h
 
 
 SOURCES += \
@@ -123,6 +125,7 @@ SOURCES += \
     src/interface/basedockwidget.cpp \
     src/interface/backgroundwidget.cpp \
     src/managers/basemanager.cpp \
+    src/managers/selectionmanager.cpp \
     src/managers/colormanager.cpp \
     src/managers/layermanager.cpp \
     src/managers/toolmanager.cpp \
@@ -167,7 +170,8 @@ SOURCES += \
     src/qminiz.cpp \
     src/activeframepool.cpp \
     src/util/pointerevent.cpp \
-    src/structure/layerbitmapsurface.cpp
+    src/structure/layerbitmapsurface.cpp \
+    src/transformpainter.cpp
 
 FORMS += \
     ui/camerapropertiesdialog.ui

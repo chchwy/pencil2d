@@ -77,32 +77,15 @@ public:
 
 
     void deleteSelection();
-    void setSelection(QRectF rect);
-    void adjustSelection(float offsetX, float offsetY, qreal rotatedAngle);
     void applySelectionChanges();
     void displaySelectionProperties();
-    void resetSelectionProperties();
 
-    bool isSomethingSelected() const;
-    QRectF getSelection() const { return mySelection; }
-    void calculateSelectionRect();
-    void calculateSelectionTransformation();
     void paintTransformedSelection();
     void applyTransformedSelection();
     void cancelTransformedSelection();
 
-    inline bool transformHasBeenModified() { return (mySelection != myTempTransformedSelection) || myRotatedAngle != 0; }
-
-    QRectF mySelection;
-    QRectF myTransformedSelection;
-    QRectF myTempTransformedSelection;
-    qreal myRotatedAngle = 0.0;
-    QList<int> mClosestCurves;
-
     bool isLayerPaintable() const;
     bool allowSmudging();
-
-    void flipSelection(bool flipVertical);
 
     QVector<QPoint> calcSelectionCenterPoints();
 
@@ -112,13 +95,6 @@ public:
     qreal getCurveSmoothing() const { return mCurveSmoothingLevel; }
     bool usePressure() const { return mUsePressure; }
     bool makeInvisible() const { return mMakeInvisible; }
-
-    void setMoveMode(MoveMode moveMode) { mMoveMode = moveMode; }
-    MoveMode getMoveMode() const { return mMoveMode; }
-    void findMoveModeOfCornerInRange();
-    MoveMode getMoveModeForSelectionAnchor();
-
-    QPointF whichAnchorPoint(QPointF anchorPoint);
 
     QRectF getCameraRect();
     QPointF getCentralPoint();
@@ -134,6 +110,8 @@ public:
     bool shouldUpdateAll() const { return mNeedUpdateAll; }
     void setAllDirty() { mNeedUpdateAll = true; }
 
+    void flipSelection(bool flipVertical);
+
     BaseTool* currentTool();
     BaseTool* getTool(ToolType eToolMode);
     void setCurrentTool(ToolType eToolMode);
@@ -146,10 +124,9 @@ public:
     bool isPointerInUse() const { return mMouseInUse || mStrokeManager->isTabletInUse(); }
     bool isTemporaryTool() const { return mInstantTool; }
 
-    void manageSelectionOrigin(QPointF currentPoint, QPointF originPoint);
-
     void updateBackground();
     void showCurrentFrame();
+    void showBitmapFrame(Layer* layer);
     void updatePreviousFrame(int index);
 
     /**
@@ -157,20 +134,6 @@ public:
      * Used to get the current frame content into mypaint
      */
     void prepareForDrawing();
-
-    /**
-     * @brief paintCachedCanvas
-     * @param painter
-     * Used to paint the canvas with a cached surface for faster playback
-     */
-    void paintCachedCanvas(QPainter& painter);
-
-    /**
-     * @brief paintTiledCanvas
-     * @param painter
-     * Used to paint the canvas through the tiles backend, optimized for drawing.
-     */
-    void paintTiledCanvas(QPainter& painter);
 
     /// Used to load frame into mypaint. Should only be true if the user  scrubbed prior this
     bool frameFirstLoad = false;
@@ -187,8 +150,6 @@ signals:
 
 public slots:
     void clearCanvas();
-    void selectAll();
-    void deselectAll();
 
     void setCurveSmoothing(int);
     void toggleThinLines();
@@ -199,8 +160,6 @@ public slots:
     void paletteColorChanged(QColor);
 
     bool isDoingAssistedToolAdjustment(Qt::KeyboardModifiers keyMod);
-
-    QPointF getCurrentOffset();
 
     void showLayerNotVisibleWarning();
 
@@ -266,13 +225,11 @@ public:
     QPixmap mCursorImg;
     QPixmap mTransCursImg;
 
-    QPointF getTransformOffset() { return mOffset; }
-
     MPHandler* mMyPaint = nullptr;
 private:
 //    void drawCanvas(int frame, QRect rect);
     void settingUpdated(SETTING setting);
-    void paintSelectionVisuals(QPainter& painter);
+    void paintSelectionVisuals();
 
     void drawCanvasBack(int frame, QRect rect);
     void drawCanvas(int frame, QRect rect);
@@ -339,27 +296,20 @@ private:
 
     qreal mSelectionTolerance = 8.0;
     QList<VertexRef> mClosestVertices;
-    QPointF mOffset;
     QPoint mCursorCenterPos;
 
     QPointF mTransformedCursorPos;
 
     //instant tool (temporal eg. eraser)
     bool mInstantTool = false; //whether or not using temporal tool
-    bool mSomethingSelected = false;
 
     bool mIsPainting = false;
-
-    VectorSelection vectorSelection;
-    QTransform selectionTransformation;
-
-    QPolygonF mCurrentTransformSelection;
-    QPolygonF mLastTransformSelection;
 
     PreferenceManager* mPrefs = nullptr;
 
     QPixmap mCanvas;
     CanvasPainter mCanvasPainter;
+    TransformPainter mTransformPainter;
 
     // Pixmap Cache keys
     std::vector<QPixmapCache::Key> mPixmapCacheKeys;

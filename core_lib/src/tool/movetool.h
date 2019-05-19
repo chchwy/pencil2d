@@ -19,6 +19,7 @@ GNU General Public License for more details.
 #define MOVETOOL_H
 
 #include "basetool.h"
+//#include "transformproxytool.h"
 #include "movemode.h"
 
 class Layer;
@@ -45,9 +46,7 @@ private:
     void cancelChanges();
     void applyTransformation();
     void applySelectionChanges();
-    void resetSelectionProperties();
     void paintTransformedSelection();
-    void whichAnchorPoint();
     void setAnchorToLastPoint();
     void updateTransformation();
 
@@ -61,10 +60,6 @@ private:
     void setCurveSelected(VectorImage* vectorImage, Qt::KeyboardModifiers keyMod);
     void setAreaSelected(VectorImage* vectorImage, Qt::KeyboardModifiers keyMod);
 
-    bool transformHasBeenModified();
-    bool shouldDeselect();
-
-    QPointF maintainAspectRatio(qreal offsetX, qreal offsetY);
     Layer* currentPaintableLayer();
 
     QPointF anchorOriginPoint;

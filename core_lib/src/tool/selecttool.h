@@ -19,8 +19,10 @@ GNU General Public License for more details.
 #define SELECTTOOL_H
 
 #include "basetool.h"
+//#include "transformproxytool.h"
 
 class Layer;
+class SelectionManager;
 
 class SelectTool : public BaseTool
 {
@@ -39,9 +41,6 @@ private:
     void pointerMoveEvent(PointerEvent*) override;
 
     bool keyPressEvent(QKeyEvent* event) override;
-
-    QPointF whichAnchorPoint();
-    void controlOffsetOrigin();
 
     void beginSelection();
     void keepSelection();
