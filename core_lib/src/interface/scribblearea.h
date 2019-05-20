@@ -40,6 +40,7 @@ GNU General Public License for more details.
 #include "colourref.h"
 #include "vectorselection.h"
 #include "canvaspainter.h"
+#include "transformpainter.h"
 #include "preferencemanager.h"
 #include "strokemanager.h"
 
@@ -201,7 +202,7 @@ public:
 
     void paintBitmapBuffer();
     void paintBitmapBufferRect(const QRect& rect);
-    void paintCanvasCursor(QPainter& painter);
+    void paintCanvasCursor();
     void clearBitmapBuffer();
     void refreshBitmap(const QRectF& rect, int rad);
     void refreshVector(const QRectF& rect, int rad);
@@ -229,7 +230,7 @@ public:
 private:
 //    void drawCanvas(int frame, QRect rect);
     void settingUpdated(SETTING setting);
-    void paintSelectionVisuals();
+    void paintSelectionAnchors();
 
     void drawCanvasBack(int frame, QRect rect);
     void drawCanvas(int frame, QRect rect);

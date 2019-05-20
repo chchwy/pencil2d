@@ -118,7 +118,6 @@ bool ScribbleArea::init()
 //    mCanvasTopItem->setZValue(10000);
 
     updateCanvasCursor();
-//    updateBackground();
 
     setMouseTracking(true); // reacts to mouse move events, even if the button is not pressed
 
@@ -176,7 +175,6 @@ void ScribbleArea::settingUpdated(SETTING setting)
         updateAllFrames();
     case SETTING::BACKGROUND_STYLE:
     case SETTING::SHADOW:
-//        updateBackground();
         break;
     default:
         break;
@@ -325,10 +323,8 @@ void ScribbleArea::updatePreviousFrame(int index)
 //    }
 }
 
-void ScribbleArea::showCurrentFrame()
+void ScribbleArea::showBitmapFrame(Layer* layer)
 {
-    Layer* layer = mEditor->layers()->currentLayer();
-
     BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
 
     if (surfaceImage->isModified()) {
@@ -375,36 +371,29 @@ void ScribbleArea::showCurrentFrame()
         MPTile *tile = getTileFromPos(pos);
         tile->setImage(pixmap->toImage());
     }
+}
 
-//    updateDirtyTiles();
+void ScribbleArea::showCurrentFrame()
+{
+    Layer* layer = mEditor->layers()->currentLayer();
+
+    switch (layer->type())
+    {
+        case Layer::BITMAP:
+        {
+            showBitmapFrame(layer);
+            break;
+        }
+        case Layer::VECTOR:
+        {
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
     update();
-
-
-    // We retrieve the entire canvas from the cache;
-    // We draw it if it doesn't exist.
-    //
-    // This is used for optimizing scrubbing and move/scale speed.
-    //
-//    QString cachedFrameKey = getCachedFrameKey( frame );
-
-//    bool hasCache = QPixmapCache::find( cachedFrameKey, mCanvas );
-//    if ( !hasCache )
-//    {
-//        drawCanvas(frame, mCanvas.rect());
-//    }
-
-//    if (isInPreviewMode) {
-//        loadFullCanvas();
-//    }
-//    else {
-//        drawCanvasBack(frame, mCanvasBack.rect());
-//        drawCanvasLayer(frame, mCanvasLayer.rect());
-//        drawCanvasTop(frame, mCanvasTop.rect());
-
-//        loadBackCanvas();
-//        loadTiles();
-//        loadTopCanvas();
-//    }
 }
 
 void ScribbleArea::loadTiles()
@@ -492,7 +481,7 @@ void ScribbleArea::loadTopCanvas()
     mCanvasTopItem->setPixmap(mCanvasTop);
 }
 
-void ScribbleArea::drawCanvas( int frame, QRect rect )
+void ScribbleArea::drawCanvas(int frame, QRect rect)
 {
     Object* object = mEditor->object();
 
@@ -614,7 +603,7 @@ void ScribbleArea::updateAllFrames()
     QPixmapCache::clear();
 
     if (mEditor) {
-//        showCurrentFrame();
+        showCurrentFrame();
     }
     mNeedUpdateAll = false;
 }
@@ -846,7 +835,7 @@ void ScribbleArea::wheelEvent(QWheelEvent* event)
     event->accept();
 
     update();
-    updateCanvasCursor();
+//    updateCanvasCursor();
 }
 
 void ScribbleArea::tabletEvent(QTabletEvent *e)
@@ -977,7 +966,7 @@ void ScribbleArea::pointerMoveEvent(PointerEvent* event)
         return;
     }
     currentTool()->pointerMoveEvent(event);
-//    updateCanvasCursor();
+    updateCanvasCursor();
 }
 
 void ScribbleArea::pointerReleaseEvent(PointerEvent* event)
@@ -1321,8 +1310,10 @@ void ScribbleArea::refreshVector(const QRectF& rect, int rad)
     //update();
 }
 
-void ScribbleArea::paintCanvasCursor(QPainter& painter)
+void ScribbleArea::paintCanvasCursor()
 {
+    QPainter painter(this);
+
     QTransform view = mEditor->view()->getView();
     QPointF mousePos = currentTool()->getCurrentPoint();
     int centerCal = mCursorImg.width() / 2;
@@ -1339,6 +1330,8 @@ void ScribbleArea::paintCanvasCursor(QPainter& painter)
     painter.drawPixmap(QPoint(static_cast<int>(mTransformedCursorPos.x() - mCursorCenterPos.x()),
                               static_cast<int>(mTransformedCursorPos.y() - mCursorCenterPos.y())),
                        mCursorImg);
+
+//    painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 
     // update center of transformed img for rect only
     mTransCursImg = mCursorImg.transformed(view);
@@ -1425,74 +1418,6 @@ void ScribbleArea::handleDrawingOnEmptyFrame()
     }
 }
 
-void ScribbleArea::paintCachedCanvas(QPainter& painter)
-{
-    ViewManager* vM = mEditor->view();
-
-    // TODO: consider storing layer and current surface for less look up
-    Layer* layer = mEditor->layers()->currentLayer();
-
-    switch (layer->type())
-    {
-        case Layer::BITMAP:
-        {
-            BitmapSurface* surface = currentBitmapSurfaceImage(layer);
-            QRectF mappedBounds = vM->mapCanvasToScreen(surface->bounds());
-            painter.drawImage(mappedBounds, surface->surfaceImage());
-        }
-        case Layer::VECTOR:
-        {
-            Q_ASSERT("Not yet implemented");
-            break;
-        }
-        default:
-        {
-            break;
-        }
-
-    }
-
-//    drawCanvas(mEditor->currentFrame(), mCanvas.rect());
-}
-
-void ScribbleArea::paintTiledCanvas(QPainter& painter)
-{
-    int tilesUpdated = 0;
-
-
-    drawCanvas(mEditor->currentFrame(), mCanvas.rect());
-
-//    QTransform v = mEditor->view()->getView();
-//    for (MPTile* item : tilesToBeRendered.values()) {
-
-//        QRectF tileRect = QRectF(item->pos(),QSize(item->boundingRect().width(), item->boundingRect().height()));
-//        tileRect = v.mapRect(tileRect);
-
-//        QImage image = item->image();
-
-//        // TODO: move to prescale method
-//        if (mEditor->view()->scaling() < 1.5f) { // 150%
-//            painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing);
-
-//            // Only prescale when the content is small enough, as it's performance intensive to upscale larger images.
-//            if (mEditor->view()->scaling() < 0.5f) { // 50%
-//            image = image.scaled(tileRect.size().toSize(),
-//                                                 Qt::KeepAspectRatio, Qt::SmoothTransformation);
-//            }
-//        }
-
-//        bool visualCanvasContainsTiles = this->rect().adjusted(-tileRect.width(),
-//                                                               -tileRect.width(),
-//                                                               tileRect.width(),
-//                                                               tileRect.width()).contains(tileRect.toRect());
-//        if (visualCanvasContainsTiles) {
-//            painter.drawImage(tileRect.toRect(), image);
-//            tilesUpdated++;
-//        }
-
-//    }
-}
-
 void ScribbleArea::paintEvent(QPaintEvent* event)
 {
 //    if (!mMouseInUse || currentTool()->type() == MOVE || currentTool()->type() == HAND || mMouseRightButtonInUse)
@@ -1524,30 +1449,18 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 
     calculateDeltaTime();
 
-//    // paints the canvas
-//    painter.setWorldMatrixEnabled(false);
-
-//    if (editor()->playback()->isPlaying()) {
-
-//        paintCachedCanvas(painter);
-//    } else {
-//        // otherwise paint tiles
-//        paintTiledCanvas(painter);
-//    }
-
+//    paintCanvasCursor();
     drawCanvas(mEditor->currentFrame(), this->rect());
+    paintSelectionAnchors();
 
 //    paintCanvasCursor(painter);
 
 //    painter.setCompositionMode(-QPainter::CompositionMode_DestinationOut);
 //    updateCanvasCursor();
 
-//    mCanvasPainter.renderGrid(painter);
-
     //        // paints the selection outline
     //        if (mSomethingSelected && !myTempTransformedSelection.isNull())
     //        {
-                paintSelectionVisuals();
     //        }
 
 //    painter.drawPixmap(QPoint(0, 0), mCanvas);
@@ -1663,7 +1576,7 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
     event->accept();
 }
 
-void ScribbleArea::paintSelectionVisuals()
+void ScribbleArea::paintSelectionAnchors()
 {
     QPainter painter(this);
 
@@ -1677,6 +1590,17 @@ void ScribbleArea::paintSelectionVisuals()
     TransformParameters params = { selectMan->lastSelectionPolygonF(), selectMan->currentSelectionPolygonF() };
     mTransformPainter.paint(painter, object, mEditor->currentLayerIndex(), currentTool(), params);
 }
+
+//void ScribbleArea::paintVectorAnchors()
+//{
+//    QPainter painter(this);
+
+//    Object* object = mEditor->object();
+
+//    VectorPainterParameters params;
+
+////    mTransformPainter.paint(painter, object, mEditor->currentLayerIndex(), currentTool(), params);
+//}
 
 BitmapImage* ScribbleArea::currentBitmapImage(Layer* layer) const
 {
