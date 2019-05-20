@@ -125,10 +125,8 @@ public:
     bool isPointerInUse() const { return mMouseInUse || mStrokeManager->isTabletInUse(); }
     bool isTemporaryTool() const { return mInstantTool; }
 
-    void updateBackground();
     void showCurrentFrame();
     void showBitmapFrame(Layer* layer);
-    void updatePreviousFrame(int index);
 
     /**
      * @brief prepareForDrawing
@@ -214,9 +212,6 @@ public:
 
     void updateCanvasCursor();
 
-    void switchToPreviewMode();
-    void switchToDrawingMode();
-
     /// Call this when starting to use a paint tool. Checks whether we are drawing
     /// on an empty frame, and if so, takes action according to use preference.
     void handleDrawingOnEmptyFrame();
@@ -232,18 +227,10 @@ private:
     void settingUpdated(SETTING setting);
     void paintSelectionAnchors();
 
-    void drawCanvasBack(int frame, QRect rect);
     void drawCanvas(int frame, QRect rect);
-    void drawCanvasLayer(int frame, QRect rect);
-    void drawCanvasTop(int frame, QRect rect);
-
     void applyBackgroundShadow(QPainter& painter);
 
     CanvasPainterOptions getRenderOptions();
-    void loadFullCanvas();
-    void loadBackCanvas();
-    void loadTiles();
-    void loadTopCanvas();
 
     /**
      * @brief ScribbleArea::calculateDeltaTime
@@ -324,18 +311,6 @@ private:
     QHash<QString, MPTile*> mTiles;
     QHash<QString, MPTile*> mBufferTiles;
     QHash<QString, MPTile*> mTempTiles;
-    QGraphicsScene mScene;
-
-//    GraphicsView *mGraphicsView;
-
-    QGraphicsPixmapItem* mCanvasItem;
-    QGraphicsPixmapItem* mBackgroundItem;
-    QGraphicsPixmapItem* mCanvasBackItem;
-    QGraphicsPixmapItem* mCanvasTopItem;
-
-    QPixmap mCanvasBack;
-    QPixmap mCanvasLayer;
-    QPixmap mCanvasTop;
 
     bool isInPreviewMode = false;
     bool mNeedQuickUpdate = false;

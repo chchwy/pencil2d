@@ -90,9 +90,6 @@ public:
     void renderGrid(QPainter& painter);
 
     void initPaint(const Object *object, int layer, int frame, QPainter& painter);
-    void paintBackgroundToLayer(Object *object, int layer, int frame, QRect rect, bool quick);
-    void paintLayer(Object *object, int layer, int frame, QRect rect, bool quick);
-    void paintTopToLayer(Object *object, int layer, int frame, QRect rect, bool quick);
 
 private:
     void paintBackground(QPainter& painter);

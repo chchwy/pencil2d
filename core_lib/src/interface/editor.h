@@ -169,9 +169,6 @@ public: //slots
     bool autoSaveNeverAskAgain() { return mAutosaveNerverAskAgain; }
     void resetAutoSaveCounter();
 
-    void startPreviewMode();
-    void endPreviewMode();
-
     // mypaint
     void loadBrush(QString toolName, QString brushName, const QByteArray &content);
 

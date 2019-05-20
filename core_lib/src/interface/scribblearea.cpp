@@ -101,22 +101,6 @@ bool ScribbleArea::init()
 
     mBufferImg = new BitmapImage;
 
-//    mBackgroundItem = new QGraphicsPixmapItem();
-//    mScene.addItem(mBackgroundItem);
-//    mBackgroundItem->setZValue(0);
-
-//    mCanvasItem = new QGraphicsPixmapItem();
-//    mScene.addItem(mCanvasItem);
-//    mCanvasItem->setZValue(1);
-
-//    mCanvasBackItem = new QGraphicsPixmapItem();
-//    mScene.addItem(mCanvasBackItem);
-//    mCanvasBackItem->setZValue(2);
-
-//    mCanvasTopItem = new QGraphicsPixmapItem();
-//    mScene.addItem(mCanvasTopItem);
-//    mCanvasTopItem->setZValue(10000);
-
     updateCanvasCursor();
 
     setMouseTracking(true); // reacts to mouse move events, even if the button is not pressed
@@ -201,38 +185,6 @@ void ScribbleArea::setEffect(SETTING e, bool isOn)
     updateAllFrames();
 }
 
-void ScribbleArea::updateBackground()
-{
-//    // Init background with the size of the canvas
-//    //
-//    QPixmap bgPixmap = QPixmap(size());
-//    bgPixmap.fill(QColor("#FFFFFF"));
-
-//    QPainter painter;
-//    painter.begin( &bgPixmap );
-
-//    QString bgName = mPrefs->getString(SETTING::BACKGROUND_STYLE);
-
-//    if (bgName.startsWith("#")) {
-//        // Fill with color
-//        //
-//        bgPixmap.fill(QColor(bgName));
-//    }
-//    else {
-//        // Fill with Pattern
-//        //
-//        QPixmap pattern = QPixmap(":background/"+bgName);
-//        painter.drawTiledPixmap( bgPixmap.rect(), pattern );
-//    }
-
-//    // Draw Shadow
-//    //
-//    applyBackgroundShadow(painter);
-
-//    mBackgroundItem->setPixmap(bgPixmap);
-//    painter.end();
-}
-
 void ScribbleArea::applyBackgroundShadow(QPainter& painter)
 {
     if (mPrefs->isOn(SETTING::SHADOW)) {
@@ -308,21 +260,6 @@ void ScribbleArea::prepareForDrawing()
 
 }
 
-void ScribbleArea::updatePreviousFrame(int index)
-{
-//    Layer* layer = mEditor->layers()->currentLayer();
-//    BitmapSurface* surfaceImage = static_cast<LayerBitmapSurface*>(layer)->getBitmapImageAtFrame(index);
-
-//    qDebug() << "previous frame is: " << index;
-//    qDebug() << "previous keyframe updated";
-//    if (surfaceImage->isModified()) {
-//        qDebug() << "previous keyframe modified";
-//        mMyPaint->clearSurface();
-////        refreshSurface();
-//        surfaceImage->setModified(false);
-//    }
-}
-
 void ScribbleArea::showBitmapFrame(Layer* layer)
 {
     BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
@@ -341,26 +278,6 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
     }
 
     qDebug() << "show current frame";
-//    mMyPaint->clearSurface();
-
-    // If the canvas needs to be updated, we make sur that there is no cache
-//    //
-//    if (mNeedUpdateAll) {
-//        QPixmapCache::clear();
-//    }
-//    mNeedUpdateAll = false;
-
-//    // Load mypaint surface
-
-//    // ---- checks ------
-//    Q_ASSERT( layer );
-//    if ( layer == NULL ) { return; } // TODO: remove in future.
-
-//    QPixmap currentImage = QPixmap(mCanvas.size());
-//    mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
-
-//    Layer* layer = mEditor->layers()->currentLayer();
-//    BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
 
     // render surface image to to tile
     // tile is then rendered in paintEvent
@@ -394,91 +311,6 @@ void ScribbleArea::showCurrentFrame()
         }
     }
     update();
-}
-
-void ScribbleArea::loadTiles()
-{
-//    QSize tileSize = QSize(MYPAINT_TILE_SIZE, MYPAINT_TILE_SIZE);
-
-
-//    int nbTilesOnWidth = ceil((float)mCanvasLayer.width() / (float)tileSize.width());
-//    int nbTilesOnHeight = ceil((float)mCanvasLayer.height() / (float)tileSize.height());
-
-//    for (int h=0; h < nbTilesOnHeight; h++) {
-
-//        for (int w=0; w < nbTilesOnWidth; w++) {
-
-//            QPoint tilePos = QPoint(w*MYPAINT_TILE_SIZE, h*MYPAINT_TILE_SIZE);
-//            MPTile *tile = getTileFromPos(tilePos);
-
-////            QTransform v = mEditor->view()->getView();
-////            QTransform t;
-
-////            t.translate(v.dx()*0.5, v.dy()*0.5);
-////            t.scale(mEditor->view()->scaling(), mEditor->view()->scaling());
-////            t.translate(-v.dx()*0.5, -v.dy()*0.5);
-
-////            tile->setTransform(t);
-
-//            QRect tileRect = QRect(tilePos, tileSize);
-//            QPixmap tileImage = mCanvasLayer.copy(tileRect);
-
-//            tile->setImage(tileImage.toImage());
-//        }
-//    }
-}
-
-void ScribbleArea::switchToPreviewMode()
-{
-    if (!isInPreviewMode) {
-
-        // Hide Decomposed Canvas show Full Canvas
-        //
-//        foreach (QGraphicsItem* gItem, mScene.items()) {
-//            gItem->(false);
-//        }
-//        mBackgroundItem->setVisible(true);
-//        mCanvasItem->setVisible(true);
-
-        mNeedQuickUpdate = true;
-        isInPreviewMode = true;
-
-//        showCurrentFrame();
-    }
-}
-
-void ScribbleArea::switchToDrawingMode()
-{
-    if (isInPreviewMode) {
-
-        // Hide Full Canvas show Decomposed Canvas
-        //
-//        foreach (QGraphicsItem* gItem, mScene.items()) {
-//            gItem->setVisible(true);
-//        }
-//        mCanvasItem->setVisible(false);
-
-//        mNeedQuickUpdate = false;
-//        isInPreviewMode = false;
-
-//        showCurrentFrame();
-    }
-}
-
-void ScribbleArea::loadFullCanvas()
-{
-    mCanvasItem->setPixmap(mCanvas);
-    mCanvasItem->setVisible(true);
-}
-
-void ScribbleArea::loadBackCanvas()
-{
-    mCanvasBackItem->setPixmap(mCanvasBack);
-}
-
-void ScribbleArea::loadTopCanvas()
-{
-    mCanvasTopItem->setPixmap(mCanvasTop);
 }
 
 void ScribbleArea::drawCanvas(int frame, QRect rect)
@@ -540,37 +372,6 @@ CanvasPainterOptions ScribbleArea::getRenderOptions()
 
     return o;
 }
-
-void ScribbleArea::drawCanvasBack(int frame, QRect rect)
-{
-    Object* object = mEditor->object();
-
-    mCanvasPainter.setOptions(getRenderOptions());
-    mCanvasPainter.setCanvas(&mCanvasBack);
-    mCanvasPainter.setViewTransform(mEditor->view()->getView());
-    mCanvasPainter.paintBackgroundToLayer(object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate);
-}
-
-void ScribbleArea::drawCanvasLayer( int frame, QRect rect )
-{
-    Object* object = mEditor->object();
-
-    mCanvasPainter.setOptions( getRenderOptions() );
-    mCanvasPainter.setCanvas( &mCanvasLayer );
-    mCanvasPainter.setViewTransform(mEditor->view()->getView());
-    mCanvasPainter.paintLayer( object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate );
-}
-
-void ScribbleArea::drawCanvasTop( int frame, QRect rect )
-{
-    Object* object = mEditor->object();
-
-    mCanvasPainter.setOptions( getRenderOptions() );
-    mCanvasPainter.setCanvas( &mCanvasTop );
-    mCanvasPainter.setViewTransform(mEditor->view()->getView());
-    mCanvasPainter.paintTopToLayer( object, mEditor->layers()->currentLayerIndex(), frame, rect, mNeedQuickUpdate );
-}
-
 
 QString ScribbleArea::getCachedFrameKey(int frame)
 {
@@ -1108,22 +909,10 @@ void ScribbleArea::resizeEvent(QResizeEvent* event)
     mCanvas = QPixmap( newSize );
     mCanvas.fill(Qt::transparent);
 
-    mCanvasBack = QPixmap( newSize );
-    mCanvasBack.fill(Qt::transparent);
-
-    mCanvasLayer = QPixmap( newSize );
-    mCanvasLayer.fill(Qt::transparent);
-
-    mCanvasTop = QPixmap( newSize );
-    mCanvasTop.fill(Qt::transparent);
-
     mMyPaint->setSurfaceSize(newSize);
     mEditor->view()->setCanvasSize( newSize );
 
     QWidget::resizeEvent( event );
-
-    updateBackground();
-//    updateAllFrames();
 }
 
 bool ScribbleArea::isDoingAssistedToolAdjustment(Qt::KeyboardModifiers keyMod)
@@ -1451,7 +1240,7 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 
 //    paintCanvasCursor();
     drawCanvas(mEditor->currentFrame(), this->rect());
-    paintSelectionAnchors();
+//    paintSelectionAnchors();
 
 //    paintCanvasCursor(painter);
 

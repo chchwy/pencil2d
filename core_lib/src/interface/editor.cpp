@@ -874,16 +874,6 @@ void Editor::updateCurrentFrame()
     mScribbleArea->updateCurrentFrame();
 }
 
-void Editor::startPreviewMode()
-{
-    mScribbleArea->switchToPreviewMode();
-}
-
-void Editor::endPreviewMode()
-{
-    mScribbleArea->switchToDrawingMode();
-}
-
 void Editor::setCurrentLayerIndex(int i)
 {
     mCurrentLayerIndex = i;

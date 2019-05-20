@@ -102,35 +102,10 @@ void CanvasPainter::paint(QPainter& painter, const Object* object, int layerInde
 {
 
     // Paint Canvas
-//    QPainter painter;
     initPaint(object, layerIndex, frameIndex, painter);
     mTilesToBeRendered = tilesToBeRendered;
 
-//    paintBackground( painter );
-
-//    if (!quick) {
-//        paintOnionSkin( painter );
-//    }
-//    painter.setPen(Qt::red);
-//    painter.drawRect(mCanvas->rect().adjusted(1,1,-1,-1));
-
     paintCurrentFrame( painter, RENDER_LEVEL::ALL );
-    paintCameraBorder( painter );
-
-    // post effects
-    paintPostEffects(painter);
-    painter.end();
-}
-
-void CanvasPainter::paintTopToLayer(Object *object, int layer, int frame, QRect rect, bool quick)
-{
-    Q_UNUSED(rect);
-
-    // Paint Canvas
-    QPainter painter;
-    initPaint(object, layer, frame, painter);
-
-    paintCurrentFrame( painter, RENDER_LEVEL::TOP_ONLY );
     paintCameraBorder( painter );
 
     // post effects
@@ -149,62 +124,6 @@ void CanvasPainter::paintPostEffects(QPainter& painter)
     {
         paintGrid( painter );
     }
-}
-
-void CanvasPainter::paintBackgroundToLayer(Object *object, int layer, int frame, QRect rect, bool quick)
-{
-    Q_UNUSED(rect);
-
-    // Paint Canvas
-    QPainter painter;
-    initPaint(object, layer, frame, painter);
-
-    paintBackground(painter);
-
-    if (!quick) {
-        paintOnionSkin( painter );
-    }
-
-    paintCurrentFrame( painter, RENDER_LEVEL::BACK_ONLY );
-
-    painter.end();
-}
-
-
-void CanvasPainter::paintLayer(Object *object, int layer, int frame, QRect rect, bool quick)
-{
-    Q_UNUSED(rect);
-
-    // Paint Canvas
-    QPainter painter;
-    initPaint(object, layer, frame, painter);
-
-    paintCurrentFrame( painter, RENDER_LEVEL::CURRENT_LAYER_ONLY );
-
-    painter.end();
-}
-
-void CanvasPainter::paintFrameAtLayer(QPixmap &image, Object* object, int layer, int frame)
-{
-    Q_ASSERT( object );
-    mObject = object;
-
-    mCurrentLayerIndex = layer;
-    mFrameNumber = frame;
-
-    QPainter painter;
-    painter.begin(&image);
-    painter.setWorldTransform( mViewTransform );
-
-    paintCurrentFrameAtLayer(painter, layer);
-
-    painter.end();
-}
-
-void CanvasPainter::paintBackground(QPainter& painter)
-{
-    Q_UNUSED(painter);
-//    mCanvas->fill(Qt::transparent);
 }
 
 void CanvasPainter::paintOnionSkin(QPainter& painter)
