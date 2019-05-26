@@ -185,7 +185,9 @@ QVector<std::shared_ptr< QPixmap >> BitmapSurface::pixmaps()
 void BitmapSurface::clear()
 {
     mBounds = QRect();
+    mCachedSurface = QImage();
     mPixmaps.clear();
+    mTilePositions.clear();
 }
 
 Status BitmapSurface::writeFile(const QString& filename)
