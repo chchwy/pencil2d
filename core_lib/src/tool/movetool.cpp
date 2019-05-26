@@ -52,7 +52,7 @@ void MoveTool::loadSettings()
 
 QCursor MoveTool::cursor()
 {
-    MoveMode mode = mEditor->select()->getMoveModeForSelectionAnchor();
+    MoveMode mode = mEditor->select()->getMoveModeForSelectionAnchor(getCurrentPoint());
     return mScribbleArea->currentTool()->selectMoveCursor(mode, type());
 }
 
@@ -61,7 +61,7 @@ void MoveTool::pointerPressEvent(PointerEvent* event)
     mCurrentLayer = currentPaintableLayer();
     if (mCurrentLayer == nullptr) return;
 
-    mEditor->select()->update();
+    mEditor->select()->updatePolygons();
 
     setAnchorToLastPoint();
     beginInteraction(event->modifiers(), mCurrentLayer);
@@ -72,7 +72,7 @@ void MoveTool::pointerMoveEvent(PointerEvent* event)
     mCurrentLayer = currentPaintableLayer();
     if (mCurrentLayer == nullptr) return;
 
-    mEditor->select()->update();
+    mEditor->select()->updatePolygons();
 
     if (mScribbleArea->isPointerInUse())   // the user is also pressing the mouse (dragging)
     {
@@ -101,7 +101,7 @@ void MoveTool::pointerReleaseEvent(PointerEvent*)
     mRotatedAngle = selectMan->myRotatedAngle;
     updateTransformation();
 
-    selectMan->update();
+    selectMan->updatePolygons();
 
     mScribbleArea->updateToolCursor();
     mScribbleArea->updateCurrentFrame();
@@ -127,16 +127,19 @@ void MoveTool::transformSelection(Qt::KeyboardModifiers keyMod, Layer* layer)
     {
         QPointF offset;
         if (layer->type() == Layer::VECTOR) {
-            offset = selectMan->getTransformOffset();
+            offset = offsetFromPressPos();
         } else {
-            offset = selectMan->getTransformOffset().toPoint();
+            offset = offsetFromPressPos().toPoint();
         }
 
         // maintain aspect ratio
         if (keyMod == Qt::ShiftModifier)
         {
-            offset = selectMan->maintainAspectRatio(offset.x(), offset.y());
+            offset = selectMan->offsetFromAspectRatio(offset.x(), offset.y());
         }
+
+        mRotatedAngle = (getCurrentPixel().x() -
+                         getLastPressPixel().x()) + mRotatedAngle;
 
         selectMan->adjustSelection(offset.x(), offset.y(), mRotatedAngle);
         selectMan->calculateSelectionTransformation();
@@ -158,19 +161,18 @@ void MoveTool::beginInteraction(Qt::KeyboardModifiers keyMod, Layer* layer)
 //        mEditor->backup(typeName());
     }
 
-    selectMan->findMoveModeOfCornerInRange();
     selectMan->myRotatedAngle = mRotatedAngle;
 
     if (keyMod != Qt::ShiftModifier)
     {
-        if (selectMan->shouldDeselect())
+        if (selectMan->isOutsideSelectionArea(getCurrentPoint()))
         {
             applyTransformation();
-            selectMan->deselectAll();
+            mEditor->deselectAll();
         }
     }
 
-    if (selectMan->getMoveMode() == MoveMode::MIDDLE)
+    if (selectMan->validateMoveMode(getLastPoint()) == MoveMode::MIDDLE)
     {
         if (keyMod == Qt::ControlModifier) // --- rotation
         {
@@ -243,8 +245,7 @@ void MoveTool::storeClosestVectorCurve(Layer* layer)
     auto selectMan = mEditor->select();
     auto layerVector = static_cast<LayerVector*>(layer);
     VectorImage* pVecImg = layerVector->getLastVectorImageAtFrame(mEditor->currentFrame(), 0);
-    selectMan->setCurves(pVecImg->getCurvesCloseTo(getCurrentPoint(),
-                        selectMan->selectionTolerance / mEditor->view()->scaling()));
+    selectMan->setCurves(pVecImg->getCurvesCloseTo(getCurrentPoint(), selectMan->selectionTolerance()));
 }
 
 void MoveTool::setAnchorToLastPoint()
@@ -257,7 +258,7 @@ void MoveTool::cancelChanges()
     auto selectMan = mEditor->select();
     mScribbleArea->cancelTransformedSelection();
     selectMan->resetSelectionProperties();
-    selectMan->deselectAll();
+    mEditor->deselectAll();
 }
 
 void MoveTool::applySelectionChanges()
@@ -297,7 +298,7 @@ bool MoveTool::switchingLayer()
     auto selectMan = mEditor->select();
     if (!selectMan->transformHasBeenModified())
     {
-        selectMan->deselectAll();
+        mEditor->deselectAll();
         return true;
     }
 
@@ -314,7 +315,7 @@ bool MoveTool::switchingLayer()
             applyTransformation();
         }
 
-        selectMan->deselectAll();
+        mEditor->deselectAll();
         return true;
     }
     else if (returnValue == QMessageBox::No)
@@ -347,4 +348,9 @@ Layer* MoveTool::currentPaintableLayer()
     if (!layer->isPaintable())
         return nullptr;
     return layer;
+}
+
+QPointF MoveTool::offsetFromPressPos()
+{
+    return getCurrentPoint() - getCurrentPressPoint();
 }

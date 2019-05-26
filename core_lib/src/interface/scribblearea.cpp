@@ -88,6 +88,11 @@ bool ScribbleArea::init()
 
     connect(mPrefs, &PreferenceManager::optionChanged, this, &ScribbleArea::settingUpdated);
     connect(mDoubleClickTimer, &QTimer::timeout, this, &ScribbleArea::handleDoubleClick);
+
+    connect(mEditor->select(), &SelectionManager::selectionChanged, this, &ScribbleArea::updateCurrentFrame);
+    connect(mEditor->select(), &SelectionManager::needPaintAndApply, this, &ScribbleArea::applySelectionChanges);
+    connect(mEditor->select(), &SelectionManager::needDeleteSelection, this, &ScribbleArea::deleteSelection);
+
     mDoubleClickTimer->setInterval(50);
 
     const int curveSmoothingLevel = mPrefs->getInt(SETTING::CURVE_SMOOTHING);
@@ -511,7 +516,7 @@ void ScribbleArea::keyPressEvent(QKeyEvent *event)
         }
         else
         {
-            mEditor->layers()->gotoPreviouslayer();
+            mEditor->layers()->gotoNextLayer();
             event->ignore();
         }
         break;
@@ -525,7 +530,7 @@ void ScribbleArea::keyPressEvent(QKeyEvent *event)
         }
         else
         {
-            mEditor->layers()->gotoNextLayer();
+            mEditor->layers()->gotoPreviouslayer();
             event->ignore();
         }
         break;
@@ -534,7 +539,7 @@ void ScribbleArea::keyPressEvent(QKeyEvent *event)
         {
             applyTransformedSelection();
             paintTransformedSelection();
-            selectMan->deselectAll();
+            mEditor->deselectAll();
         }
         else
         {
@@ -544,7 +549,7 @@ void ScribbleArea::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Escape:
         if (selectMan->somethingSelected())
         {
-            selectMan->deselectAll();
+            mEditor->deselectAll();
             paintTransformedSelection();
             applyTransformedSelection();
         }
@@ -553,7 +558,7 @@ void ScribbleArea::keyPressEvent(QKeyEvent *event)
         if (selectMan->somethingSelected())
         {
             deleteSelection();
-            selectMan->deselectAll();
+            mEditor->deselectAll();
         }
         break;
     case Qt::Key_Space:
@@ -1376,8 +1381,13 @@ void ScribbleArea::paintSelectionAnchors()
     if (selectMan->currentSelectionPolygonF().isEmpty()) { return; }
     if (selectMan->currentSelectionPolygonF().count() < 4) { return; }
 
-    TransformParameters params = { selectMan->lastSelectionPolygonF(), selectMan->currentSelectionPolygonF() };
-    mTransformPainter.paint(painter, object, mEditor->currentLayerIndex(), currentTool(), params);
+    selectMan->updatePolygons();
+
+    QPolygonF lastSelectionPolygon = editor()->view()->mapPolygonToScreen(selectMan->lastSelectionPolygonF());
+    QPolygonF currentSelectionPolygon = editor()->view()->mapPolygonToScreen(selectMan->currentSelectionPolygonF());
+
+    TransformParameters params = { lastSelectionPolygon, currentSelectionPolygon };
+    mSelectionPainter.paint(painter, object, mEditor->currentLayerIndex(), currentTool(), params);
 }
 
 //void ScribbleArea::paintVectorAnchors()
@@ -1677,6 +1687,8 @@ void ScribbleArea::flipSelection(bool flipVertical)
     applyTransformedSelection();
 }
 
+
+
 void ScribbleArea::blurBrush(BitmapImage *bmiSource_, QPointF srcPoint_, QPointF thePoint_, qreal brushWidth_, qreal mOffset_, qreal opacity_)
 {
     QRadialGradient radialGrad(thePoint_, 0.5 * brushWidth_);
@@ -1803,23 +1815,25 @@ void ScribbleArea::paintTransformedSelection()
 
 void ScribbleArea::applySelectionChanges()
 {
-//    // we haven't applied our last modifications yet
-//    // therefore apply the transformed selection first.
-//    applyTransformedSelection();
+    // we haven't applied our last modifications yet
+    // therefore apply the transformed selection first.
+    applyTransformedSelection();
 
-//    // make sure the current transformed selection is valid
-//    if (!myTempTransformedSelection.isValid())
-//    {
-//        myTempTransformedSelection = myTempTransformedSelection.normalized();
-//    }
-//    setSelection(myTempTransformedSelection);
-//    paintTransformedSelection();
+    auto selectMan = mEditor->select();
 
-//    // Calculate the new transformation based on the new selection
-//    calculateSelectionTransformation();
+    // make sure the current transformed selection is valid
+    if (!selectMan->myTempTransformedSelection.isValid())
+    {
+        selectMan->myTempTransformedSelection = selectMan->myTempTransformedSelection.normalized();
+    }
+    selectMan->setSelection(selectMan->myTempTransformedSelection);
+    paintTransformedSelection();
 
-//    // apply the transformed selection to make the selection modification absolute.
-//    applyTransformedSelection();
+    // Calculate the new transformation based on the new selection
+    selectMan->calculateSelectionTransformation();
+
+    // apply the transformed selection to make the selection modification absolute.
+    applyTransformedSelection();
 
 }
 
@@ -1963,11 +1977,11 @@ void ScribbleArea::setCurrentTool(ToolType eToolMode)
         if (currentTool()->type() == MOVE)
         {
             paintTransformedSelection();
-            mEditor->select()->deselectAll();
+            mEditor->deselectAll();
         }
         else if (currentTool()->type() == POLYLINE)
         {
-            mEditor->select()->deselectAll();
+            mEditor->deselectAll();
         }
     }
 
@@ -2001,7 +2015,7 @@ void ScribbleArea::deleteSelection()
 
 ////        mEditor->backup(tr("Delete Selection", "Undo Step: clear the selection area."));
 
-        selectMan->closestCurves().clear();
+        selectMan->clearCurves();
         if (layer->type() == Layer::VECTOR) { currentVectorImage(layer)->deleteSelection(); }
         if (layer->type() == Layer::BITMAP) { currentBitmapImage(layer)->clear(selectMan->mySelection); }
         updateAllFrames();
@@ -2018,8 +2032,8 @@ void ScribbleArea::clearCanvas()
 //        mEditor->backup(tr("Clear Image", "Undo step text"));
 
         currentVectorImage(layer)->clear();
-        mEditor->select()->closestCurves().clear();
-        mClosestVertices.clear();
+        mEditor->select()->clearCurves();
+        mEditor->select()->clearVertices();
     }
     else if (layer->type() == Layer::BITMAP)
     {
@@ -2069,5 +2083,5 @@ void ScribbleArea::floodFillError(int errorType)
     if (errorType == 2) { error = tr("Could not find a closed path."); }
     if (errorType == 3) { error = tr("Could not find the root index."); }
     QMessageBox::warning(this, tr("Flood fill error"), tr("%1<br><br>Error: %2").arg(message).arg(error), QMessageBox::Ok, QMessageBox::Ok);
-    mEditor->select()->deselectAll();
+    mEditor->deselectAll();
 }

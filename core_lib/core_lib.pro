@@ -69,6 +69,7 @@ HEADERS +=  \
     src/structure/object.h \
     src/structure/objectdata.h \
     src/structure/filemanager.h \
+    src/structure/layerbitmapsurface.h \
     src/tool/basetool.h \
     src/tool/brushtool.h \
     src/tool/buckettool.h \
@@ -101,9 +102,7 @@ HEADERS +=  \
     src/external/platformhandler.h \
     src/external/macosx/macosxnative.h \
     src/util/pointerevent.h \
-    src/graphics/bitmap/bitmapsurface.h \
-    src/structure/layerbitmapsurface.h \
-    src/transformpainter.h
+    src/selectionpainter.h
 
 
 SOURCES += \
@@ -143,6 +142,7 @@ SOURCES += \
     src/structure/soundclip.cpp \
     src/structure/objectdata.cpp \
     src/structure/filemanager.cpp \
+    src/structure/layerbitmapsurface.cpp \
     src/tool/basetool.cpp \
     src/tool/brushtool.cpp \
     src/tool/buckettool.cpp \
@@ -170,8 +170,7 @@ SOURCES += \
     src/qminiz.cpp \
     src/activeframepool.cpp \
     src/util/pointerevent.cpp \
-    src/structure/layerbitmapsurface.cpp \
-    src/transformpainter.cpp
+    src/selectionpainter.cpp
 
 FORMS += \
     ui/camerapropertiesdialog.ui

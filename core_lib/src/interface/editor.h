@@ -100,6 +100,11 @@ public:
     bool exportSeqCLI(QString filePath, LayerCamera* cameraLayer, QString format = "PNG", int width = -1, int height = -1, int startFrame = 1, int endFrame = -1, bool transparency = false, bool antialias = true);
     bool exportMovieCLI(QString filePath, LayerCamera* cameraLayer, int width = -1, int height = -1, int startFrame = 1, int endFrame = -1);
 
+    float viewScaleInversed();
+    void deselectAll();
+
+    void setSelectionToCalculatedRect();
+
     QString workingDir() const;
 
     void importMovie(QString filePath, int fps);

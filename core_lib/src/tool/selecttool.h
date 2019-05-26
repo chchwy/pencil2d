@@ -19,7 +19,6 @@ GNU General Public License for more details.
 #define SELECTTOOL_H
 
 #include "basetool.h"
-//#include "transformproxytool.h"
 
 class Layer;
 class SelectionManager;
@@ -42,8 +41,13 @@ private:
 
     bool keyPressEvent(QKeyEvent* event) override;
 
+    void manageSelectionOrigin(QPointF currentPoint, QPointF originPoint);
+    void controlOffsetOrigin(QPointF currentPoint, QPointF anchorPoint);
+
     void beginSelection();
     void keepSelection();
+
+    QPointF offsetFromPressPos();
 
     inline bool isSelectionPointValid() { return mAnchorOriginPoint != getLastPoint(); }
     bool maybeDeselect();
@@ -51,7 +55,7 @@ private:
     // Store selection origin so we can calculate
     // the selection rectangle in mousePressEvent.
     QPointF mAnchorOriginPoint;
-    MoveMode mOldMoveMode;
+    MoveMode mMoveMode;
     Layer* mCurrentLayer = nullptr;
 };
 

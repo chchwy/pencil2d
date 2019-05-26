@@ -325,7 +325,7 @@ void PencilTool::paintVectorStroke(Layer* layer)
 
     if (vectorImage->isAnyCurveSelected() || mEditor->select()->somethingSelected())
     {
-        mEditor->select()->deselectAll();
+        mEditor->deselectAll();
     }
 
     // select last/newest curve

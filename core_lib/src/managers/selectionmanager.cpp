@@ -1,13 +1,11 @@
 #include "selectionmanager.h"
 #include "editor.h"
 
-#include "layermanager.h"
-#include "basetool.h"
-#include "toolmanager.h"
-#include "viewmanager.h"
-#include "scribblearea.h"
+#include "layerbitmap.h"
+#include "vectorimage.h"
+#include "bitmapimage.h"
 
-#include "qpainter.h"
+#include "layervector.h"
 
 //#ifdef QT_DEBUG
 #include <QDebug>
@@ -15,9 +13,9 @@
 
 
 SelectionManager::SelectionManager(Editor* editor) : BaseManager(editor),
-    mSomethingSelected(false), mySelection(QRectF()), myTempTransformedSelection(QRectF()), myTransformedSelection(QRectF()),
-    mLastSelectionPolygonF(QPolygonF()),mCurrentSelectionPolygonF(QPolygonF()),
-    mOffset(QPointF()), myRotatedAngle(0), mMoveMode(MoveMode::NONE)
+    mySelection(QRectF()), myTempTransformedSelection(QRectF()), myTransformedSelection(QRectF()),
+    mSomethingSelected(false), mLastSelectionPolygonF(QPolygonF()), mCurrentSelectionPolygonF(QPolygonF()),
+    myRotatedAngle(0), mOffset(QPointF()), mMoveMode(MoveMode::NONE)
 {
 }
 
@@ -44,7 +42,7 @@ void SelectionManager::workingLayerChanged(Layer *)
 {
 }
 
-void SelectionManager::resetSelectionProperties()
+void SelectionManager::resetSelectionTransformProperties()
 {
     mOffset = QPoint(0, 0);
     myRotatedAngle = 0;
@@ -52,11 +50,10 @@ void SelectionManager::resetSelectionProperties()
 }
 
 
-void SelectionManager::update()
+void SelectionManager::updatePolygons()
 {
-    mOffset = getCurrentOffset();
-    mCurrentSelectionPolygonF = editor()->view()->mapPolygonToScreen(myTempTransformedSelection.toRect());
-    mLastSelectionPolygonF = editor()->view()->mapPolygonToScreen(myTransformedSelection.toRect());
+    mCurrentSelectionPolygonF = myTempTransformedSelection;
+    mLastSelectionPolygonF = myTransformedSelection;
 }
 
 void SelectionManager::resetSelectionTransform()
@@ -64,35 +61,47 @@ void SelectionManager::resetSelectionTransform()
     mSelectionTransform.reset();
 }
 
-QPointF SelectionManager::getCurrentOffset()
+bool SelectionManager::isOutsideSelectionArea(QPointF point)
 {
-    BaseTool* tool = editor()->tools()->currentTool();
-    return tool->getCurrentPoint() - tool->getCurrentPressPoint();
-}
-
-bool SelectionManager::shouldDeselect()
-{
-    BaseTool* tool = editor()->tools()->currentTool();
-    return (!myTransformedSelection.contains(tool->getCurrentPoint())
-            && getMoveMode() == MoveMode::NONE);
+    return (!myTransformedSelection.contains(point)
+            && validateMoveMode(point) == MoveMode::NONE);
 }
 
 void SelectionManager::deleteSelection()
 {
-    ScribbleArea* scribbleArea = editor()->getScribbleArea();
-    scribbleArea->deleteSelection();
+    emit needDeleteSelection();
 }
 
-void SelectionManager::findMoveModeOfCornerInRange()
+void SelectionManager::clearCurves()
 {
-    BaseTool* currentTool = editor()->tools()->currentTool();
+    mClosestCurves.clear();
+}
+
+void SelectionManager::clearVertices()
+{
+    mClosestVertices.clear();
+}
+
+float SelectionManager::selectionTolerance() const
+{
+    return mSelectionTolerance * editor()->viewScaleInversed();
+}
+
+MoveMode SelectionManager::validateMoveMode(QPointF pos)
+{
+    return moveModeForAnchorInRange(pos);
+}
+
+MoveMode SelectionManager::moveModeForAnchorInRange(QPointF lastPos)
+{
     const double marginInPixels = 15;
-    const double scale = editor()->view()->getView().inverted().m11();
+    const double scale = editor()->viewScaleInversed();
     const double scaledMargin = qAbs(marginInPixels * scale);
 
-    // MAYBE: if this is broken, use myTransformedSelection
+    qDebug() << editor()->viewScaleInversed();
+
     QRectF transformRect = myTempTransformedSelection;
-    QPointF lastPoint = currentTool->getLastPoint();
+    QPointF lastPoint = lastPos;
 
     MoveMode mode;
     if (QLineF(lastPoint, transformRect.topLeft()).length() < scaledMargin)
@@ -119,59 +128,39 @@ void SelectionManager::findMoveModeOfCornerInRange()
     else {
         mode = MoveMode::NONE;
     }
-
-//    qDebug("%i", mode);
     mMoveMode = mode;
+    return mode;
 }
 
-void SelectionManager::controlOffsetOrigin(QPointF currentPoint, QPointF anchorPoint)
-{
-    QPointF offset = mOffset;
-    if (getMoveMode() != MoveMode::NONE)
-    {
-        if (editor()->layers()->currentLayer()->type() == Layer::BITMAP) {
-            offset = QPointF(mOffset).toPoint();
-        }
-
-        adjustSelection(mOffset.x(), mOffset.y(), myRotatedAngle);
-    }
-    else
-    {
-        // when the selection is none, manage the selection Origin
-        manageSelectionOrigin(currentPoint, anchorPoint);
-    }
-}
-
-MoveMode SelectionManager::getMoveModeForSelectionAnchor()
+MoveMode SelectionManager::getMoveModeForSelectionAnchor(QPointF pos)
 {
 
-    BaseTool* currentTool = editor()->tools()->currentTool();
+//    BaseTool* currentTool = editor()->tools()->currentTool();
     const double marginInPixels = 15;
     const double radius = marginInPixels / 2;
-    const double scale = editor()->view()->getView().inverted().m11();
+    const double scale = editor()->viewScaleInversed();
     const double scaledMargin = qAbs(marginInPixels * scale);
 
-    qDebug() << mCurrentSelectionPolygonF;
     if (mCurrentSelectionPolygonF.count() < 4) { return MoveMode::NONE; }
 
 
-    QRectF topLeftCorner = editor()->view()->mapScreenToCanvas(QRectF(mCurrentSelectionPolygonF[0].x() - radius,
+    QRectF topLeftCorner = QRectF(mCurrentSelectionPolygonF[0].x() - radius,
                                                                      mCurrentSelectionPolygonF[0].y() - radius,
-                                                                     marginInPixels, marginInPixels));
+                                                                     marginInPixels, marginInPixels);
 
-    QRectF topRightCorner = editor()->view()->mapScreenToCanvas(QRectF(mCurrentSelectionPolygonF[1].x() - radius,
+    QRectF topRightCorner = QRectF(mCurrentSelectionPolygonF[1].x() - radius,
                                                                       mCurrentSelectionPolygonF[1].y() - radius,
-                                                                      marginInPixels, marginInPixels));
+                                                                      marginInPixels, marginInPixels);
 
-    QRectF bottomRightCorner = editor()->view()->mapScreenToCanvas(QRectF(mCurrentSelectionPolygonF[2].x() - radius,
+    QRectF bottomRightCorner = QRectF(mCurrentSelectionPolygonF[2].x() - radius,
                                                                          mCurrentSelectionPolygonF[2].y() - radius,
-                                                                         marginInPixels, marginInPixels));
+                                                                         marginInPixels, marginInPixels);
 
-    QRectF bottomLeftCorner = editor()->view()->mapScreenToCanvas(QRectF(mCurrentSelectionPolygonF[3].x() - radius,
+    QRectF bottomLeftCorner = QRectF(mCurrentSelectionPolygonF[3].x() - radius,
                                                                         mCurrentSelectionPolygonF[3].y() - radius,
-                                                                        marginInPixels, marginInPixels));
+                                                                        marginInPixels, marginInPixels);
 
-    QPointF currentPos = currentTool->getCurrentPoint();
+    QPointF currentPos = pos;
 
     if (QLineF(currentPos, topLeftCorner.center()).length() < scaledMargin)
     {
@@ -198,9 +187,9 @@ MoveMode SelectionManager::getMoveModeForSelectionAnchor()
     return MoveMode::NONE;
 }
 
-QPointF SelectionManager::whichAnchorPoint(QPointF anchorPoint)
+QPointF SelectionManager::whichAnchorPoint(QPointF currentPoint, QPointF anchorPoint)
 {
-    MoveMode mode = getMoveModeForSelectionAnchor();
+    MoveMode mode = getMoveModeForSelectionAnchor(currentPoint);
     if (mode == MoveMode::TOPLEFT)
     {
         anchorPoint = mySelection.bottomRight();
@@ -222,54 +211,40 @@ QPointF SelectionManager::whichAnchorPoint(QPointF anchorPoint)
 
 void SelectionManager::adjustSelection(float offsetX, float offsetY, qreal rotatedAngle)
 {
-
-    qDebug() << offsetX;
-    qDebug() << offsetY;
-    BaseTool* currentTool = editor()->tools()->currentTool();
     QRectF& transformedSelection = myTransformedSelection;
 
     switch (mMoveMode)
     {
     case MoveMode::MIDDLE:
     {
-        myTempTransformedSelection =
-            transformedSelection.translated(QPointF(offsetX, offsetY));
-
+        myTempTransformedSelection = transformedSelection.translated(QPointF(offsetX, offsetY));
         break;
     }
     case MoveMode::TOPRIGHT:
     {
-        myTempTransformedSelection =
-            transformedSelection.adjusted(0, offsetY, offsetX, 0);
-
+        myTempTransformedSelection = transformedSelection.adjusted(0, offsetY, offsetX, 0);
         break;
     }
     case MoveMode::TOPLEFT:
     {
-        myTempTransformedSelection =
-            transformedSelection.adjusted(offsetX, offsetY, 0, 0);
-
+        myTempTransformedSelection = transformedSelection.adjusted(offsetX, offsetY, 0, 0);
         break;
     }
     case MoveMode::BOTTOMLEFT:
     {
-        myTempTransformedSelection =
-            transformedSelection.adjusted(offsetX, 0, 0, offsetY);
+        myTempTransformedSelection = transformedSelection.adjusted(offsetX, 0, 0, offsetY);
         break;
     }
     case MoveMode::BOTTOMRIGHT:
     {
-        myTempTransformedSelection =
-            transformedSelection.adjusted(0, 0, offsetX, offsetY);
+        myTempTransformedSelection = transformedSelection.adjusted(0, 0, offsetX, offsetY);
         break;
 
     }
     case MoveMode::ROTATION:
     {
-        myTempTransformedSelection =
-            transformedSelection; // @ necessary?
-        myRotatedAngle = (currentTool->getCurrentPixel().x() -
-                          currentTool->getLastPressPixel().x()) + rotatedAngle;
+        myTempTransformedSelection = transformedSelection;
+        myRotatedAngle = rotatedAngle;
         break;
     }
     default:
@@ -280,59 +255,13 @@ void SelectionManager::adjustSelection(float offsetX, float offsetY, qreal rotat
 
 void SelectionManager::setSelection(QRectF rect)
 {
-    Layer* layer = editor()->layers()->currentLayer();
-
-    if (layer->type() == Layer::BITMAP)
-    {
-        rect = rect.toRect();
-    }
+    resetSelectionTransformProperties();
     mySelection = rect;
     myTransformedSelection = rect;
     myTempTransformedSelection = rect;
     mSomethingSelected = (mySelection.isNull() ? false : true);
 
-
-    // Temporary disabled this as it breaks selection rotate key (ctrl) event.
-    // displaySelectionProperties();
-}
-
-/**
- * @brief ScribbleArea::manageSelectionOrigin
- * switches anchor point when crossing threshold
- */
-void SelectionManager::manageSelectionOrigin(QPointF currentPoint, QPointF originPoint)
-{
-    BaseTool* currentTool = editor()->tools()->currentTool();
-    int mouseX = currentPoint.x();
-    int mouseY = currentPoint.y();
-
-    QRectF selectRect;
-
-    if (mouseX <= originPoint.x())
-    {
-        selectRect.setLeft(mouseX);
-        selectRect.setRight(originPoint.x());
-    }
-    else
-    {
-        selectRect.setLeft(originPoint.x());
-        selectRect.setRight(mouseX);
-    }
-
-    if (mouseY <= originPoint.y())
-    {
-        selectRect.setTop(mouseY);
-        selectRect.setBottom(originPoint.y());
-    }
-    else
-    {
-        selectRect.setTop(originPoint.y());
-        selectRect.setBottom(mouseY);
-    }
-
-    if (currentTool->type() == ToolType::SELECT) {
-        myTempTransformedSelection = selectRect;
-    }
+    emit selectionChanged();
 }
 
 void SelectionManager::calculateSelectionTransformation()
@@ -371,7 +300,7 @@ QVector<QPoint> SelectionManager::calcSelectionCenterPoints()
 }
 
 
-QPointF SelectionManager::maintainAspectRatio(qreal offsetX, qreal offsetY)
+QPointF SelectionManager::offsetFromAspectRatio(qreal offsetX, qreal offsetY)
 {
     qreal factor = myTransformedSelection.width() / myTransformedSelection.height();
 
@@ -397,37 +326,6 @@ QPointF SelectionManager::maintainAspectRatio(qreal offsetX, qreal offsetY)
     return QPointF(offsetX, offsetY);
 }
 
-void SelectionManager::deselectAll()
-{
-    resetSelectionProperties();
-    mySelection = QRectF();
-    myTransformedSelection = QRectF();
-    myTempTransformedSelection = QRectF();
-    mCurrentSelectionPolygonF = QPolygonF();
-    mLastSelectionPolygonF = QPolygonF();
-
-    Layer* layer = editor()->layers()->currentLayer();
-    if (layer == nullptr) { return; }
-//    if (layer->type() == Layer::VECTOR)
-//    {
-//        currentVectorImage(layer)->deselectAll();
-//    }
-    mSomethingSelected = false;
-
-//    mBufferImg->clear();
-
-    //mBitmapSelection.clear();
-//    vectorSelection.clear();
-
-    // clear all the data tools may have accumulated
-    editor()->tools()->cleanupAllToolsData();
-
-    // Update cursor
-//    setCursor(currentTool()->cursor());
-
-//    updateCurrentFrame();
-}
-
 /**
  * @brief ScribbleArea::flipSelection
  * flip selection along the X or Y axis
@@ -451,45 +349,19 @@ void SelectionManager::flipSelection(bool flipVertical)
     mSelectionTransform.reset();
     mSelectionTransform *= _translate * scale * translate;
 
-//    paintTransformedSelection();
-//    applyTransformedSelection();
+    emit needPaintAndApply();
 }
 
-void SelectionManager::calculateSelectionRect()
+void SelectionManager::resetSelectionProperties()
 {
-    mSelectionTransform.reset();
-    Layer* layer = editor()->layers()->currentLayer();
-    if (layer == nullptr) { return; }
-    if (layer->type() == Layer::VECTOR)
-    {
-//        VectorImage *vectorImage = currentVectorImage(layer);
-//        vectorImage->calculateSelectionRect();
-//        setSelection(vectorImage->getSelectionRect());
-    }
-}
+    resetSelectionTransformProperties();
+    mySelection = QRectF();
+    myTransformedSelection = QRectF();
+    myTempTransformedSelection = QRectF();
+    mCurrentSelectionPolygonF = QPolygonF();
+    mLastSelectionPolygonF = QPolygonF();
 
-void SelectionManager::selectAll()
-{
-    mOffset.setX(0);
-    mOffset.setY(0);
-    Layer* layer = editor()->layers()->currentLayer();
-
-    Q_ASSERT(layer);
-    if (layer == nullptr) { return; }
-
-    if (layer->type() == Layer::BITMAP)
-    {
-        // Selects the drawn area (bigger or smaller than the screen). It may be more accurate to select all this way
-        // as the drawing area is not limited
-//        BitmapImage *bitmapImage = currentBitmapImage(layer);
-//        setSelection(bitmapImage->bounds());
-    }
-    else if (layer->type() == Layer::VECTOR)
-    {
-//        VectorImage *vectorImage = currentVectorImage(layer);
-//        vectorImage->selectAll();
-//        setSelection(vectorImage->getSelectionRect());
-    }
-//    updateCurrentFrame();
+    mSomethingSelected = false;
+    vectorSelection.clear();
 }
 

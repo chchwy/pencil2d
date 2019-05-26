@@ -60,6 +60,8 @@ private:
     void setCurveSelected(VectorImage* vectorImage, Qt::KeyboardModifiers keyMod);
     void setAreaSelected(VectorImage* vectorImage, Qt::KeyboardModifiers keyMod);
 
+    QPointF offsetFromPressPos();
+
     Layer* currentPaintableLayer();
 
     QPointF anchorOriginPoint;

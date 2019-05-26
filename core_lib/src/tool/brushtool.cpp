@@ -355,7 +355,7 @@ void BrushTool::paintVectorStroke()
 
         if (vectorImage->isAnyCurveSelected() || mEditor->select()->somethingSelected())
         {
-            mEditor->select()->deselectAll();
+            mEditor->deselectAll();
         }
 
         vectorImage->setSelected(vectorImage->getLastCurveNumber(), true);

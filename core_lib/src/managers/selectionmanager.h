@@ -1,6 +1,7 @@
 #ifndef SELECTIONMANAGER_H
 #define SELECTIONMANAGER_H
 
+#include "pencildef.h"
 #include "basemanager.h"
 #include "movemode.h"
 #include "vertexref.h"
@@ -27,36 +28,36 @@ public:
 
     QVector<QPoint> calcSelectionCenterPoints();
 
-    void update();
+    void updatePolygons();
 
     QRectF mappedSelection();
 
-    QPointF whichAnchorPoint(QPointF anchorPoint);
+    QPointF whichAnchorPoint(QPointF currentPoint, QPointF anchorPoint);
     QPointF getTransformOffset() { return mOffset; }
-    QPointF getCurrentOffset();
-    QPointF maintainAspectRatio(qreal offsetX, qreal offsetY);
+    QPointF offsetFromAspectRatio(qreal offsetX, qreal offsetY);
 
     void flipSelection(bool flipVertical);
-    void selectAll();
-    void deselectAll();
 
     void setSelection(QRectF rect);
-    void controlOffsetOrigin(QPointF currentPoint, QPointF anchorPoint);
 
-    MoveMode getMoveModeForSelectionAnchor();
+    MoveMode getMoveModeForSelectionAnchor(QPointF pos);
+    MoveMode validateMoveMode(QPointF pos);
     MoveMode getMoveMode() const { return mMoveMode; }
     void setMoveMode(MoveMode moveMode) { mMoveMode = moveMode; }
 
     bool somethingSelected() const { return mSomethingSelected; }
 
     void calculateSelectionTransformation();
-    void calculateSelectionRect();
     void adjustSelection(float offsetX, float offsetY, qreal rotatedAngle);
-    void manageSelectionOrigin(QPointF currentPoint, QPointF originPoint);
-    void findMoveModeOfCornerInRange();
+    MoveMode moveModeForAnchorInRange(QPointF lastPos);
     void setCurves(QList<int> curves) { mClosestCurves = curves; }
-    QList<int> closestCurves() { return mClosestCurves; }
-    QList<VertexRef> closestVertices() { return mClosestVertices; }
+    void setVertices(QList<VertexRef> vertices) { mClosestVertices = vertices; }
+
+    void clearCurves();
+    void clearVertices();
+
+    const QList<int> closestCurves() { return mClosestCurves; }
+    const QList<VertexRef> closestVertices() { return mClosestVertices; }
 
     QTransform selectionTransform() { return mSelectionTransform; }
     void setSelectionTransform(QTransform transform) { mSelectionTransform = transform; }
@@ -64,14 +65,18 @@ public:
 
     inline bool transformHasBeenModified() { return (mySelection != myTempTransformedSelection) || myRotatedAngle != 0; }
 
-    /** @brief TransformProxyTool::resetSelectionProperties
+    /** @brief SelectionManager::resetSelectionTransformProperties
      * should be used whenever translate, rotate, transform, scale
      * has been applied to a selection, but don't want to reset size nor position
      */
+    void resetSelectionTransformProperties();
+
     void resetSelectionProperties();
     void deleteSelection();
 
-    bool shouldDeselect();
+    bool isOutsideSelectionArea(QPointF point);
+
+    float selectionTolerance() const;
 
 
     QPolygonF currentSelectionPolygonF() const { return mCurrentSelectionPolygonF; }
@@ -82,10 +87,13 @@ public:
     QRectF myTransformedSelection;
 
     int myRotatedAngle;
-    qreal selectionTolerance = 8.0;
 
     VectorSelection vectorSelection;
 
+signals:
+    void selectionChanged();
+    void needPaintAndApply();
+    void needDeleteSelection();
 
 private:
 
@@ -100,6 +108,8 @@ private:
     MoveMode mMoveMode;
 
     QTransform mSelectionTransform;
+
+    float mSelectionTolerance = 8.0;
 };
 
 #endif // SELECTIONMANAGER_H

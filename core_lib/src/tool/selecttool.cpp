@@ -39,7 +39,7 @@ void SelectTool::loadSettings()
 
 QCursor SelectTool::cursor()
 {
-    MoveMode mode = mEditor->select()->getMoveModeForSelectionAnchor();
+    MoveMode mode = mEditor->select()->getMoveModeForSelectionAnchor(getCurrentPoint());
     BaseTool* tool = mEditor->tools()->currentTool();
     return tool->selectMoveCursor(mode, type());
 }
@@ -63,11 +63,10 @@ void SelectTool::beginSelection()
             static_cast<LayerVector*>(mCurrentLayer)->getLastVectorImageAtFrame(mEditor->currentFrame(), 0)->deselectAll();
         }
 
-        selectMan->findMoveModeOfCornerInRange();
-        mAnchorOriginPoint = selectMan->whichAnchorPoint(mAnchorOriginPoint);
+        mAnchorOriginPoint = selectMan->whichAnchorPoint(getLastPoint(), mAnchorOriginPoint);
 
         // the user did not click on one of the corners
-        if (selectMan->getMoveMode() == MoveMode::NONE)
+        if (selectMan->validateMoveMode(getLastPoint()) == MoveMode::NONE)
         {
             selectMan->mySelection.setTopLeft(getLastPoint());
             selectMan->mySelection.setBottomRight(getLastPoint());
@@ -76,6 +75,7 @@ void SelectTool::beginSelection()
     else
     {
         selectMan->setSelection(QRectF(getCurrentPoint().x(), getCurrentPoint().y(),1,1));
+        mMoveMode = MoveMode::NONE;
     }
     mScribbleArea->update();
 }
@@ -88,7 +88,9 @@ void SelectTool::pointerPressEvent(PointerEvent* event)
     if (event->button() != Qt::LeftButton) { return; }
     auto selectMan = mEditor->select();
 
-    selectMan->update();
+    mMoveMode = selectMan->validateMoveMode(getCurrentPoint());
+
+    selectMan->updatePolygons();
 
     beginSelection();
 }
@@ -102,13 +104,13 @@ void SelectTool::pointerMoveEvent(PointerEvent* event)
 
     if (!selectMan->somethingSelected()) { return; }
 
-    selectMan->update();
+    selectMan->updatePolygons();
 
     mScribbleArea->updateToolCursor();
 
     if (mScribbleArea->isPointerInUse())
     {
-        selectMan->controlOffsetOrigin(getCurrentPoint(), mAnchorOriginPoint);
+        controlOffsetOrigin(getCurrentPoint(), mAnchorOriginPoint);
 
         if (mCurrentLayer->type() == Layer::VECTOR)
         {
@@ -133,18 +135,18 @@ void SelectTool::pointerReleaseEvent(PointerEvent* event)
     // TODO: improve by adding a timer to check if the user is deliberately selecting
     if (QLineF(mAnchorOriginPoint, getCurrentPoint()).length() < 5.0)
     {
-        selectMan->deselectAll();
+        mEditor->deselectAll();
     }
     if (maybeDeselect())
     {
-        selectMan->deselectAll();
+        mEditor->deselectAll();
     }
     else
     {
         keepSelection();
     }
 
-    selectMan->update();
+    selectMan->updatePolygons();
 
     mScribbleArea->updateToolCursor();
     mScribbleArea->updateCurrentFrame();
@@ -153,7 +155,7 @@ void SelectTool::pointerReleaseEvent(PointerEvent* event)
 
 bool SelectTool::maybeDeselect()
 {
-    return (!isSelectionPointValid() && mEditor->select()->getMoveMode() == MoveMode::NONE);
+    return (!isSelectionPointValid() && mEditor->select()->validateMoveMode(getLastPoint()) == MoveMode::NONE);
 }
 
 /**
@@ -180,6 +182,63 @@ void SelectTool::keepSelection()
     }
 }
 
+void SelectTool::controlOffsetOrigin(QPointF currentPoint, QPointF anchorPoint)
+{
+    QPointF offset = offsetFromPressPos();
+
+    if (mMoveMode != MoveMode::NONE)
+    {
+        if (editor()->layers()->currentLayer()->type() == Layer::BITMAP) {
+            offset = QPointF(offset).toPoint();
+        }
+
+        auto selectMan = mEditor->select();
+
+        selectMan->adjustSelection(offset.x(), offset.y(), selectMan->myRotatedAngle);
+    }
+    else
+    {
+        // when the selection is none, manage the selection Origin
+        manageSelectionOrigin(currentPoint, anchorPoint);
+    }
+}
+
+/**
+ * @brief SelectTool::manageSelectionOrigin
+ * switches anchor point when crossing threshold
+ */
+void SelectTool::manageSelectionOrigin(QPointF currentPoint, QPointF originPoint)
+{
+    int mouseX = currentPoint.x();
+    int mouseY = currentPoint.y();
+
+    QRectF selectRect;
+
+    if (mouseX <= originPoint.x())
+    {
+        selectRect.setLeft(mouseX);
+        selectRect.setRight(originPoint.x());
+    }
+    else
+    {
+        selectRect.setLeft(originPoint.x());
+        selectRect.setRight(mouseX);
+    }
+
+    if (mouseY <= originPoint.y())
+    {
+        selectRect.setTop(mouseY);
+        selectRect.setBottom(originPoint.y());
+    }
+    else
+    {
+        selectRect.setTop(originPoint.y());
+        selectRect.setBottom(mouseY);
+    }
+
+    mEditor->select()->myTempTransformedSelection = selectRect;
+}
+
 bool SelectTool::keyPressEvent(QKeyEvent* event)
 {
     switch (event->key())
@@ -193,4 +252,9 @@ bool SelectTool::keyPressEvent(QKeyEvent* event)
 
     // Follow the generic behaviour anyway
     return false;
+}
+
+QPointF SelectTool::offsetFromPressPos()
+{
+    return getCurrentPoint() - getCurrentPressPoint();
 }

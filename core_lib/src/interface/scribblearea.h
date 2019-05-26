@@ -40,9 +40,9 @@ GNU General Public License for more details.
 #include "colourref.h"
 #include "vectorselection.h"
 #include "canvaspainter.h"
-#include "transformpainter.h"
 #include "preferencemanager.h"
 #include "strokemanager.h"
+#include "selectionpainter.h"
 
 class Layer;
 class Editor;
@@ -282,8 +282,6 @@ private:
     const int DOUBLE_CLICK_THRESHOLD = 500;
     QTimer* mDoubleClickTimer;
 
-    qreal mSelectionTolerance = 8.0;
-    QList<VertexRef> mClosestVertices;
     QPoint mCursorCenterPos;
 
     QPointF mTransformedCursorPos;
@@ -297,7 +295,7 @@ private:
 
     QPixmap mCanvas;
     CanvasPainter mCanvasPainter;
-    TransformPainter mTransformPainter;
+    SelectionPainter mSelectionPainter;
 
     // Pixmap Cache keys
     std::vector<QPixmapCache::Key> mPixmapCacheKeys;

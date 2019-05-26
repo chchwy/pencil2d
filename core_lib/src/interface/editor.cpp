@@ -453,7 +453,14 @@ void Editor::undo()
         mBackupList[mBackupIndex]->restore(this);
         mBackupIndex--;
         mScribbleArea->cancelTransformedSelection();
-        select()->calculateSelectionRect(); // really ugly -- to improve
+
+        Layer* layer = layers()->currentLayer();
+        if (layer == nullptr) { return; }
+
+        select()->resetSelectionTransform();
+        if (layer->type() == Layer::VECTOR) {
+            setSelectionToCalculatedRect(); // still ugly... but I don't want to fiddle with the vector stuff yet
+        }
         emit updateBackup();
     }
 }
@@ -502,7 +509,7 @@ void Editor::cut()
 {
     copy();
     mScribbleArea->deleteSelection();
-    select()->deselectAll();
+    deselectAll();
 }
 
 void Editor::copy()
@@ -564,7 +571,7 @@ void Editor::paste()
         else if (layer->type() == Layer::VECTOR && clipboardVectorOk)
         {
             backup(tr("Paste"));
-            select()->deselectAll();
+            deselectAll();
             VectorImage* vectorImage = (static_cast<LayerVector*>(layer))->getLastVectorImageAtFrame(currentFrame(), 0);
             vectorImage->paste(g_clipboardVectorImage);  // paste the clipboard
             select()->setSelection(vectorImage->getSelectionRect());
@@ -859,6 +866,36 @@ bool Editor::importGIF(QString filePath, int numOfImages)
     return false;
 }
 
+float Editor::viewScaleInversed()
+{
+    return view()->getViewInverse().m11();
+}
+
+void Editor::deselectAll()
+{
+    Layer* layer = layers()->currentLayer();
+    if (layer == nullptr) { return; }
+
+    if (layer->type() == Layer::VECTOR)
+    {
+        static_cast<LayerVector*>(layer)->getLastVectorImageAtFrame(mFrame, 0)->deselectAll();;
+    }
+
+    select()->resetSelectionProperties();
+}
+
+void Editor::setSelectionToCalculatedRect()
+{
+    Layer* layer = layers()->currentLayer();
+    if (layer == nullptr) { return; }
+    if (layer->type() == Layer::VECTOR)
+    {
+        VectorImage *vectorImage = static_cast<LayerVector*>(layer)->getVectorImageAtFrame(mFrame);
+        vectorImage->calculateSelectionRect();
+        select()->setSelection(vectorImage->getSelectionRect());
+    }
+}
+
 void Editor::updateFrame(int frameNumber)
 {
     mScribbleArea->updateFrame(frameNumber);
@@ -970,7 +1007,7 @@ void Editor::removeKey()
 
     backup(tr("Remove frame"));
 
-    select()->deselectAll();
+    deselectAll();
     layer->removeKeyFrame(currentFrame());
 
     scrubBackward();
