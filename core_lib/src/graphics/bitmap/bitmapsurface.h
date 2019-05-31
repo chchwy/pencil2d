@@ -10,13 +10,37 @@
 
 class QPixmap;
 
+typedef struct Surface
+{
+    QList<QPoint> positions;
+    QList<QPixmap> pixmaps;
+    Surface(QList<QPoint> positions, QList<QPixmap> pixmaps) : positions(positions), pixmaps(pixmaps)
+    {
+    }
+
+    int countTiles()
+    {
+        return pixmaps.count();
+    }
+
+    const QPixmap& pixmapAt(int index)
+    {
+        return pixmaps.at(index);
+    }
+
+    const QPoint pointAt(int index)
+    {
+        return positions.at(index);
+    }
+} Surface;
 
 class BitmapSurface : public KeyFrame
 {
+
 public:
     BitmapSurface();
     BitmapSurface(BitmapSurface& pieces);
-    ~BitmapSurface();
+    ~BitmapSurface() override;
 
     // Keyframe
     BitmapSurface* clone() override;
@@ -30,16 +54,15 @@ public:
 
     Status writeFile(const QString& filename);
 
-    void addBitmapPiece(const QPixmap& pixmap, const QPoint& pos);
+    void appendBitmapSurface(const QPixmap& pixmap, const QPoint& pos);
 
-    void createPiecesFromImage(QImage& image, QPoint& topLeft);
+    void appendToSurfaceFromImage(QImage& image, QPoint& topLeft);
     void createPiecesFromImage(QString& path, QPoint& topLeft);
 
-    QImage getSubImageFromImage(QImage& image, QRect& rect);
+    QImage getSubImageFromImage(const QImage& image, const QRect& rect);
     bool isTransparent(QImage& image);
 
-    const QRect getBoundingRectAtIndex(const int& index);
-    const QPixmap getPixmapAtIndex(const int& index);
+    const QRect getBoundingRectAtIndex(const QPoint& idx);
 
     const QPixmap getPixmapFromTilePos(const QPoint& pos);
     inline QPoint getTilePos(const QPoint& idx);
@@ -48,6 +71,19 @@ public:
 
     void extendBoundaries(QRect rect);
 
+    QPixmap cutSurfaceAsPixmap(const QRect selection);
+
+    /**
+     * @brief BitmapSurface::intersectedSurface
+     * Returns a Surface containing the intersected area
+     * Additionally: deletes selected area
+     * @param rect
+     * @return Surface
+     */
+    Surface intersectedSurface(const QRect rect);
+
+    void eraseSelection(const QPoint pos, QPixmap& pixmap, const QRect selection);
+    void fillSelection(const QPoint pos, QPixmap &pixmap, QColor color, const QRect selection);
     void clear();
 
     QVector<std::shared_ptr< QPixmap >> pixmaps();

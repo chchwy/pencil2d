@@ -994,7 +994,7 @@ void ScribbleArea::paintBitmapBuffer()
         // adds content from canvas and saves to surfaceimage
         for (MPTile* item : mBufferTiles.values()) {
             QPixmap tilePixmap = QPixmap::fromImage(item->image());
-            surfaceImage->addBitmapPiece(QPixmap::fromImage(item->image()), item->pos().toPoint());
+            surfaceImage->appendBitmapSurface(QPixmap::fromImage(item->image()), item->pos().toPoint());
 
             // load the new tiles from buffer into mypaint
             mMyPaint->loadTile(tilePixmap, item->pos().toPoint());
