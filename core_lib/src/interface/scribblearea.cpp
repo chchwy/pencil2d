@@ -269,6 +269,8 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
 {
     BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
 
+    mMyPaint->clearSurface();
+    refreshSurface();
     if (surfaceImage->isModified()) {
         qDebug() << "keyframe has been modified";
         prepareForDrawing();
@@ -277,8 +279,6 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
         // render tiles to image for faster playback
         surfaceImage->renderSurfaceImage();
     } else {
-        mMyPaint->clearSurface();
-        refreshSurface();
         frameFirstLoad = true;
     }
 
@@ -2039,15 +2039,14 @@ void ScribbleArea::clearCanvas()
     {
 //        mEditor->backup(tr("Clear Image", "Undo step text"));
         currentBitmapSurfaceImage(layer)->clear();
-        mMyPaint->clearSurface();
-        refreshSurface();
-        update();
     }
     else
     {
         return; // skip updates when nothing changes
     }
     setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
+
+    updateCurrentFrame();
 }
 
 void ScribbleArea::setPrevTool()
