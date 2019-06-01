@@ -64,6 +64,8 @@ public:
 
     const QRect getBoundingRectAtIndex(const QPoint& idx);
 
+    const std::shared_ptr<QPixmap> getPixmapAt(const int index) { return mPixmaps.at(index); }
+
     const QPixmap getPixmapFromTilePos(const QPoint& pos);
     inline QPoint getTilePos(const QPoint& idx);
     inline QPoint getTileIndex(const QPoint& pos);
@@ -72,6 +74,7 @@ public:
     void extendBoundaries(QRect rect);
 
     QPixmap cutSurfaceAsPixmap(const QRect selection);
+    QPixmap copySurfaceAsPixmap(const QRect selection);
 
     /**
      * @brief BitmapSurface::intersectedSurface
@@ -82,6 +85,7 @@ public:
      */
     Surface intersectedSurface(const QRect rect);
 
+    void eraseSelection(const QRect selection);
     void eraseSelection(const QPoint pos, QPixmap& pixmap, const QRect selection);
     void fillSelection(const QPoint pos, QPixmap &pixmap, QColor color, const QRect selection);
     void clear();
@@ -99,8 +103,6 @@ public slots:
     void setSurfaceFromFuture(int index);
 
 private:
-
-    const std::shared_ptr<QPixmap> getPixmapAt(const int index) { return mPixmaps.at(index); }
     const QSize TILESIZE = QSize(64,64);
 
     QVector<std::shared_ptr< QPixmap >> mPixmaps;

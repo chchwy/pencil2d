@@ -1245,7 +1245,7 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 
 //    paintCanvasCursor();
     drawCanvas(mEditor->currentFrame(), this->rect());
-//    paintSelectionAnchors();
+    paintSelectionAnchors();
 
 //    paintCanvasCursor(painter);
 
@@ -1799,7 +1799,9 @@ void ScribbleArea::paintTransformedSelection()
     {
         if (layer->type() == Layer::BITMAP)
         {
-            mCanvasPainter.setTransformedSelection(selectMan->mySelection.toRect(), selectMan->selectionTransform());
+            mCanvasPainter.setTransformedSelection(selectMan->mySelection.toRect(),
+                                                   selectMan->myTempTransformedSelection.toRect(),
+                                                   selectMan->selectionTransform());
         }
         else if (layer->type() == Layer::VECTOR)
         {

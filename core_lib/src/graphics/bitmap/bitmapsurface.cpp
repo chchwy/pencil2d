@@ -164,6 +164,16 @@ void BitmapSurface::eraseSelection(const QPoint pos, QPixmap& pixmap, const QRec
     fillSelection(pos, pixmap, Qt::transparent, selection);
 }
 
+void BitmapSurface::eraseSelection(const QRect selection)
+{
+    for (int i = 0; i < mPixmaps.count(); i++) {
+
+        QPixmap& pixmap = *mPixmaps.at(i);
+        const QPoint pos = mTilePositions.at(i);
+        eraseSelection(pos, pixmap, selection);
+    }
+}
+
 void BitmapSurface::fillSelection(const QPoint pos, QPixmap& pixmap, QColor color, const QRect selection)
 {
     QPainter painter(&pixmap);
@@ -189,8 +199,6 @@ Surface BitmapSurface::intersectedSurface(const QRect rect)
         if (rect.intersects(getBoundingRectAtIndex(pos))) {
             selectionImages.append(pix);
             selectionPos.append(pos);
-
-            eraseSelection(pos, pix, rect);
         }
     }
 
@@ -198,6 +206,29 @@ Surface BitmapSurface::intersectedSurface(const QRect rect)
 }
 
 QPixmap BitmapSurface::cutSurfaceAsPixmap(const QRect selection)
+{
+    Q_ASSERT(!selection.isEmpty());
+
+    Surface intersectSurface = intersectedSurface(selection);
+
+    eraseSelection(selection);
+
+    QPixmap paintedImage(selection.size());
+    paintedImage.fill(Qt::transparent);
+
+    QPainter painter(&paintedImage);
+    painter.translate(-selection.topLeft());
+    for (int i = 0; i < intersectSurface.countTiles(); i++)
+    {
+        const QPixmap pix = intersectSurface.pixmapAt(i);
+        const QPoint pos = intersectSurface.pointAt(i);
+        painter.drawPixmap(pos, pix);
+    }
+    return paintedImage;
+}
+
+
+QPixmap BitmapSurface::copySurfaceAsPixmap(const QRect selection)
 {
     Q_ASSERT(!selection.isEmpty());
 

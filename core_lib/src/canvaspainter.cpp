@@ -53,12 +53,13 @@ void CanvasPainter::setViewTransform(const QTransform view)
     mViewTransform = view;
 }
 
-void CanvasPainter::setTransformedSelection(QRect selection, QTransform transform)
+void CanvasPainter::setTransformedSelection(QRect selection, QRect movingSelection, QTransform transform)
 {
     // Make sure that the selection is not empty
     if (selection.width() > 0 && selection.height() > 0)
     {
         mSelection = selection;
+        mMovingSelection = movingSelection;
         mSelectionTransform = transform;
         mRenderTransform = true;
     }
@@ -216,7 +217,9 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameI
     QTransform v = mViewTransform;
     for (MPTile* item : mTilesToBeRendered) {
 
-        QRectF tileRect = QRectF(item->pos(),QSize(item->boundingRect().width(), item->boundingRect().height()));
+        QRectF tileRect = QRectF(item->pos(),
+                               QSizeF(item->boundingRect().width(),
+                                     item->boundingRect().height()));
         tileRect = v.mapRect(tileRect);
 
         QImage image = item->image();
@@ -226,7 +229,10 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameI
         if (isRectInsideCanvas(tileRect)) {
             painter.drawImage(tileRect.toRect(), image);
         }
+    }
 
+    if (mRenderTransform) {
+        paintTransformedSelection(painter);
     }
 
     // If the current frame on the current layer has a transformation, we apply it.
@@ -452,12 +458,21 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
     if (layer->type() == Layer::BITMAP)
     {
         // Get the transformed image
-        BitmapImage* bitmapImage = dynamic_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(mFrameNumber, 0);
-        BitmapImage transformedImage = bitmapImage->transformed(mSelection, mSelectionTransform, mOptions.antiAliasingEnabled);
+        BitmapSurface* bitmapSurface = dynamic_cast<LayerBitmapSurface*>(layer)->getLastBitmapImageAtFrame(mFrameNumber, 0);
+        QPixmap map = bitmapSurface->copySurfaceAsPixmap(mSelection);
 
-        // Paint the transformation output
-        painter.setWorldMatrixEnabled(true);
-        transformedImage.paintImage(painter);
+        QRect selection = mViewTransform.mapRect(mSelection);
+        QRect movingSelection = mViewTransform.mapRect(mMovingSelection);
+
+        painter.save();
+
+        // Fill the region where the selection started with white
+        // to make it look like the surface has been modified
+        painter.fillRect(selection, QColor(255,255,255,255));
+
+        // Draw the selection image separately and on top
+        painter.drawPixmap(movingSelection, map);
+        painter.restore();
     }
 }
 
