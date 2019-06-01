@@ -232,7 +232,7 @@ void SmudgeTool::pointerReleaseEvent(PointerEvent* event)
 
     if (event->button() == Qt::LeftButton)
     {
-        mEditor->backup(typeName());
+//        mEditor->backup(typeName());
 
         if (layer->type() == Layer::BITMAP)
         {

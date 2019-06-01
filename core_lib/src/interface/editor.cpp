@@ -1005,7 +1005,7 @@ void Editor::removeKey()
         return;
     }
 
-    backup(tr("Remove frame"));
+//    backup(tr("Remove frame"));
 
     deselectAll();
     layer->removeKeyFrame(currentFrame());
