@@ -73,7 +73,7 @@ bool BitmapSurface::isTransparent(QImage& image)
     return true;
 }
 
-void BitmapSurface::createPiecesFromImage(QString& path, QPoint& topLeft)
+void BitmapSurface::createSurfaceFromImage(QString& path, QPoint& topLeft)
 {
     QImage image(path);
     appendToSurfaceFromImage(image, topLeft);
@@ -102,8 +102,12 @@ void BitmapSurface::extendBoundaries(QRect rect)
 
 void BitmapSurface::appendToSurfaceFromImage(QImage& image, QPoint& topLeft)
 {
-    int nbTilesOnWidth = ceil((float)image.width() / (float)TILESIZE.width());
-    int nbTilesOnHeight = ceil((float)image.height() / (float)TILESIZE.height());
+    float imageWidth = static_cast<float>(image.width());
+    float imageHeight = static_cast<float>(image.height());
+    float tileWidth = static_cast<float>(TILESIZE.width());
+    float tileHeight = static_cast<float>(TILESIZE.height());
+    int nbTilesOnWidth = static_cast<int>(ceil(imageWidth / tileWidth));
+    int nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
 
     QPixmap paintTo(TILESIZE);
     paintTo.fill(Qt::transparent);
@@ -181,7 +185,7 @@ void BitmapSurface::fillSelection(const QPoint pos, QPixmap& pixmap, QColor colo
     painter.setCompositionMode(QPainter::CompositionMode_Source);
 
     const QPixmap copiedPix = pixmap;
-    const QRect intersection = selection.intersected(getBoundingRectAtIndex(pos));
+    const QRect intersection = selection.intersected(getBoundingRectAtIndex(pos, copiedPix.size()));
     painter.fillRect(intersection, color);
     painter.end();
 
@@ -293,9 +297,9 @@ const QPixmap BitmapSurface::getPixmapFromTilePos(const QPoint& pos)
     return QPixmap();
 }
 
-const QRect BitmapSurface::getBoundingRectAtIndex(const QPoint& idx)
+const QRect BitmapSurface::getBoundingRectAtIndex(const QPoint& idx, const QSize size)
 {
-    return QRect(idx.x(), idx.y(), TILESIZE.width(), TILESIZE.height());
+    return QRect(idx.x(), idx.y(), size.width(), size.height());
 }
 
 inline QPoint BitmapSurface::getTilePos(const QPoint& idx)

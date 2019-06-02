@@ -46,7 +46,7 @@ BitmapSurface* LayerBitmapSurface::getLastBitmapImageAtFrame(int frameNumber, in
 void LayerBitmapSurface::loadImageAtFrame(QString path, QPoint topLeft, int frameNumber)
 {
     BitmapSurface* pKeyFrame = new BitmapSurface();
-    pKeyFrame->createPiecesFromImage(path, topLeft);
+    pKeyFrame->createSurfaceFromImage(path, topLeft);
     pKeyFrame->setPos(frameNumber);
     loadKey(pKeyFrame);
 }

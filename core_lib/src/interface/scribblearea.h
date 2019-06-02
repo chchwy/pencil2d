@@ -316,7 +316,7 @@ private:
     QElapsedTimer deltaTimer;
     int lastFrameTime;
     int currentFrameTime;
-    float deltaTime = 0;
+    double deltaTime = 0;
 };
 
 #endif

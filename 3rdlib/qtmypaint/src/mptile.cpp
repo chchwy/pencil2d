@@ -70,7 +70,6 @@ void MPTile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     if (!m_cache_valid) 
         updateCache(); // We need to transfer the uint16_t table to the QImage cache
     painter->drawImage(QPoint(), m_cache_img, m_cache_img.rect());
-    painter->resetTransform();
 }
 
 uint16_t* MPTile::Bits(bool readOnly)

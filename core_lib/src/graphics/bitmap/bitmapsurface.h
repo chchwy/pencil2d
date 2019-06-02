@@ -57,12 +57,12 @@ public:
     void appendBitmapSurface(const QPixmap& pixmap, const QPoint& pos);
 
     void appendToSurfaceFromImage(QImage& image, QPoint& topLeft);
-    void createPiecesFromImage(QString& path, QPoint& topLeft);
+    void createSurfaceFromImage(QString& path, QPoint& topLeft);
 
     QImage getSubImageFromImage(const QImage& image, const QRect& rect);
     bool isTransparent(QImage& image);
 
-    const QRect getBoundingRectAtIndex(const QPoint& idx);
+    const QRect getBoundingRectAtIndex(const QPoint& idx, const QSize size);
 
     const std::shared_ptr<QPixmap> getPixmapAt(const int index) { return mPixmaps.at(index); }
 

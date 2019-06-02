@@ -130,7 +130,7 @@ void MPHandler::clearSurface()
     m_surface->clear();
 }
 
-QImage MPHandler::renderImage(QTransform transform)
+QImage MPHandler::renderImage()
 {
     QImage image = m_surface->renderImage();
     return image;
@@ -163,12 +163,20 @@ void MPHandler::setBrushWidth(float width)
 
 void
 MPHandler::
-strokeTo(float x, float y, float pressure, float xtilt, float ytilt, float dtime)
+strokeTo(double x, double y, float pressure, float xtilt, float ytilt, double dtime)
 {
-    mypaint_surface_begin_atomic((MyPaintSurface *)m_surface);
-    mypaint_brush_stroke_to(m_brush->brush, (MyPaintSurface *)m_surface, x, y, pressure, xtilt, ytilt, dtime/*, 1.0, 1.0, .0*/);
+    auto surface = reinterpret_cast<MyPaintSurface*>(m_surface);
+
+    mypaint_surface_begin_atomic(surface);
+    mypaint_brush_stroke_to(m_brush->brush, surface,
+                            static_cast<float>(x),
+                            static_cast<float>(y),
+                            pressure,
+                            xtilt,
+                            ytilt,
+                            dtime/*, 1.0, 1.0, .0*/);
     MyPaintRectangle roi;
-    mypaint_surface_end_atomic((MyPaintSurface *)m_surface, &roi);
+    mypaint_surface_end_atomic(surface, &roi);
 }
 
 void
@@ -179,7 +187,7 @@ MPHandler::startStroke()
 }
 
 void
-MPHandler::strokeTo(float x, float y)
+MPHandler::strokeTo(double x, double y)
 {
     float pressure = 1.0;
     float xtilt = 0.0;
