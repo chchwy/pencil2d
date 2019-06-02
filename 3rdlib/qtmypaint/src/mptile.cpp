@@ -121,12 +121,12 @@ void MPTile::setImage(const QImage &image) {
     for (int y = 0 ; y < tileSize.height() ; y++) {
          for (int x = 0 ; x < tileSize.width() ; x++) {
 
-             QRgb pixelColor = m_cache_img.pixel(x, y);
+             const QRgb pixelColor = *(reinterpret_cast<const QRgb*>(m_cache_img.constScanLine(y))+x);
 
-             t_pixels[y][x][k_alpha]    = CONV_8_16(qAlpha(pixelColor));
-             t_pixels[y][x][k_red]      = CONV_8_16(qRed(pixelColor));
-             t_pixels[y][x][k_green]    = CONV_8_16(qGreen(pixelColor));
-             t_pixels[y][x][k_blue]     = CONV_8_16(qBlue(pixelColor));
+             t_pixels[y][x][k_alpha]    = static_cast<uint16_t>CONV_8_16(qAlpha(pixelColor));
+             t_pixels[y][x][k_red]      = static_cast<uint16_t>CONV_8_16(qRed(pixelColor));
+             t_pixels[y][x][k_green]    = static_cast<uint16_t>CONV_8_16(qGreen(pixelColor));
+             t_pixels[y][x][k_blue]     = static_cast<uint16_t>CONV_8_16(qBlue(pixelColor));
 
          }
     }
