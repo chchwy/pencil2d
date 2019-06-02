@@ -1378,6 +1378,7 @@ void ScribbleArea::paintSelectionAnchors()
 
     auto selectMan = mEditor->select();
 
+    if (!selectMan->somethingSelected()) { return; }
     if (selectMan->currentSelectionPolygonF().isEmpty()) { return; }
     if (selectMan->currentSelectionPolygonF().count() < 4) { return; }
 
