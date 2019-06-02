@@ -142,7 +142,7 @@ void PolylineTool::pointerDoubleClickEvent(PointerEvent*)
     // include the current point before ending the line.
     mPoints << getCurrentPoint();
 
-    mEditor->backup(typeName());
+//    mEditor->backup(typeName());
 
     endPolyline(mPoints);
     clearToolData();
