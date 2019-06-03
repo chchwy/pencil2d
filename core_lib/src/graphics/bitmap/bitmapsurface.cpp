@@ -110,17 +110,17 @@ void BitmapSurface::appendToSurfaceFromImage(QImage& image, QPoint& topLeft)
     int nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
 
     QPixmap paintTo(TILESIZE);
-    paintTo.fill(Qt::transparent);
     mPixmaps = QVector<std::shared_ptr< QPixmap >>();
     mBounds = QRect(topLeft, image.size());
 
     for (int h=0; h < nbTilesOnHeight; h++) {
         for (int w=0; w < nbTilesOnWidth; w++) {
+            paintTo.fill(Qt::transparent);
             QPoint idx(w, h);
             QPoint tilePos = getTilePos(idx);
 
             QRect tileRect = QRect(tilePos, TILESIZE);
-            QImage tileImage = getSubImageFromImage(image, tileRect);
+            QImage tileImage = image.copy(tileRect);
 
             QPainter painter(&paintTo);
             painter.drawImage(QPoint(), tileImage);
@@ -129,16 +129,6 @@ void BitmapSurface::appendToSurfaceFromImage(QImage& image, QPoint& topLeft)
             mPixmaps.append(std::make_shared<QPixmap>(paintTo));
         }
     }
-}
-
-QImage BitmapSurface::getSubImageFromImage(const QImage& image, const QRect& rect)
-{
-    int offset = rect.x() * image.depth() / 8 + rect.y() * image.bytesPerLine();
-    return QImage(image.bits() + offset,
-                  rect.width(),
-                  rect.height(),
-                  image.bytesPerLine(),
-                  image.format());
 }
 
 QFuture<QImage> BitmapSurface::surfaceAsImage()
