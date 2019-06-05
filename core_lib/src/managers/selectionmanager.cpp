@@ -67,6 +67,15 @@ bool SelectionManager::isOutsideSelectionArea(QPointF point)
             && validateMoveMode(point) == MoveMode::NONE);
 }
 
+bool SelectionManager::hasBeenModified()
+{
+    if (mySelection != myTransformedSelection && mySelection != myTempTransformedSelection)
+    {
+        return true;
+    }
+    return false;
+}
+
 void SelectionManager::deleteSelection()
 {
     emit needDeleteSelection();

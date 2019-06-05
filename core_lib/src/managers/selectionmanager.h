@@ -75,6 +75,7 @@ public:
     void deleteSelection();
 
     bool isOutsideSelectionArea(QPointF point);
+    bool hasBeenModified();
 
     float selectionTolerance() const;
 

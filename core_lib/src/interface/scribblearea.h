@@ -85,6 +85,8 @@ public:
     void applyTransformedSelection();
     void cancelTransformedSelection();
 
+    void moveBitmapSurface();
+
     bool isLayerPaintable() const;
     bool allowSmudging();
 

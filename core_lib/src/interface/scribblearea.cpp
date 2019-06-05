@@ -1853,15 +1853,11 @@ void ScribbleArea::applyTransformedSelection()
     auto selectMan = mEditor->select();
     if (selectMan->somethingSelected())
     {
-        if (selectMan->mySelection.isEmpty()) { return; }
+        if (!selectMan->hasBeenModified()) { return; };
 
         if (layer->type() == Layer::BITMAP)
         {
-            BitmapSurface* bitmapSurface = currentBitmapSurfaceImage(layer);
-//            BitmapImage transformedImage = bitmapSurface->transformed(mySelection.toRect(), selectionTransformation, true);
-
-//            bitmapImage->clear(mySelection);
-//            bitmapImage->paste(&transformedImage, QPainter::CompositionMode_SourceOver);
+            moveBitmapSurface();
         }
         else if (layer->type() == Layer::VECTOR)
         {
@@ -1874,6 +1870,19 @@ void ScribbleArea::applyTransformedSelection()
     }
 
     updateCurrentFrame();
+}
+
+void ScribbleArea::moveBitmapSurface()
+{
+    auto selectMan = mEditor->select();
+    auto layer = mEditor->layers()->currentLayer();
+    BitmapSurface* bitmapSurface = currentBitmapSurfaceImage(layer);
+    QPixmap pixmap = bitmapSurface->copySurfaceAsPixmap(selectMan->mySelection.toRect());
+    bitmapSurface->eraseSelection(selectMan->mySelection.toRect());
+
+    Surface selectedSurface = bitmapSurface->surfaceFromPixmap(pixmap);
+    QPoint topLeft = selectMan->myTempTransformedSelection.topLeft().toPoint();
+    bitmapSurface->moveSurfaceTo(selectedSurface, topLeft);
 }
 
 void ScribbleArea::cancelTransformedSelection()

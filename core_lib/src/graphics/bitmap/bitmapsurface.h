@@ -14,21 +14,22 @@ typedef struct Surface
 {
     QList<QPoint> positions;
     QList<QPixmap> pixmaps;
+    Surface(){}
     Surface(QList<QPoint> positions, QList<QPixmap> pixmaps) : positions(positions), pixmaps(pixmaps)
     {
     }
 
-    int countTiles()
+    int countTiles() const
     {
         return pixmaps.count();
     }
 
-    const QPixmap& pixmapAt(int index)
+    const QPixmap& pixmapAt(int index) const
     {
         return pixmaps.at(index);
     }
 
-    const QPoint pointAt(int index)
+    const QPoint pointAt(int index) const
     {
         return positions.at(index);
     }
@@ -56,10 +57,20 @@ public:
 
     void appendBitmapSurface(const QPixmap& pixmap, const QPoint& pos);
 
-    void appendToSurfaceFromImage(QImage& image, QPoint& topLeft);
-    void createSurfaceFromImage(QString& path, QPoint& topLeft);
+    void moveSurfaceTo(const Surface& surface, const QPoint& newPos);
 
-    QImage getSubImageFromImage(const QImage& image, const QRect& rect);
+    void createNewSurfaceFromImage(QImage& image, QPoint& topLeft);
+    void createNewSurfaceFromImage(QString& path, QPoint& topLeft);
+
+
+    /** @brief BitmapSurface::surfaceFromPixmap
+     * Intended to be used for image imports, selections etc...
+     *
+     * Will slice a big image into tiles
+     * @param pixmap
+     * @return Surface */
+    Surface surfaceFromPixmap(QPixmap& pixmap);
+
     bool isTransparent(QImage& image);
 
     const QRect getBoundingRectAtIndex(const QPoint& idx, const QSize size);
@@ -78,8 +89,7 @@ public:
 
     /**
      * @brief BitmapSurface::intersectedSurface
-     * Returns a Surface containing the intersected area
-     * Additionally: deletes selected area
+     * Returns a Surface containing the tiles that intersected the region
      * @param rect
      * @return Surface
      */
