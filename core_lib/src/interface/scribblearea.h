@@ -229,7 +229,7 @@ private:
     void settingUpdated(SETTING setting);
     void paintSelectionAnchors();
 
-    void drawCanvas(int frame, QRect rect);
+    void drawCanvas(int frame);
     void applyBackgroundShadow(QPainter& painter);
 
     CanvasPainterOptions getRenderOptions();

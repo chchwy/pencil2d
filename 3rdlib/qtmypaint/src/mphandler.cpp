@@ -146,7 +146,7 @@ void MPHandler::loadTile(const QPixmap& pixmap, const QPoint pos)
     m_surface->loadTile(pixmap, pos);
 }
 
-void MPHandler::loadTiles(const QVector<std::shared_ptr<QPixmap> > pixmaps, const QVector<QPoint>& pos)
+void MPHandler::loadTiles(const QList<std::shared_ptr<QPixmap>>& pixmaps, const QList<QPoint>& pos)
 {
     m_surface->loadTiles(pixmaps, pos);
 }

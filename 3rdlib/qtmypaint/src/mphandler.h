@@ -82,7 +82,7 @@ public:
     QImage renderImage();
 
     void loadImage(const QImage &image);
-    void loadTiles(const QVector<std::shared_ptr<QPixmap> > pixmaps, const QVector<QPoint>& pos);
+    void loadTiles(const QList<std::shared_ptr<QPixmap> > &pixmaps, const QList<QPoint>& pos);
     void loadTile(const QPixmap& pixmap, const QPoint pos);
 
 

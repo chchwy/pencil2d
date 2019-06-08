@@ -286,12 +286,15 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
 
     // render surface image to to tile
     // tile is then rendered in paintEvent
-    for (int i = 0; i < surfaceImage->pixmaps().count(); i++) {
+    const Surface& surface = surfaceImage->surface();
+    for (int i = 0; i < surface.countTiles(); i++) {
 
-        const QPixmap* pixmap = surfaceImage->pixmaps().at(i).get();
-        const QPoint pos = surfaceImage->tilePositions().at(i);
+        QPixmap pixmap = surface.pixmapAt(i);
+        const QPoint& pos = surface.pointAt(i);
         MPTile *tile = getTileFromPos(pos);
-        tile->setImage(pixmap->toImage());
+
+        qDebug() << "mp tile pos: " << tile->pos();
+        tile->setImage(pixmap.toImage());
     }
 }
 
@@ -318,7 +321,7 @@ void ScribbleArea::showCurrentFrame()
     update();
 }
 
-void ScribbleArea::drawCanvas(int frame, QRect rect)
+void ScribbleArea::drawCanvas(int frame)
 {
     Object* object = mEditor->object();
 
@@ -1204,7 +1207,7 @@ void ScribbleArea::handleDrawingOnEmptyFrame()
             mEditor->addNewKey();
 
             // Refresh canvas
-            drawCanvas(frameNumber, mCanvas.rect());
+            drawCanvas(frameNumber);
             break;
         default:
             break;
@@ -1244,7 +1247,7 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
     calculateDeltaTime();
 
 //    paintCanvasCursor();
-    drawCanvas(mEditor->currentFrame(), this->rect());
+    drawCanvas(mEditor->currentFrame());
     paintSelectionAnchors();
 
 //    paintCanvasCursor(painter);
@@ -1496,6 +1499,7 @@ void ScribbleArea::existingTileUpdated(MPSurface *surface, MPTile *tile)
 
 void ScribbleArea::onClearedSurface(MPSurface* surface)
 {
+    Q_UNUSED(surface);
 //    qDebug() << "surface cleared?";
 }
 

@@ -133,7 +133,7 @@ void MPSurface::loadTile(const QPixmap& pixmap, const QPoint& pos)
     this->onUpdateTileFunction(this, tile);
 }
 
-void MPSurface::loadTiles(QVector<std::shared_ptr< QPixmap >> pixmaps, const QVector<QPoint>& positions)
+void MPSurface::loadTiles(const QList<std::shared_ptr<QPixmap>>& pixmaps, const QList<QPoint>& positions)
 {
     if (pixmaps.isEmpty()) { return; }
 

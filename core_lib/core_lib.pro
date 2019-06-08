@@ -33,6 +33,7 @@ INCLUDEPATH += src \
 HEADERS +=  \
     src/graphics/bitmap/bitmapsurface.h \
     src/graphics/bitmap/bitmapimage.h \
+    src/graphics/surface.h \
     src/graphics/vector/bezierarea.h \
     src/graphics/vector/beziercurve.h \
     src/graphics/vector/colourref.h \
