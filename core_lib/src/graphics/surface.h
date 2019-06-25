@@ -16,6 +16,22 @@ typedef struct Surface
     {
     }
 
+    Surface& operator+=(const Surface& rhs) {
+
+          pixmaps += rhs.pixmaps;
+          positions += rhs.positions;
+          extendBoundaries(rhs.bounds);
+          return *this;
+    }
+
+    void extendBoundaries(const QRect& rect)
+    {
+        if (bounds.left() > rect.left()) { bounds.setLeft(rect.left()); }
+        if (bounds.right() < rect.right()) { bounds.setRight(rect.right()); }
+        if (bounds.top() > rect.top()) { bounds.setTop(rect.top()); }
+        if (bounds.bottom() < rect.bottom()) { bounds.setBottom(rect.bottom()); }
+    }
+
     QPoint topLeft() const
     {
         return bounds.topLeft();
@@ -23,12 +39,19 @@ typedef struct Surface
 
     int countTiles() const
     {
+        Q_ASSERT(pixmaps.count() == positions.count());
         return pixmaps.count();
     }
 
     bool isEmpty() {
         return countTiles() == 0 ? true : false;
     }
+
+    QPixmap& pixmapAt(int index)
+    {
+        return *pixmaps[index];
+    }
+
 
     const QPixmap& pixmapAt(int index) const
     {
@@ -55,6 +78,14 @@ typedef struct Surface
         pixmaps.clear();
         positions.clear();
         bounds = QRect();
+    }
+
+    bool contains(const QPixmap& pixmap) const {
+        return pixmaps.contains(std::make_shared<QPixmap>(pixmap));
+    }
+
+    bool contains(const QPoint& point) const {
+        return positions.contains(point);
     }
 } Surface;
 

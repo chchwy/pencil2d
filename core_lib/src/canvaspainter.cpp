@@ -459,7 +459,7 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
     {
         // Get the transformed image
         BitmapSurface* bitmapSurface = dynamic_cast<LayerBitmapSurface*>(layer)->getLastBitmapImageAtFrame(mFrameNumber, 0);
-        QPixmap map = bitmapSurface->copySurfaceAsPixmap(mSelection);
+        QPixmap pixmap = bitmapSurface->copySurfaceAsPixmap(mSelection);
 
         QRect selection = mViewTransform.mapRect(mSelection);
         QRect movingSelection = mViewTransform.mapRect(mMovingSelection);
@@ -471,7 +471,7 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
         painter.fillRect(selection, QColor(255,255,255,255));
 
         // Draw the selection image separately and on top
-        painter.drawPixmap(movingSelection, map);
+        painter.drawPixmap(movingSelection, pixmap);
         painter.restore();
     }
 }

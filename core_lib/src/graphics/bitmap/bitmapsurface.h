@@ -32,11 +32,22 @@ public:
     Status writeFile(const QString& filename);
 
     void appendBitmapSurface(const QPixmap& pixmap, const QPoint& pos);
+    void appendBitmapSurface(const Surface& surface);
 
-    void moveSurfaceTo(const Surface& surface, const QPoint& newPos);
+    Surface movedSurface(const Surface& inSurface, const QPoint& newPos);
 
-    void createNewSurfaceFromImage(QImage& image, QPoint& topLeft);
-    void createNewSurfaceFromImage(QString& path, QPoint& topLeft);
+    void paintSurfaceUsing(const QPixmap& inPixmap, const QPoint& newPos);
+
+    /**
+     * @brief touchedTiles
+     * Will find and return points within and surrounding the selection
+     * @param QRect rect
+     * @return list of touched points
+     */
+    QList<QPoint> touchedTiles(const QRect& rect);
+
+    void createNewSurfaceFromImage(const QImage& image, const QPoint& topLeft);
+    void createNewSurfaceFromImage(const QString& path, const QPoint& topLeft);
 
 
     /** @brief BitmapSurface::surfaceFromPixmap
@@ -47,9 +58,12 @@ public:
      * @return Surface */
     Surface surfaceFromPixmap(QPixmap& pixmap);
 
+    Surface surfaceFromBounds(const QRect& bounds);
+
     bool isTransparent(QImage& image);
 
-    const QRect getBoundingRectAtIndex(const QPoint& idx, const QSize size);
+    const QRect getRectForPoint(const QPoint& point, const QSize size);
+    const QRect getRectForPoint(const QPoint& point);
 
     const QPixmap getPixmapAt(const int index) { return mSurface.pixmapAt(index); }
 
@@ -91,6 +105,10 @@ public slots:
     void setSurfaceFromFuture(int index);
 
 private:
+
+    QList<QPoint> scanForSurroundingTiles(const QRect& rect);
+    QList<QPoint> scanForTilesAtSelection(const QRect& rect);
+
     const QSize TILESIZE = QSize(64,64);
 
     Surface mSurface;

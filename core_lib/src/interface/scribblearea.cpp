@@ -1826,6 +1826,8 @@ void ScribbleArea::applySelectionChanges()
     // therefore apply the transformed selection first.
     applyTransformedSelection();
 
+
+    //// might not be needed anymore...
     auto selectMan = mEditor->select();
 
     // make sure the current transformed selection is valid
@@ -1841,6 +1843,7 @@ void ScribbleArea::applySelectionChanges()
 
     // apply the transformed selection to make the selection modification absolute.
     applyTransformedSelection();
+    //// end
 
 }
 
@@ -1884,9 +1887,9 @@ void ScribbleArea::moveBitmapSurface()
     QPixmap pixmap = bitmapSurface->copySurfaceAsPixmap(selectMan->mySelection.toRect());
     bitmapSurface->eraseSelection(selectMan->mySelection.toRect());
 
-    Surface selectedSurface = bitmapSurface->surfaceFromPixmap(pixmap);
     QPoint topLeft = selectMan->myTempTransformedSelection.topLeft().toPoint();
-    bitmapSurface->moveSurfaceTo(selectedSurface, topLeft);
+
+    bitmapSurface->paintSurfaceUsing(pixmap, topLeft);
 }
 
 void ScribbleArea::cancelTransformedSelection()
