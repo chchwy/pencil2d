@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static void freeTiledSurface(MyPaintSurface *surface)
 {
-    MPSurface *self = (MPSurface *)surface;
+    MPSurface *self = reinterpret_cast<MPSurface*>(surface);
     mypaint_tiled_surface_destroy(self);
 
     free(self->tile_buffer);
@@ -49,11 +49,11 @@ static void defaultUpdateFonction(MPSurface *surface, MPTile *tile)
 
 static void onTileRequestStart(MyPaintTiledSurface *tiled_surface, MyPaintTileRequest *request)
 {
-    MPSurface *self = (MPSurface *)tiled_surface;
+    MPSurface *self = static_cast<MPSurface*>(tiled_surface);
 
     const int tx = request->tx;
     const int ty = request->ty;
-    uint16_t *tile_pointer = NULL;
+    uint16_t *tile_pointer = nullptr;
 
     if (tx > self->getTilesWidth()) {
         self->setTilesWidth(tx);
@@ -65,27 +65,29 @@ static void onTileRequestStart(MyPaintTiledSurface *tiled_surface, MyPaintTileRe
 
     if (self->getTilesWidth() == 0 || self->getTilesHeight() == 0) {
 
-        qDebug() << "tile is null";
         // Give it a tile which we will ignore writes to
         tile_pointer = self->null_tile;
     } else {
-//        qDebug() << "get tile from index";
+
         MPTile* tile = self->getTileFromIdx(QPoint(tx,ty));
-        tile_pointer = tile ? tile->Bits(false) : NULL;
+        tile_pointer = tile ? tile->Bits(false) : nullptr;
     }
 
+    // here we send our buffer data to mypaint
     request->buffer = tile_pointer;
 }
 
 static void onTileRequestEnd(MyPaintTiledSurface *tiled_surface, MyPaintTileRequest *request)
 {
-    MPSurface *self = (MPSurface *)tiled_surface;
+    MPSurface *self = static_cast<MPSurface*>(tiled_surface);
 
     const int tx = request->tx;
     const int ty = request->ty;
 
     MPTile* tile = self->getTileFromIdx(QPoint(tx,ty));
-    if (tile) tile->updateCache();
+    if (tile) {
+        tile->updateCache();
+    }
 
     self->onUpdateTileFunction(self, tile);
 }
@@ -103,7 +105,7 @@ MPSurface::MPSurface(QSize size)
     resetSurface(size);
 
 
-    mypaint_tiled_surface_init((MyPaintTiledSurface *)this, onTileRequestStart, onTileRequestEnd);
+    mypaint_tiled_surface_init(static_cast<MyPaintTiledSurface*>(this), onTileRequestStart, onTileRequestEnd);
 }
 
 MPSurface::~MPSurface()
@@ -318,7 +320,7 @@ void MPSurface::resetSurface(QSize size)
 
 bool MPSurface::isFullyTransparent(QImage image)
 {
-    image.convertToFormat(QImage::Format_ARGB32);
+    image = image.convertToFormat(QImage::Format_ARGB32);
 
     for (int x = 0 ; x < image.width() ; x++) {
 
