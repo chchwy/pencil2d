@@ -29,7 +29,7 @@ class MPTile : public QGraphicsItem
 {
 public:
 
-    explicit MPTile (QGraphicsItem * parent = NULL);
+    explicit MPTile (QGraphicsItem * parent = nullptr);
     explicit MPTile (QPixmap& pixmap);
     ~MPTile();
 
@@ -37,6 +37,7 @@ public:
     enum { k_red = 0, k_green = 1, k_blue = 2, k_alpha =3 }; // Index to access RGBA values in myPaint
 
     QImage image();
+    QPixmap pixmap() { return m_cache_pix; }
 
     virtual QRectF       boundingRect () const;
 //    virtual bool         contains  (const QPointF & point) const;
@@ -48,7 +49,8 @@ public:
     void drawPoint ( uint x, uint y, uint16_t r, uint16_t g, uint16_t b, uint16_t a );
     void updateCache();
     void clear();
-    void setImage(const QImage &image);
+    void setImage(const QImage& image);
+    void setPixmap(const QPixmap& image);
 
     QTransform transform;
 
@@ -59,6 +61,7 @@ private:
 
     uint16_t  t_pixels [k_tile_dim][k_tile_dim][4];
     QImage    m_cache_img;
+    QPixmap m_cache_pix;
     bool      m_cache_valid;
     bool m_dirty = false;
 };

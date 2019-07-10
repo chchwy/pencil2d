@@ -131,7 +131,7 @@ void MPSurface::setOnClearedSurface(MPOnUpdateSurfaceFunction onClearedSurfaceFu
 void MPSurface::loadTile(const QPixmap& pixmap, const QPoint& pos)
 {
     MPTile* tile = getTileFromPos(pos);
-    tile->setImage(pixmap.toImage());
+    tile->setPixmap(pixmap);
     this->onUpdateTileFunction(this, tile);
 }
 
@@ -141,15 +141,15 @@ void MPSurface::loadTiles(const QList<std::shared_ptr<QPixmap>>& pixmaps, const 
 
     for (int i = 0; i < pixmaps.count(); i++) {
 
-        const QPixmap* pixmap = pixmaps.at(i).get();
+        const QPixmap& pixmap = *pixmaps.at(i).get();
         const QPoint pos = positions.at(i);
 
         // Optimization : Fully transparent (empty) tiles
         // don't need to be created.
-        if (!isFullyTransparent(pixmap->toImage())) {
+        if (!isFullyTransparent(pixmap.toImage())) {
 
             MPTile *tile = getTileFromPos(pos);
-            tile->setImage(pixmap->toImage());
+            tile->setPixmap(pixmap);
             this->onUpdateTileFunction(this, tile);
         }
     }
@@ -162,19 +162,17 @@ void MPSurface::loadImage(const QImage &image)
     int nbTilesOnWidth = ceil((float)this->width / (float)tileSize.width());
     int nbTilesOnHeight = ceil((float)this->height / (float)tileSize.height());
 
-    QImage sourceImage = image.scaled(this->size(), Qt::IgnoreAspectRatio);
-
-    int nbTiles = 0;
+    const QImage& sourceImage = image.scaled(this->size(), Qt::IgnoreAspectRatio);
 
     for (int h=0; h < nbTilesOnHeight; h++) {
 
         for (int w=0; w < nbTilesOnWidth; w++) {
 
-            QPoint idx(w, h);
-            QPoint tilePos = getTilePos(idx) ;
+            const QPoint& idx = QPoint(w, h);
+            const QPoint& tilePos = getTilePos(idx) ;
 
-            QRect tileRect = QRect(tilePos, tileSize);
-            QImage tileImage = sourceImage.copy(tileRect);
+            const QRect& tileRect = QRect(tilePos, tileSize);
+            const QImage& tileImage = sourceImage.copy(tileRect);
 
             // Optimization : Fully transparent (empty) tiles
             // don't need to be created.
@@ -205,23 +203,23 @@ QSize MPSurface::size()
 
 void MPSurface::clear()
 {
-//    QHashIterator<QPoint, MPTile*> i(m_Tiles);
+    QHashIterator<QPoint, MPTile*> i(m_Tiles);
 
     if (!m_Tiles.isEmpty()) {
         m_Tiles.clear();
     }
 
-//    while (i.hasNext()) {
-//        i.next();
-//        MPTile *tile = i.value();
-//        if (tile)
-//        {
-//            // Clear the content of the tile
-//            //
-//            tile->clear();
-//            m_Tiles.remove(i.key());
-//        }
-//    }
+    while (i.hasNext()) {
+        i.next();
+        MPTile *tile = i.value();
+        if (tile)
+        {
+            // Clear the content of the tile
+            //
+            tile->clear();
+            m_Tiles.remove(i.key());
+        }
+    }
 
     this->onClearedSurfaceFunction(this);
 }
