@@ -226,38 +226,6 @@ void MPSurface::clear()
     this->onClearedSurfaceFunction(this);
 }
 
-QImage MPSurface::renderImage()
-{
-    QPixmap renderedImage = QPixmap(size());
-    //renderedImage = renderedImage.scaled(size());
-    renderedImage.fill(QColor(Qt::transparent));
-
-    QGraphicsScene surfaceScene;
-    surfaceScene.setSceneRect(QRect(QPoint(0,0), size()));
-
-
-    QHashIterator<QPoint, MPTile*> i(m_Tiles);
-    while (i.hasNext()) {
-        i.next();
-        MPTile *tile = i.value();
-        if (tile)
-        {
-            QGraphicsPixmapItem* item = new QGraphicsPixmapItem(tile->pixmap());
-            item->setPos(tile->pos());
-            surfaceScene.addItem(item);
-        }
-    }
-
-    QPainter painter;
-    painter.begin(&renderedImage);
-    surfaceScene.render(&painter);
-    painter.end();
-
-    surfaceScene.clear();
-
-    return renderedImage.toImage();
-}
-
 int MPSurface::getTilesWidth()
 {
     return this->tiles_width;
@@ -360,16 +328,15 @@ MPTile* MPSurface::getTileFromIdx(const QPoint& idx)
         selectedTile = m_Tiles.value(idx, NULL);
 
         if (!selectedTile) {
-            // Time to allocate it, update table and insert it as a QGraphicsItem in scene:
+            // Time to allocate it, update table:
             selectedTile = new MPTile();
             m_Tiles.insert(idx, selectedTile);
 
             QPoint tilePos ( getTilePos(idx) );
             selectedTile->setPos(tilePos);
         }
-        if (!selectedTile->scene()) {
-            this->onNewTileFunction(this, selectedTile);
-        }
+
+        this->onNewTileFunction(this, selectedTile);
     }
 
     return selectedTile;

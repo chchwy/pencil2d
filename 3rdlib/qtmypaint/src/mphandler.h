@@ -79,7 +79,6 @@ public:
     QSize surfaceSize();
 
     void clearSurface();
-    QImage renderImage();
 
     void loadImage(const QImage &image);
     void loadTiles(const QList<std::shared_ptr<QPixmap> > &pixmaps, const QList<QPoint>& pos);

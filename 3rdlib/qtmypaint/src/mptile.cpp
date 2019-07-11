@@ -9,22 +9,18 @@
 #include "mptile.h"
 #include "qdebug.h"
 #include "qelapsedtimer.h"
-#include <QPixmapCache>
-#include <QStyleOption>
 
-MPTile::MPTile(QGraphicsItem * parent) : QGraphicsItem(parent),
+MPTile::MPTile(const MPTile* tile):
     m_cache_img(k_tile_dim,k_tile_dim,QImage::Format_ARGB32_Premultiplied),
     m_cache_pix(k_tile_dim, k_tile_dim)
 {
-    setCacheMode(QGraphicsItem::NoCache);
+    Q_UNUSED(tile);
     clear(); //Default tiles are transparent
 }
 
 MPTile::MPTile(QPixmap& pixmap)
 {
-//    m_cache_img = pixmap.toImage();
     m_cache_pix = pixmap;
-    setCacheMode(QGraphicsItem::NoCache);
 }
 
 MPTile::~MPTile()
@@ -34,37 +30,6 @@ MPTile::~MPTile()
 QRectF MPTile::boundingRect() const 
 {
     return m_cache_pix.rect();
-}
-
-//bool MPTile::contains(const QPointF & point) const
-//{
-//    // opaque if alpha > 16
-//    return qAlpha(m_cache_img.pixel(point.toPoint())) > 0x10;
-//}
-
-QPainterPath MPTile::shape() const
-{
-    QPainterPath path;
-    path.addRect(m_cache_pix.rect());
-    return path;
-}
-
-void MPTile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
-{
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
-
-    QString cacheKey = QString("pos: %1,%2").arg(pos().x()).arg(pos().y());
-
-    painter->setClipRect(option->exposedRect);
-
-    if (!QPixmapCache::find(cacheKey, m_cache_pix)) {
-        qDebug() << "didn't find cache";
-        QPixmapCache::insert(cacheKey, m_cache_pix);
-        updateCache(); // We need to transfer the uint16_t table to the QImage cache
-    }
-    qDebug() << "using cache";
-    painter->drawPixmap(QPoint(), m_cache_pix, m_cache_pix.rect());
 }
 
 uint16_t* MPTile::Bits(bool readOnly)

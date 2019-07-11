@@ -90,7 +90,6 @@ public:
     QSize size();
 
     void clear();
-    QImage renderImage();
 
     void loadImage(const QImage &image);
 

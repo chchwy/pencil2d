@@ -130,12 +130,6 @@ void MPHandler::clearSurface()
     m_surface->clear();
 }
 
-QImage MPHandler::renderImage()
-{
-    QImage image = m_surface->renderImage();
-    return image;
-}
-
 void MPHandler::loadImage(const QImage &image)
 {
     m_surface->loadImage(image);
