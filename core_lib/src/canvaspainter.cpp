@@ -222,51 +222,37 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameI
                                      item->boundingRect().height()));
         tileRect = v.mapRect(tileRect);
 
-        QImage image = item->image();
+        QPixmap pix = item->pixmap();
 
-        prescaleSurface(painter, image, tileRect);
+        prescaleSurface(painter, pix, tileRect);
 
-        if (isRectInsideCanvas(tileRect)) {
-            painter.drawImage(tileRect.toRect(), image);
+        QRect alignedRect = tileRect.toRect();
+        if (isRectInsideCanvas(alignedRect)) {
+            painter.drawPixmap(alignedRect, pix);
         }
     }
 
     if (mRenderTransform) {
         paintTransformedSelection(painter);
     }
-
-    // If the current frame on the current layer has a transformation, we apply it.
-//    if (mRenderTransform && frameIndex == mFrameNumber && layer == mObject->getLayer(mCurrentLayerIndex))
-//    {
-//        paintTransformedSelection(painter);
-//    }
-
-//    painter.drawPixmap()
-
-//    painter.setWorldMatrixEnabled(true);
-//    painter.drawRect(paintToImage.bounds());
-//    qDebug() << painter.transform();
-//    paintToImage.setBounds(QRect(mCanvas->rect().topLeft(), paintToImage.size()));
-//    paintToImage.paintImage(painter);
-//    paintToImage.paintImage()
 }
 
-bool CanvasPainter::isRectInsideCanvas(const QRectF& rect) const
+bool CanvasPainter::isRectInsideCanvas(const QRect& rect) const
 {
     return mCanvas->rect().adjusted(-rect.width(),
                                     -rect.width(),
                                     rect.width(),
-                                    rect.width()).contains(rect.toRect());
+                                    rect.width()).contains(rect);
 }
 
-void CanvasPainter::prescaleSurface(QPainter& painter, QImage& image, const QRectF& rect)
+void CanvasPainter::prescaleSurface(QPainter& painter, QPixmap& pixmap, const QRectF& rect)
 {
     if (mOptions.zoomLevel < 1.5f) { // 150%
         painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing);
 
         // Only prescale when the content is small enough, as it's performance intensive to upscale larger images.
         if (mOptions.zoomLevel < 0.5f) { // 50%
-        image = image.scaled(rect.size().toSize(),
+        pixmap = pixmap.scaled(rect.size().toSize(),
                                              Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
     }

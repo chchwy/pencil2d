@@ -13,7 +13,7 @@ BitmapSurface::BitmapSurface()
     mSurface = Surface(positions, pixmaps, QRect());
 }
 
-BitmapSurface::BitmapSurface(BitmapSurface& pieces) : KeyFrame (pieces),
+BitmapSurface::BitmapSurface(const BitmapSurface& pieces) : KeyFrame (pieces),
     mSurface(pieces.mSurface)
 {
 }
@@ -22,7 +22,7 @@ BitmapSurface::~BitmapSurface()
 {
 }
 
-BitmapSurface* BitmapSurface::clone()
+BitmapSurface* BitmapSurface::clone() const
 {
     return new BitmapSurface(*this);
 }

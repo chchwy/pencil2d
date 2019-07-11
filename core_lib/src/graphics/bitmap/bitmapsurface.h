@@ -15,11 +15,11 @@ class BitmapSurface : public KeyFrame
 
 public:
     BitmapSurface();
-    BitmapSurface(BitmapSurface& pieces);
+    BitmapSurface(const BitmapSurface& pieces);
     ~BitmapSurface() override;
 
     // Keyframe
-    BitmapSurface* clone() override;
+    BitmapSurface* clone() const override;
     bool isLoaded() override;
     void loadFile() override;
     void unloadFile() override;
@@ -100,6 +100,7 @@ public:
     void renderSurfaceImage();
 
     Surface surface() { return mSurface; }
+    const Surface readOnlySurface() const {return mSurface; }
 
 public slots:
     void setSurfaceFromFuture(int index);

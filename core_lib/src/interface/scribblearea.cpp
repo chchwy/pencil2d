@@ -282,19 +282,25 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
         frameFirstLoad = true;
     }
 
+    placeSurfaceOnCanvas(*surfaceImage);
+}
+
+void ScribbleArea::placeSurfaceOnCanvas(const BitmapSurface& surfaceImage)
+{
     qDebug() << "show current frame";
 
     // render surface image to to tile
     // tile is then rendered in paintEvent
-    const Surface& surface = surfaceImage->surface();
+    const Surface& surface = surfaceImage.readOnlySurface();
     for (int i = 0; i < surface.countTiles(); i++) {
 
-        QPixmap pixmap = surface.pixmapAt(i);
+        const QPixmap& pixmap = surface.pixmapAt(i);
         const QPoint& pos = surface.pointAt(i);
-        MPTile *tile = getTileFromPos(pos);
+        MPTile* tile = getTileFromPos(pos);
 
-        qDebug() << "mp tile pos: " << tile->pos();
-        tile->setImage(pixmap.toImage());
+//        qDebug() << "mp tile pos: " << tile->pos();
+//        tile->setImage(pixmap.toImage());
+        tile->setPixmap(pixmap);
     }
 }
 
@@ -996,8 +1002,8 @@ void ScribbleArea::paintBitmapBuffer()
 
         // adds content from canvas and saves to surfaceimage
         for (MPTile* item : mBufferTiles.values()) {
-            QPixmap tilePixmap = QPixmap::fromImage(item->image());
-            surfaceImage->appendBitmapSurface(QPixmap::fromImage(item->image()), item->pos().toPoint());
+            QPixmap tilePixmap = item->pixmap();
+            surfaceImage->appendBitmapSurface(tilePixmap, item->pos().toPoint());
 
             // load the new tiles from buffer into mypaint
             mMyPaint->loadTile(tilePixmap, item->pos().toPoint());
@@ -1511,9 +1517,7 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 
     MPTile *item = getTileFromPos(pos);
     item->setDirty(true);
-    item->setImage(tile->image());
-
-    item->update();
+    item->setPixmap(tile->pixmap());
 }
 
 void ScribbleArea::clearSurfaceBuffer()
@@ -1622,10 +1626,13 @@ void ScribbleArea::updateDirtyTiles()
     while (i.hasNext()) {
         i.next();
         MPTile* tile = i.value();
+        const QPointF& tilePos = tile->pos();
+        const QSizeF& tileSize = tile->boundingRect().size();
         if (tile->isDirty()) {
 
-            QRectF mappedRect = v.mapRect(QRectF(tile->pos(), tile->boundingRect().size()));
+            const QRectF& mappedRect = v.mapRect(QRectF(tilePos, tileSize));
             update(mappedRect.toRect());
+
             tile->setDirty(false);
             mBufferTiles.insert(i.key(), i.value());
         } else {

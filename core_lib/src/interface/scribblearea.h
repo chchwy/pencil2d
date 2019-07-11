@@ -229,6 +229,7 @@ private:
     void settingUpdated(SETTING setting);
     void paintSelectionAnchors();
 
+    void placeSurfaceOnCanvas(const BitmapSurface& surfaceImage);
     void drawCanvas(int frame);
     void applyBackgroundShadow(QPainter& painter);
 

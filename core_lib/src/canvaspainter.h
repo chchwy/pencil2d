@@ -115,9 +115,9 @@ private:
     void paintCameraOutline(QPainter& painter);
     void paintAxis(QPainter& painter);
     void prescale(BitmapImage* bitmapImage);
-    void prescaleSurface(QPainter& painter, QImage& image, const QRectF& rect);
+    void prescaleSurface(QPainter& painter, QPixmap& pixmap, const QRectF& rect);
 
-    bool isRectInsideCanvas(const QRectF& rect) const;
+    bool isRectInsideCanvas(const QRect& rect) const;
 
 private:
     CanvasPainterOptions mOptions;
