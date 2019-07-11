@@ -2071,6 +2071,7 @@ void ScribbleArea::clearCanvas()
         return; // skip updates when nothing changes
     }
     setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
+    mMyPaint->clearSurface();
 
     updateCurrentFrame();
 }
