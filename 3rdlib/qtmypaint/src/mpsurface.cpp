@@ -163,6 +163,7 @@ void MPSurface::loadImage(const QImage &image)
     int nbTilesOnHeight = ceil((float)this->height / (float)tileSize.height());
 
     const QImage& sourceImage = image.scaled(this->size(), Qt::IgnoreAspectRatio);
+    const QPixmap& sourcePixmap = QPixmap::fromImage(sourceImage);
 
     for (int h=0; h < nbTilesOnHeight; h++) {
 
@@ -172,6 +173,7 @@ void MPSurface::loadImage(const QImage &image)
             const QPoint& tilePos = getTilePos(idx) ;
 
             const QRect& tileRect = QRect(tilePos, tileSize);
+            const QPixmap& tilePix = sourcePixmap.copy(tileRect);
             const QImage& tileImage = sourceImage.copy(tileRect);
 
             // Optimization : Fully transparent (empty) tiles
@@ -180,7 +182,7 @@ void MPSurface::loadImage(const QImage &image)
             if (!isFullyTransparent(tileImage)) {
 
                 MPTile *tile = getTileFromIdx(idx);
-                tile->setImage(tileImage);
+                tile->setPixmap(tilePix);
 
                 this->onUpdateTileFunction(this, tile);
             }
@@ -240,7 +242,7 @@ QImage MPSurface::renderImage()
         MPTile *tile = i.value();
         if (tile)
         {
-            QGraphicsPixmapItem* item = new QGraphicsPixmapItem( QPixmap::fromImage(tile->image()));
+            QGraphicsPixmapItem* item = new QGraphicsPixmapItem(tile->pixmap());
             item->setPos(tile->pos());
             surfaceScene.addItem(item);
         }

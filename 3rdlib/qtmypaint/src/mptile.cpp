@@ -9,8 +9,12 @@
 #include "mptile.h"
 #include "qdebug.h"
 #include "qelapsedtimer.h"
+#include <QPixmapCache>
+#include <QStyleOption>
 
-MPTile::MPTile(QGraphicsItem * parent) : QGraphicsItem(parent), m_cache_img(k_tile_dim, k_tile_dim, QImage::Format_ARGB32_Premultiplied)
+MPTile::MPTile(QGraphicsItem * parent) : QGraphicsItem(parent),
+    m_cache_img(k_tile_dim,k_tile_dim,QImage::Format_ARGB32_Premultiplied),
+    m_cache_pix(k_tile_dim, k_tile_dim)
 {
     setCacheMode(QGraphicsItem::NoCache);
     clear(); //Default tiles are transparent
@@ -25,11 +29,6 @@ MPTile::MPTile(QPixmap& pixmap)
 
 MPTile::~MPTile()
 {
-}
-
-QImage MPTile::image() 
-{
-    return m_cache_img;
 }
 
 QRectF MPTile::boundingRect() const 
@@ -55,8 +54,16 @@ void MPTile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    if (!m_cache_valid) 
+    QString cacheKey = QString("pos: %1,%2").arg(pos().x()).arg(pos().y());
+
+    painter->setClipRect(option->exposedRect);
+
+    if (!QPixmapCache::find(cacheKey, m_cache_pix)) {
+        qDebug() << "didn't find cache";
+        QPixmapCache::insert(cacheKey, m_cache_pix);
         updateCache(); // We need to transfer the uint16_t table to the QImage cache
+    }
+    qDebug() << "using cache";
     painter->drawPixmap(QPoint(), m_cache_pix, m_cache_pix.rect());
 }
 
@@ -83,6 +90,7 @@ void MPTile::drawPoint(uint x, uint y, uint16_t r, uint16_t g, uint16_t b, uint1
 //
 void MPTile::updateCache()
 {
+    m_cache_img = m_cache_pix.toImage();
     QRgb* dst = (reinterpret_cast<QRgb*>(m_cache_img.bits()));
     for (int y = 0 ; y < k_tile_dim ; y++) {
          for (int x = 0 ; x < k_tile_dim ; x++) {
@@ -95,6 +103,7 @@ void MPTile::updateCache()
               dst++; // next image pixel...
          }
     }
+
     m_cache_pix = QPixmap::fromImage(m_cache_img);
     m_cache_valid = true;
 }
@@ -103,30 +112,8 @@ void MPTile::setPixmap(const QPixmap& pixmap)
 {
     m_cache_pix = pixmap;
     m_cache_valid = true;
-}
 
-void MPTile::setImage(const QImage &image) {
-
-    QSize tileSize = this->boundingRect().size().toSize();
-
-//    // Make sure the image has the same dimentions as the tile
-    if (image.isNull()) { return; }
-    m_cache_img = image.scaled(tileSize, Qt::IgnoreAspectRatio);
-
-    QRgb pixelColor = *(reinterpret_cast<const QRgb*>(m_cache_img.bits()));
-    for (int y = 0 ; y < tileSize.height() ; y++) {
-         for (int x = 0 ; x < tileSize.width() ; x++) {
-             t_pixels[y][x][k_alpha]    = static_cast<uint16_t>CONV_8_16(qAlpha(pixelColor));
-             t_pixels[y][x][k_red]      = static_cast<uint16_t>CONV_8_16(qRed(pixelColor));
-             t_pixels[y][x][k_green]    = static_cast<uint16_t>CONV_8_16(qGreen(pixelColor));
-             t_pixels[y][x][k_blue]     = static_cast<uint16_t>CONV_8_16(qBlue(pixelColor));
-            pixelColor++;
-         }
-    }
-    m_cache_pix = QPixmap::fromImage(m_cache_img);
-    m_cache_valid = true;
-
-    update();
+//    update();
 }
 
 void MPTile::clear()

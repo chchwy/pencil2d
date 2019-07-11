@@ -11,6 +11,7 @@
 
 #include <QGraphicsItem>
 #include <QImage>
+#include <QPixmap>
 #include <QPainter>
 #include <stdint.h>
 
@@ -31,25 +32,22 @@ public:
 
     explicit MPTile (QGraphicsItem * parent = nullptr);
     explicit MPTile (QPixmap& pixmap);
-    ~MPTile();
+    ~MPTile() override;
 
     enum { k_tile_dim = 64 };
     enum { k_red = 0, k_green = 1, k_blue = 2, k_alpha =3 }; // Index to access RGBA values in myPaint
 
-    QImage image();
+    //    virtual bool         contains  (const QPointF & point) const;
     QPixmap pixmap() { return m_cache_pix; }
 
-    virtual QRectF       boundingRect () const;
-//    virtual bool         contains  (const QPointF & point) const;
-    virtual QPainterPath shape     () const;
-    virtual void         paint     (QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-
+    QRectF boundingRect () const override;
+    QPainterPath shape() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget*) override;
 
     uint16_t* Bits (bool readOnly);
     void drawPoint ( uint x, uint y, uint16_t r, uint16_t g, uint16_t b, uint16_t a );
     void updateCache();
     void clear();
-    void setImage(const QImage& image);
     void setPixmap(const QPixmap& image);
 
     QTransform transform;
