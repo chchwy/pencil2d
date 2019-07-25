@@ -1,0 +1,1 @@
+/usr/local/Cellar/intltool/0.51.0/share/aclocal/intltool.m4

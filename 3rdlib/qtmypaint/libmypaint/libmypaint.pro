@@ -1,14 +1,10 @@
-QT += core gui widgets
+QT += core
 
 TARGET = mypaint
 TEMPLATE = lib
 CONFIG += sharedlib
 
-HEADERS += brushmodes.h \
-           brushsettings-gen.h \
-           fifo.h \
-           helpers.h \
-           mypaint-mapping.h \
+HEADERS += mypaint-mapping.h \
            mypaint.h \
            mypaint-brush.h \
            mypaint-brush-settings.h \
@@ -18,12 +14,7 @@ HEADERS += brushmodes.h \
            mypaint-glib-compat.h \
            mypaint-rectangle.h \
            mypaint-surface.h \
-           mypaint-tiled-surface.h \
-           operationqueue.h \
-           rng-double.h \
-           tiled-surface-private.h \
-           tilemap.h \
-           utils.h
+           mypaint-tiled-surface.h
 
 INCLUDEPATH += ../json-c
 LIBS += -L../json-c -ljson-c

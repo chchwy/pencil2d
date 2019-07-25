@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libmypaint
+Description: MyPaint brush engine library, with GEGL integration.
+Version: 1.3.0
+Requires: gegl-0.3 libmypaint
+Cflags: -I${includedir}/libmypaint-gegl
+Libs: -L${libdir} -lmypaint-gegl

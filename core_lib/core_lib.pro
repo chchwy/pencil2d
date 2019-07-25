@@ -196,9 +196,9 @@ unix:!macx {
 }
 
 # --- mypaint ---
-INCLUDEPATH += $$PWD/../3rdlib/qtmypaint/json-c \
-               $$PWD/../3rdlib/qtmypaint/libmypaint \
-               $$PWD/../3rdlib/qtmypaint/src \
-               $$PWD/../3rdlib/qtmypaint
+INCLUDEPATH += $$PWD/../3rdlib/paint_lib/json-c \
+               $$PWD/../3rdlib/paint_lib/libmypaint \
+               $$PWD/../3rdlib/paint_lib/qtmypaint \
+               $$PWD/../3rdlib/paint_lib
 
-DEPENDPATH += $$PWD/../3rdlib/qtmypaint
+DEPENDPATH += $$PWD/../3rdlib/paint_lib

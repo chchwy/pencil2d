@@ -3,4 +3,6 @@ TEMPLATE = subdirs
 SUBDIRS = json-c \
           libmypaint \
           src
-#          demo
+
+# build the project sequentially as listed in SUBDIRS !
+CONFIG += ordered

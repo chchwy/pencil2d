@@ -5,7 +5,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS = \ # sub-project names
-    qtmypaint \
+    paint_lib \
     core_lib \
     app \
     tests \
@@ -17,14 +17,14 @@ CONFIG += ordered
 core_lib.subdir = core_lib
 app.subdir      = app
 tests.subdir    = tests
-qtmypaint.subdir = 3rdlib/qtmypaint
+paint_lib.subdir = 3rdlib/paint_lib
 
 # what subproject depends on others
 app.depends      = core_lib
-app.depends      = qtmypaint
+app.depends      = paint_lib
 tests.depends    = core_lib
-tests.depends    = qtmypaint
-core_lib.depends = qtmypaint
+tests.depends    = paint_lib
+core_lib.depends = paint_lib
 
 TRANSLATIONS += translations/pencil.ts \
                 translations/pencil_ca.ts \
