@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include "basetool.h"
 //#include "transformproxytool.h"
 #include "movemode.h"
+#include "preferencemanager.h"
 
 class Layer;
 class VectorImage;
@@ -49,6 +50,7 @@ private:
     void paintTransformedSelection();
     void setAnchorToLastPoint();
     void updateTransformation();
+    void updateSettings(const SETTING setting);
 
     int showTransformWarning();
 
@@ -67,6 +69,7 @@ private:
     QPointF anchorOriginPoint;
     Layer* mCurrentLayer = nullptr;
     qreal mRotatedAngle = 0.0;
+    int mRotationIncrement = 0;
 };
 
 #endif

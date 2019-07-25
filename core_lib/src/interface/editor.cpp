@@ -255,9 +255,10 @@ void Editor::backup(int backupLayer, int backupFrame, QString undoText)
                 element->frame = backupFrame;
                 element->undoText = undoText;
                 element->somethingSelected = select()->somethingSelected();
-                element->mySelection = select()->mySelection;
-                element->myTransformedSelection = select()->myTransformedSelection;
-                element->myTempTransformedSelection = select()->myTempTransformedSelection;
+                element->mySelection = select()->mySelectionRect();
+                element->myTransformedSelection = select()->myTransformedSelectionRect();
+                element->myTempTransformedSelection = select()->myTempTransformedSelectionRect();
+                element->rotationAngle = select()->myRotation();
                 mBackupList.append(element);
                 mBackupIndex++;
             }
@@ -272,9 +273,10 @@ void Editor::backup(int backupLayer, int backupFrame, QString undoText)
                 element->frame = backupFrame;
                 element->undoText = undoText;
                 element->somethingSelected = select()->somethingSelected();
-                element->mySelection = select()->mySelection;
-                element->myTransformedSelection = select()->myTransformedSelection;
-                element->myTempTransformedSelection = select()->myTempTransformedSelection;
+                element->mySelection = select()->mySelectionRect();
+                element->myTransformedSelection = select()->myTransformedSelectionRect();
+                element->myTempTransformedSelection = select()->myTempTransformedSelectionRect();
+                element->rotationAngle = select()->myRotation();
                 mBackupList.append(element);
                 mBackupIndex++;
             }
@@ -364,7 +366,12 @@ void Editor::restoreKey()
 void BackupBitmapElement::restore(Editor* editor)
 {
     Layer* layer = editor->object()->getLayer(this->layer);
-    editor->select()->setSelection(mySelection);
+    auto selectMan = editor->select();
+    selectMan->setSelection(mySelection);
+    selectMan->setTransformedSelectionRect(myTransformedSelection);
+    selectMan->setTempTransformedSelectionRect(myTempTransformedSelection);
+    selectMan->setRotation(rotationAngle);
+    selectMan->setSomethingSelected(somethingSelected);
 
     editor->updateFrame(this->frame);
     editor->scrubTo(this->frame);
@@ -389,7 +396,12 @@ void BackupBitmapElement::restore(Editor* editor)
 void BackupVectorElement::restore(Editor* editor)
 {
     Layer* layer = editor->object()->getLayer(this->layer);
-    editor->select()->setSelection(mySelection);
+    auto selectMan = editor->select();
+    selectMan->setSelection(mySelection);
+    selectMan->setTransformedSelectionRect(myTransformedSelection);
+    selectMan->setTempTransformedSelectionRect(myTempTransformedSelection);
+    selectMan->setRotation(rotationAngle);
+    selectMan->setSomethingSelected(somethingSelected);
 
     editor->updateFrameAndVector(this->frame);
     editor->scrubTo(this->frame);
@@ -459,7 +471,9 @@ void Editor::undo()
 
         select()->resetSelectionTransform();
         if (layer->type() == Layer::VECTOR) {
-            setSelectionToCalculatedRect(); // still ugly... but I don't want to fiddle with the vector stuff yet
+            VectorImage *vectorImage = static_cast<LayerVector*>(layer)->getVectorImageAtFrame(mFrame);
+            vectorImage->calculateSelectionRect();
+            select()->setSelection(vectorImage->getSelectionRect());
         }
         emit updateBackup();
     }
@@ -525,7 +539,7 @@ void Editor::copy()
         LayerBitmap* layerBitmap = static_cast<LayerBitmap*>(layer);
         if (select()->somethingSelected())
         {
-            g_clipboardBitmapImage = layerBitmap->getLastBitmapImageAtFrame(currentFrame(), 0)->copy(select()->mySelection.toRect());  // copy part of the image
+            g_clipboardBitmapImage = layerBitmap->getLastBitmapImageAtFrame(currentFrame(), 0)->copy(select()->mySelectionRect().toRect());  // copy part of the image
         }
         else
         {
@@ -555,7 +569,7 @@ void Editor::paste()
             qDebug() << "to be pasted --->" << tobePasted.image()->size();
             if (select()->somethingSelected())
             {
-                QRectF selection = select()->mySelection;
+                QRectF selection = select()->mySelectionRect();
                 if (g_clipboardBitmapImage.width() <= selection.width() && g_clipboardBitmapImage.height() <= selection.height())
                 {
                     tobePasted.moveTopLeft(selection.topLeft());
@@ -866,9 +880,31 @@ bool Editor::importGIF(QString filePath, int numOfImages)
     return false;
 }
 
-float Editor::viewScaleInversed()
+qreal Editor::viewScaleInversed()
 {
     return view()->getViewInverse().m11();
+}
+
+void Editor::selectAll()
+{
+    Layer* layer = layers()->currentLayer();
+
+    QRectF rect;
+    if (layer->type() == Layer::BITMAP)
+    {
+        // Selects the drawn area (bigger or smaller than the screen). It may be more accurate to select all this way
+        // as the drawing area is not limited
+        BitmapImage *bitmapImage = static_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(mFrame);
+        rect = bitmapImage->bounds();
+    }
+    else if (layer->type() == Layer::VECTOR)
+    {
+        VectorImage *vectorImage = static_cast<LayerVector*>(layer)->getLastVectorImageAtFrame(mFrame,0);
+        vectorImage->selectAll();
+        rect = vectorImage->getSelectionRect();
+    }
+    select()->setSelection(rect);
+    emit updateCurrentFrame();
 }
 
 void Editor::deselectAll()
@@ -878,22 +914,10 @@ void Editor::deselectAll()
 
     if (layer->type() == Layer::VECTOR)
     {
-        static_cast<LayerVector*>(layer)->getLastVectorImageAtFrame(mFrame, 0)->deselectAll();;
+        static_cast<LayerVector*>(layer)->getLastVectorImageAtFrame(mFrame, 0)->deselectAll();
     }
 
     select()->resetSelectionProperties();
-}
-
-void Editor::setSelectionToCalculatedRect()
-{
-    Layer* layer = layers()->currentLayer();
-    if (layer == nullptr) { return; }
-    if (layer->type() == Layer::VECTOR)
-    {
-        VectorImage *vectorImage = static_cast<LayerVector*>(layer)->getVectorImageAtFrame(mFrame);
-        vectorImage->calculateSelectionRect();
-        select()->setSelection(vectorImage->getSelectionRect());
-    }
 }
 
 void Editor::updateFrame(int frameNumber)

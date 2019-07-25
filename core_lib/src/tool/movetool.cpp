@@ -29,6 +29,7 @@ GNU General Public License for more details.
 #include "scribblearea.h"
 #include "layervector.h"
 #include "layermanager.h"
+#include "mathutils.h"
 #include "vectorimage.h"
 
 
@@ -48,12 +49,30 @@ void MoveTool::loadSettings()
     properties.useFeather = false;
     properties.stabilizerLevel = -1;
     properties.useAA = -1;
+    mRotationIncrement = mEditor->preference()->getInt(SETTING::ROTATION_INCREMENT);
+
+    connect(mEditor->preference(), &PreferenceManager::optionChanged, this, &MoveTool::updateSettings);
 }
 
 QCursor MoveTool::cursor()
 {
     MoveMode mode = mEditor->select()->getMoveModeForSelectionAnchor(getCurrentPoint());
     return mScribbleArea->currentTool()->selectMoveCursor(mode, type());
+}
+
+void MoveTool::updateSettings(const SETTING setting)
+{
+    switch (setting)
+    {
+    case SETTING::ROTATION_INCREMENT:
+    {
+        mRotationIncrement = mEditor->preference()->getInt(SETTING::ROTATION_INCREMENT);
+        break;
+    }
+    default:
+        break;
+
+    }
 }
 
 void MoveTool::pointerPressEvent(PointerEvent* event)
@@ -98,8 +117,13 @@ void MoveTool::pointerReleaseEvent(PointerEvent*)
     if (!selectMan->somethingSelected())
         return;
 
-    mRotatedAngle = selectMan->myRotatedAngle;
+    mRotatedAngle = selectMan->myRotation();
     updateTransformation();
+
+    Layer* layer = mEditor->layers()->currentLayer();
+    if (layer->type() == Layer::VECTOR) {
+        applyTransformation();
+    }
 
     selectMan->updatePolygons();
 
@@ -110,8 +134,7 @@ void MoveTool::pointerReleaseEvent(PointerEvent*)
 void MoveTool::updateTransformation()
 {
     auto selectMan = mEditor->select();
-    // update the transformed selection
-    selectMan->myTransformedSelection = selectMan->myTempTransformedSelection;
+    selectMan->updateTransformedSelection();
 
     // make sure transform is correct
     selectMan->calculateSelectionTransformation();
@@ -125,12 +148,8 @@ void MoveTool::transformSelection(Qt::KeyboardModifiers keyMod, Layer* layer)
     auto selectMan = mEditor->select();
     if (selectMan->somethingSelected())
     {
-        QPointF offset;
-        if (layer->type() == Layer::VECTOR) {
-            offset = offsetFromPressPos();
-        } else {
-            offset = offsetFromPressPos().toPoint();
-        }
+
+        QPointF offset = offsetFromPressPos();
 
         // maintain aspect ratio
         if (keyMod == Qt::ShiftModifier)
@@ -138,10 +157,19 @@ void MoveTool::transformSelection(Qt::KeyboardModifiers keyMod, Layer* layer)
             offset = selectMan->offsetFromAspectRatio(offset.x(), offset.y());
         }
 
-        mRotatedAngle = (getCurrentPixel().x() -
-                         getLastPressPixel().x()) + mRotatedAngle;
+        int rotationIncrement = 0;
+        if (selectMan->getMoveMode() == MoveMode::ROTATION && keyMod & Qt::ShiftModifier)
+        {
+            rotationIncrement = mRotationIncrement;
+        }
 
-        selectMan->adjustSelection(offset.x(), offset.y(), mRotatedAngle);
+        if(layer->type() == Layer::BITMAP)
+        {
+            offset = offset.toPoint();
+        }
+
+        selectMan->adjustSelection(getCurrentPoint(), offset.x(), offset.y(), mRotatedAngle, rotationIncrement);
+
         selectMan->calculateSelectionTransformation();
         paintTransformedSelection();
 
@@ -155,13 +183,11 @@ void MoveTool::transformSelection(Qt::KeyboardModifiers keyMod, Layer* layer)
 void MoveTool::beginInteraction(Qt::KeyboardModifiers keyMod, Layer* layer)
 {
     auto selectMan = mEditor->select();
-    QRectF selectionRect = selectMan->myTransformedSelection;
+    QRectF selectionRect = selectMan->myTransformedSelectionRect();
     if (!selectionRect.isNull())
     {
 //        mEditor->backup(typeName());
     }
-
-    selectMan->myRotatedAngle = mRotatedAngle;
 
     if (keyMod != Qt::ShiftModifier)
     {
@@ -183,6 +209,12 @@ void MoveTool::beginInteraction(Qt::KeyboardModifiers keyMod, Layer* layer)
     if (layer->type() == Layer::VECTOR)
     {
         createVectorSelection(keyMod, layer);
+    }
+
+    if(selectMan->getMoveMode() == MoveMode::ROTATION) {
+        QPointF curPoint = getCurrentPoint();
+        QPointF anchorPoint = selectionRect.center();
+        mRotatedAngle = MathUtils::radToDeg(MathUtils::getDifferenceAngle(anchorPoint, curPoint)) - selectMan->myRotation();
     }
 }
 
@@ -263,7 +295,7 @@ void MoveTool::cancelChanges()
 
 void MoveTool::applySelectionChanges()
 {
-    mEditor->select()->myRotatedAngle = 0;
+    mEditor->select()->setRotation(0);
     mRotatedAngle = 0;
 
     mScribbleArea->applySelectionChanges();

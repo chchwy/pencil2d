@@ -144,6 +144,9 @@ public:
     MPTile* getTileFromPos(QPointF point);
     void clearSurfaceBuffer();
 
+    void keyEvent(QKeyEvent* event);
+    void keyEventForSelection(QKeyEvent* event);
+
 signals:
     void modification(int);
     void multiLayerOnionSkinChanged(bool);

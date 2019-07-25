@@ -485,90 +485,77 @@ void ScribbleArea::keyPressEvent(QKeyEvent *event)
     // ---- fixed normal keys ----
 
     auto selectMan = mEditor->select();
+    bool isSomethingSelected = selectMan->somethingSelected();
+    if (isSomethingSelected) {
+        keyEventForSelection(event);
+    } else {
+        keyEvent(event);
+    }
+}
+
+void ScribbleArea::keyEventForSelection(QKeyEvent* event)
+{
+    auto selectMan = mEditor->select();
     switch (event->key())
     {
     case Qt::Key_Right:
-        if (selectMan->somethingSelected())
-        {
-            selectMan->myTempTransformedSelection.translate(1, 0);
-            selectMan->myTransformedSelection = selectMan->myTempTransformedSelection;
-            selectMan->calculateSelectionTransformation();
-            paintTransformedSelection();
-        }
-        else
-        {
-            mEditor->scrubForward();
-            event->ignore();
-        }
+        selectMan->translate(QPointF(1, 0));
+        paintTransformedSelection();
         break;
     case Qt::Key_Left:
-        if (selectMan->somethingSelected())
-        {
-            selectMan->myTempTransformedSelection.translate(-1, 0);
-            selectMan->myTransformedSelection = selectMan->myTempTransformedSelection;
-            selectMan->calculateSelectionTransformation();
-            paintTransformedSelection();
-        }
-        else
-        {
-            mEditor->scrubBackward();
-            event->ignore();
-        }
+        selectMan->translate(QPointF(-1, 0));
+        paintTransformedSelection();
         break;
     case Qt::Key_Up:
-        if (selectMan->somethingSelected())
-        {
-            selectMan->myTempTransformedSelection.translate(0, -1);
-            selectMan->myTransformedSelection = selectMan->myTempTransformedSelection;
-            selectMan->calculateSelectionTransformation();
-            paintTransformedSelection();
-        }
-        else
-        {
-            mEditor->layers()->gotoNextLayer();
-            event->ignore();
-        }
+        selectMan->translate(QPointF(0, -1));
+        paintTransformedSelection();
         break;
     case Qt::Key_Down:
-        if (selectMan->somethingSelected())
-        {
-            selectMan->myTempTransformedSelection.translate(0, 1);
-            selectMan->myTransformedSelection = selectMan->myTempTransformedSelection;
-            selectMan->calculateSelectionTransformation();
-            paintTransformedSelection();
-        }
-        else
-        {
-            mEditor->layers()->gotoPreviouslayer();
-            event->ignore();
-        }
+        selectMan->translate(QPointF(0, 1));
+        paintTransformedSelection();
         break;
     case Qt::Key_Return:
-        if (selectMan->somethingSelected())
-        {
-            applyTransformedSelection();
-            paintTransformedSelection();
-            mEditor->deselectAll();
-        }
-        else
-        {
-            event->ignore();
-        }
+        applyTransformedSelection();
+        mEditor->deselectAll();
         break;
     case Qt::Key_Escape:
-        if (selectMan->somethingSelected())
-        {
-            mEditor->deselectAll();
-            paintTransformedSelection();
-            applyTransformedSelection();
-        }
+        mEditor->deselectAll();
+        cancelTransformedSelection();
         break;
     case Qt::Key_Backspace:
-        if (selectMan->somethingSelected())
-        {
-            deleteSelection();
-            mEditor->deselectAll();
-        }
+        deleteSelection();
+        mEditor->deselectAll();
+        break;
+    case Qt::Key_Space:
+        setTemporaryTool(HAND); // just call "setTemporaryTool()" to activate temporarily any tool
+        break;
+    default:
+        event->ignore();
+    }
+}
+
+void ScribbleArea::keyEvent(QKeyEvent* event)
+{
+    switch (event->key())
+    {
+    case Qt::Key_Right:
+        mEditor->scrubForward();
+        event->ignore();
+        break;
+    case Qt::Key_Left:
+        mEditor->scrubBackward();
+        event->ignore();
+        break;
+    case Qt::Key_Up:
+        mEditor->layers()->gotoNextLayer();
+        event->ignore();
+        break;
+    case Qt::Key_Down:
+        mEditor->layers()->gotoPreviouslayer();
+        event->ignore();
+        break;
+    case Qt::Key_Return:
+        event->ignore();
         break;
     case Qt::Key_Space:
         setTemporaryTool(HAND); // just call "setTemporaryTool()" to activate temporarily any tool
@@ -766,9 +753,7 @@ void ScribbleArea::pointerMoveEvent(PointerEvent* event)
         // --- use SHIFT + drag to resize WIDTH / use CTRL + drag to resize FEATHER ---
         if (currentTool()->isAdjusting())
         {
-            // TODO: make sure this doesn't break anything
-            // was mOffset.x()... but that should be independent and only accessible in selectino context
-            currentTool()->adjustCursor(currentTool()->getCurrentPoint().x(), event->modifiers()); //updates cursors given org width or feather and x
+            currentTool()->adjustCursor(event->modifiers());
             return;
         }
     }
@@ -1386,12 +1371,11 @@ void ScribbleArea::paintSelectionAnchors()
     Object* object = mEditor->object();
 
     auto selectMan = mEditor->select();
+    selectMan->updatePolygons();
 
     if (!selectMan->somethingSelected()) { return; }
     if (selectMan->currentSelectionPolygonF().isEmpty()) { return; }
     if (selectMan->currentSelectionPolygonF().count() < 4) { return; }
-
-    selectMan->updatePolygons();
 
     QPolygonF lastSelectionPolygon = editor()->view()->mapPolygonToScreen(selectMan->lastSelectionPolygonF());
     QPolygonF currentSelectionPolygon = editor()->view()->mapPolygonToScreen(selectMan->currentSelectionPolygonF());
@@ -1692,11 +1676,8 @@ void ScribbleArea::endStroke()
 
 void ScribbleArea::flipSelection(bool flipVertical)
 {
-    SelectionManager* selectMan = mEditor->select();
-    selectMan->flipSelection(flipVertical);
-
+    mEditor->select()->flipSelection(flipVertical);
     paintTransformedSelection();
-    applyTransformedSelection();
 }
 
 
@@ -1795,9 +1776,6 @@ QPointF ScribbleArea::getCentralPoint()
     return mEditor->view()->mapScreenToCanvas(QPointF(width() / 2, height() / 2));
 }
 
-/************************************************************************************/
-// selection handling
-
 void ScribbleArea::paintTransformedSelection()
 {
     Layer* layer = mEditor->layers()->currentLayer();
@@ -1811,9 +1789,7 @@ void ScribbleArea::paintTransformedSelection()
     {
         if (layer->type() == Layer::BITMAP)
         {
-            mCanvasPainter.setTransformedSelection(selectMan->mySelection.toRect(),
-                                                   selectMan->myTempTransformedSelection.toRect(),
-                                                   selectMan->selectionTransform());
+            mCanvasPainter.setTransformedSelection(selectMan->mySelectionRect().toRect(), selectMan->myTempTransformedSelectionRect().toRect(), selectMan->selectionTransform());
         }
         else if (layer->type() == Layer::VECTOR)
         {
@@ -1824,7 +1800,7 @@ void ScribbleArea::paintTransformedSelection()
         }
         setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
     }
-//    update();
+    update();
 }
 
 void ScribbleArea::applySelectionChanges()
@@ -1838,11 +1814,12 @@ void ScribbleArea::applySelectionChanges()
     auto selectMan = mEditor->select();
 
     // make sure the current transformed selection is valid
-    if (!selectMan->myTempTransformedSelection.isValid())
+    if (!selectMan->myTempTransformedSelectionRect().isValid())
     {
-        selectMan->myTempTransformedSelection = selectMan->myTempTransformedSelection.normalized();
+        const QRectF& normalizedRect = selectMan->myTempTransformedSelectionRect().normalized();
+        selectMan->setTempTransformedSelectionRect(normalizedRect);
     }
-    selectMan->setSelection(selectMan->myTempTransformedSelection);
+    selectMan->setSelection(selectMan->myTempTransformedSelectionRect());
     paintTransformedSelection();
 
     // Calculate the new transformation based on the new selection
@@ -1867,7 +1844,7 @@ void ScribbleArea::applyTransformedSelection()
     auto selectMan = mEditor->select();
     if (selectMan->somethingSelected())
     {
-        if (!selectMan->hasBeenModified()) { return; };
+        if (selectMan->mySelectionRect().isEmpty()) { return; }
 
         if (layer->type() == Layer::BITMAP)
         {
@@ -1891,10 +1868,10 @@ void ScribbleArea::moveBitmapSurface()
     auto selectMan = mEditor->select();
     auto layer = mEditor->layers()->currentLayer();
     BitmapSurface* bitmapSurface = currentBitmapSurfaceImage(layer);
-    QPixmap pixmap = bitmapSurface->copySurfaceAsPixmap(selectMan->mySelection.toRect());
-    bitmapSurface->eraseSelection(selectMan->mySelection.toRect());
+    QPixmap pixmap = bitmapSurface->copySurfaceAsPixmap(selectMan->mySelectionRect().toRect());
+    bitmapSurface->eraseSelection(selectMan->mySelectionRect().toRect());
 
-    QPoint topLeft = selectMan->myTempTransformedSelection.topLeft().toPoint();
+    QPoint topLeft = selectMan->myTempTransformedSelectionRect().topLeft().toPoint();
 
     bitmapSurface->paintSurfaceUsing(pixmap, topLeft);
 }
@@ -1915,7 +1892,7 @@ void ScribbleArea::cancelTransformedSelection()
             vectorImage->setSelectionTransformation(QTransform());
         }
 
-        mEditor->select()->setSelection(selectMan->mySelection);
+        mEditor->select()->setSelection(selectMan->mySelectionRect());
 
         selectMan->resetSelectionProperties();
 
@@ -2043,7 +2020,7 @@ void ScribbleArea::deleteSelection()
 
         selectMan->clearCurves();
         if (layer->type() == Layer::VECTOR) { currentVectorImage(layer)->deleteSelection(); }
-        if (layer->type() == Layer::BITMAP) { currentBitmapImage(layer)->clear(selectMan->mySelection); }
+        if (layer->type() == Layer::BITMAP) { currentBitmapImage(layer)->clear(selectMan->mySelectionRect()); }
         updateAllFrames();
     }
 }
