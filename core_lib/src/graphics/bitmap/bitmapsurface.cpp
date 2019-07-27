@@ -543,7 +543,7 @@ QList<QPoint> BitmapSurface::tilePositions()
 
 QList<std::shared_ptr<QPixmap>> BitmapSurface::pixmaps()
 {
-    if (mSurface.countTiles()) { return QList<std::shared_ptr<QPixmap>>(); }
+    if (mSurface.countTiles() == 0) { return QList<std::shared_ptr<QPixmap>>(); }
     return mSurface.pixmaps;
 }
 
