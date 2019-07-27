@@ -75,10 +75,33 @@ void MPTile::updateCache()
 
 void MPTile::setPixmap(const QPixmap& pixmap)
 {
+
+    QSize tileSize = this->boundingRect().size().toSize();
+
+    if (pixmap.isNull()) { return; }
+
+    updateMyPaintBuffer(tileSize, pixmap);
+
     m_cache_pix = pixmap;
     m_cache_valid = true;
 
-//    update();
+}
+
+void MPTile::updateMyPaintBuffer(const QSize& tileSize, const QPixmap& pixmap)
+{
+    QImage image = pixmap.toImage();
+    QRgb pixelColor = *(reinterpret_cast<const QRgb*>(image.bits()));
+    for (int y = 0 ; y < tileSize.height(); y++) {
+         for (int x = 0 ; x < tileSize.width() ; x++) {
+
+            const QRgb pixelColor = *(reinterpret_cast<const QRgb*>(image.constScanLine(y))+x);
+
+            t_pixels[y][x][k_alpha]    = static_cast<uint16_t>CONV_8_16(qAlpha(pixelColor));
+            t_pixels[y][x][k_red]      = static_cast<uint16_t>CONV_8_16(qRed(pixelColor));
+            t_pixels[y][x][k_green]    = static_cast<uint16_t>CONV_8_16(qGreen(pixelColor));
+            t_pixels[y][x][k_blue]     = static_cast<uint16_t>CONV_8_16(qBlue(pixelColor));
+         }
+    }
 }
 
 void MPTile::clear()

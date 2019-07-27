@@ -45,6 +45,14 @@ public:
     void clear();
     void setPixmap(const QPixmap& image);
 
+    /**
+     * @brief updateMyPaintBuffer
+     * This method is used to update buffer data for mypaint backend, which will be applied later
+     * @param tileSize
+     * @param pixmap
+     */
+    void updateMyPaintBuffer(const QSize& tileSize, const QPixmap& pixmap);
+
     bool isDirty() { return m_dirty; }
     void setDirty(bool dirty) { m_dirty = dirty; }
     void setPos(const QPointF& pos) { m_pos = pos; }
