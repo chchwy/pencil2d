@@ -8,9 +8,12 @@
 
 BitmapSurface::BitmapSurface()
 {
+
     QList<QPoint> positions;
+    positions.append(QPoint(0,0));
     QList<std::shared_ptr<QPixmap>> pixmaps;
-    mSurface = Surface(positions, pixmaps, QRect());
+    pixmaps.append(std::make_shared<QPixmap>(QPixmap(0,0)));
+    mSurface = Surface(positions, pixmaps, QRect(0,0,1,1));
 }
 
 BitmapSurface::BitmapSurface(const BitmapSurface& pieces) : KeyFrame (pieces),
@@ -384,18 +387,18 @@ QList<QPoint> BitmapSurface::touchedTiles(const QRect& rect)
     return scanForTilesAtSelection(rect);
 }
 
-void BitmapSurface::createNewSurfaceFromImage(const QImage& image, const QPoint& topLeft)
+void BitmapSurface::drawRect(QRect rect, QColor color)
 {
-    float imageWidth = static_cast<float>(image.width());
-    float imageHeight = static_cast<float>(image.height());
+    float rectWidth = static_cast<float>(rect.width());
+    float rectHeight = static_cast<float>(rect.height());
     float tileWidth = static_cast<float>(TILESIZE.width());
     float tileHeight = static_cast<float>(TILESIZE.height());
-    int nbTilesOnWidth = static_cast<int>(ceil(imageWidth / tileWidth));
-    int nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
+    int nbTilesOnWidth = static_cast<int>(ceil(rectWidth / tileWidth));
+    int nbTilesOnHeight = static_cast<int>(ceil(rectHeight / tileHeight));
 
     QPixmap paintTo(TILESIZE);
     mSurface = Surface();
-    mSurface.bounds = QRect(topLeft, image.size());
+    mSurface.bounds = QRect(rect.topLeft(), rect.size());
 
     for (int h=0; h < nbTilesOnHeight; h++) {
         for (int w=0; w < nbTilesOnWidth; w++) {
@@ -404,7 +407,9 @@ void BitmapSurface::createNewSurfaceFromImage(const QImage& image, const QPoint&
             const QPoint& tilePos = getTilePos(idx);
 
             const QRect& tileRect = QRect(tilePos, TILESIZE);
-            const QImage& tileImage = image.copy(tileRect);
+            QImage colorImage = QImage(rect.size(), QImage::Format_ARGB32_Premultiplied);
+            colorImage.fill(color);
+            const QImage& tileImage = colorImage.copy(tileRect);
 
             QPainter painter(&paintTo);
             painter.drawImage(QPoint(), tileImage);
@@ -551,7 +556,13 @@ void BitmapSurface::clear()
 Status BitmapSurface::writeFile(const QString& filename)
 {
     if (mSurface.isEmpty()) {
-        return Status::FAIL;
+        QFile f(filename);
+        if(f.exists())
+        {
+            bool b = f.remove();
+            return (b) ? Status::OK : Status::FAIL;
+        }
+        return Status::SAFE;
     }
 
     if (mSurface.pixmaps.first()) {

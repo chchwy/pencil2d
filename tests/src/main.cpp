@@ -16,9 +16,11 @@ GNU General Public License for more details.
 
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
+#include <QGuiApplication>
 
 int main(int argc, char* argv[])
 {
+    QGuiApplication app(argc, argv);
     int result = Catch::Session().run(argc, argv);
     return result;
 }

@@ -39,6 +39,14 @@ public:
     void paintSurfaceUsing(const QPixmap& inPixmap, const QPoint& newPos);
 
     /**
+     * @brief drawRectOnSurface
+     * For test and debug currently
+     * @param rect
+     * @param color
+     */
+    void drawRect(QRect rect, QColor color);
+
+    /**
      * @brief touchedTiles
      * Will find and return points within and surrounding the selection
      * @param QRect rect
