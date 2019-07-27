@@ -75,6 +75,38 @@ void BitmapSurface::createNewSurfaceFromImage(const QString& path, const QPoint&
     createNewSurfaceFromImage(image, topLeft);
 }
 
+void BitmapSurface::createNewSurfaceFromImage(const QImage& image, const QPoint& topLeft)
+{
+    float imageWidth = static_cast<float>(image.width());
+    float imageHeight = static_cast<float>(image.height());
+    float tileWidth = static_cast<float>(TILESIZE.width());
+    float tileHeight = static_cast<float>(TILESIZE.height());
+    int nbTilesOnWidth = static_cast<int>(ceil(imageWidth / tileWidth));
+    int nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
+
+    QPixmap paintTo(TILESIZE);
+    mSurface = Surface();
+    mSurface.bounds = QRect(topLeft, image.size());
+
+    for (int h=0; h < nbTilesOnHeight; h++) {
+        for (int w=0; w < nbTilesOnWidth; w++) {
+            paintTo.fill(Qt::transparent);
+            const QPoint& idx = QPoint(w, h);
+            const QPoint& tilePos = getTilePos(idx);
+
+            const QRect& tileRect = QRect(tilePos, TILESIZE);
+            const QImage& tileImage = image.copy(tileRect);
+
+            QPainter painter(&paintTo);
+            painter.drawImage(QPoint(), tileImage);
+            painter.end();
+
+            mSurface.appendPixmap(paintTo);
+            mSurface.appendPosition(topLeft+tilePos);
+        }
+    }
+}
+
 void BitmapSurface::appendBitmapSurface(const QPixmap& pixmap, const QPoint& pos)
 {
     mSurface.appendPixmap(pixmap);
