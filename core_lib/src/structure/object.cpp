@@ -94,7 +94,7 @@ bool Object::loadXML(QDomElement docElem, ProgressCallback progressForward)
         {
             switch (element.attribute("type").toInt())
             {
-            case Layer::BITMAP: addNewBitmapLayer(); break;
+            case Layer::BITMAP: addNewBitmapSurfaceLayer(); break;
             case Layer::VECTOR: addNewVectorLayer(); break;
             case Layer::SOUND:  addNewSoundLayer();  break;
             case Layer::CAMERA: addNewCameraLayer(); break;
