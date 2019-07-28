@@ -116,127 +116,26 @@ void BitmapSurface::appendBitmapSurface(const QPixmap& pixmap, const QPoint& pos
     mSurface.appendPosition(pos);
 
     extendBoundaries(QRect(pos, pixmap.size()));
+    mImageCacheValid = false;
 }
 
 void BitmapSurface::appendBitmapSurface(const Surface &surface)
 {
     mSurface += surface;
+    mImageCacheValid = false;
 }
 
 void BitmapSurface::renderSurfaceImage()
 {
-    mCachedSurface = surfaceAsImage();
+    if (!mImageCacheValid) {
+        mCachedSurface = surfaceAsImage();
+        mImageCacheValid = true;
+    }
 }
 
 void BitmapSurface::extendBoundaries(const QRect& rect)
 {
     mSurface.extendBoundaries(rect);
-}
-
-Surface BitmapSurface::surfaceFromBounds(const QRect& bounds)
-{
-    const float& imageWidth = static_cast<float>(bounds.width());
-    const float& imageHeight = static_cast<float>(bounds.height());
-    const float& tileWidth = static_cast<float>(TILESIZE.width());
-    const float& tileHeight = static_cast<float>(TILESIZE.height());
-    const int& nbTilesOnWidth = static_cast<int>(ceil(imageWidth / tileWidth));
-    const int& nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
-    QList<QPoint> positions;
-    QList<std::shared_ptr<QPixmap>> pixmaps;
-    QPixmap paintTo(TILESIZE);
-
-    QList<QPoint> corners;
-
-    corners.append(bounds.topLeft());
-    corners.append(bounds.topRight());
-    corners.append(bounds.bottomLeft());
-    corners.append(bounds.bottomRight());
-
-    for (int h=0; h < nbTilesOnHeight; h++) {
-        for (int w=0; w < nbTilesOnWidth; w++) {
-            paintTo.fill(Qt::transparent);
-
-            const QPoint& idx = QPoint(w, h);
-            const QPoint& origTilePos = getTilePos(idx);
-
-            for (int corner = 0; corner < corners.count(); corner++) {
-
-                QPoint tileOffsetCenter = getTilePos(getTileIndex(corners[corner]));
-                tileOffsetCenter += origTilePos;
-
-                const QPoint& topLeft = tileOffsetCenter+QPoint(-64,-64);
-
-                if (bounds.intersects(getRectForPoint(topLeft))) {
-                    positions.append(topLeft);
-                    pixmaps.append(std::make_shared<QPixmap>(paintTo));
-                }
-            }
-        }
-    }
-    return Surface(positions, pixmaps, bounds);
-}
-
-Surface BitmapSurface::surfaceFromPixmap(QPixmap& pixmap)
-{
-    const float& imageWidth = static_cast<float>(pixmap.width());
-    const float& imageHeight = static_cast<float>(pixmap.height());
-    const float& tileWidth = static_cast<float>(TILESIZE.width());
-    const float& tileHeight = static_cast<float>(TILESIZE.height());
-    const int& nbTilesOnWidth = static_cast<int>(ceil(imageWidth / tileWidth));
-    const int& nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
-
-    QList<QPoint> positions;
-    QList<std::shared_ptr<QPixmap>> pixmaps;
-    QPixmap paintTo(TILESIZE);
-    const QRect& bounds = pixmap.rect();
-
-    QList<QPoint> corners;
-
-    corners.append(bounds.topLeft());
-    corners.append(bounds.topRight());
-    corners.append(bounds.bottomLeft());
-    corners.append(bounds.bottomRight());
-
-    for (int h=0; h < nbTilesOnHeight; h++) {
-        for (int w=0; w < nbTilesOnWidth; w++) {
-            paintTo.fill(Qt::transparent);
-
-            const QPoint& idx = QPoint(w, h);
-            const QPoint& origTilePos = getTilePos(idx);
-            const QRect& tileRect = QRect(origTilePos, TILESIZE);
-            const QPixmap& tilePixmap = pixmap.copy(tileRect);
-
-            QPainter painter(&paintTo);
-            painter.drawPixmap(QPoint(), tilePixmap);
-            painter.end();
-
-            positions.append(origTilePos);
-            pixmaps.append(std::make_shared<QPixmap>(paintTo));
-        }
-    }
-    return Surface(positions, pixmaps, bounds);
-}
-
-Surface BitmapSurface::movedSurface(const Surface& inSurface, const QPoint& newPos)
-{
-    Surface newSurface;
-    newSurface.bounds = QRect(newPos, inSurface.bounds.size());
-    for (int i = 0; i < inSurface.countTiles(); i++)
-    {
-        const QPixmap& pix = inSurface.pixmapAt(i);
-        const QPoint& point = inSurface.pointAt(i);
-
-        const QPoint& nonInterpolatedPos = point + newPos;
-        const QPoint& pointIndex = getTileIndex(point);
-        const QPoint& pointIndexNewPos = getTileIndex(newPos);
-        const QPoint& tilePos = getTilePos(pointIndex);
-        QPoint interpolatedPos = getTilePos(pointIndexNewPos);
-        interpolatedPos += tilePos;
-
-        newSurface.appendPixmap(pix);
-        newSurface.appendPosition(nonInterpolatedPos);
-    }
-    return newSurface;
 }
 
 void BitmapSurface::paintSurfaceUsing(const QPixmap& inPixmap, const QPoint& newPos)
