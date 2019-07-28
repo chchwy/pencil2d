@@ -269,6 +269,7 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
 {
     BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
 
+    clearSurfaceBuffer();
     mMyPaint->clearSurface();
     refreshSurface();
     if (surfaceImage->isModified()) {
@@ -1512,20 +1513,9 @@ void ScribbleArea::clearSurfaceBuffer()
         MPTile *tile = i.value();
         if (tile)
         {
-            // Clear the content of the tile
-            //
+            // clear content and remove tile
             tile->clear();
-
-            // Removes blank tile from the scene for output optimization
-            //
-            // A tile without a scene is not re-created but onNewTile is
-            // called when this tile is to be shown again.
-            //
-//            QGraphicsScene* scene = tile->scene();
-//            if (scene) {
-//                scene->removeItem(tile);
-//                i.remove();
-//            }
+            i.remove();
         }
     }
 }
@@ -1592,15 +1582,15 @@ void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float yt
     point = mEditor->view()->mapScreenToCanvas(point);
 
     mMyPaint->strokeTo(point.x(), point.y(), pressure, xtilt, ytilt, deltaTime);
-    qDebug() << "stroke to: <<<< \n";
-    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
-    qDebug() << "seconds elapsed" << timer.elapsed();
+//    qDebug() << "stroke to: <<<< \n";
+//    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
+//    qDebug() << "seconds elapsed" << timer.elapsed();
 
     // update dirty region
     updateDirtyTiles();
-    qDebug() << "\n updated tiles: <<<<";
-    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
-    qDebug() << "seconds elapsed" << timer.elapsed();
+//    qDebug() << "\n updated tiles: <<<<";
+//    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
+//    qDebug() << "seconds elapsed" << timer.elapsed();
 }
 
 void ScribbleArea::updateDirtyTiles()
