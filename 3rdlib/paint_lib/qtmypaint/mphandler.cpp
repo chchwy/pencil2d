@@ -173,6 +173,24 @@ strokeTo(double x, double y, float pressure, float xtilt, float ytilt, double dt
     mypaint_surface_end_atomic(surface, &roi);
 }
 
+QColor
+MPHandler::getSurfaceColor(float x, float y, int radius)
+{
+    auto surface = reinterpret_cast<MyPaintSurface*>(m_surface);
+    float r, g, b, a;
+    mypaint_surface_get_color(surface, x, y, radius, &r,&g,&b,&a);
+
+
+    r = r * 255;
+    g = g * 255;
+    b = b * 255;
+    a = a * 255;
+    return QColor(static_cast<int>(r),
+                  static_cast<int>(g),
+                  static_cast<int>(b),
+                  static_cast<int>(a));
+}
+
 void
 MPHandler::startStroke()
 {

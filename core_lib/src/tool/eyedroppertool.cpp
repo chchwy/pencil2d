@@ -78,49 +78,40 @@ void EyedropperTool::pointerPressEvent(PointerEvent*)
 
 void EyedropperTool::pointerMoveEvent(PointerEvent*)
 {
+
+    mPickedColor = mScribbleArea->pickColorFromSurface(getCurrentPoint(), 10);
     Layer* layer = mEditor->layers()->currentLayer();
-    if (layer == NULL) { return; }
+//    if (layer == NULL) { return; }
 
     if (layer->type() == Layer::BITMAP)
     {
-        BitmapImage* targetImage = ((LayerBitmap *)layer)->getLastBitmapImageAtFrame(mEditor->currentFrame(), 0);
-        if (targetImage->contains(getCurrentPoint()))
-        {
-            QColor pickedColour;
-            //pickedColour.setRgba(targetImage->pixel(getCurrentPoint().x(), getCurrentPoint().y()));
-            pickedColour.setRgba(targetImage->pixel(getCurrentPoint().x(), getCurrentPoint().y()));
-            int transp = 255 - pickedColour.alpha();
-            pickedColour.setRed(pickedColour.red() + transp);
-            pickedColour.setGreen(pickedColour.green() + transp);
-            pickedColour.setBlue(pickedColour.blue() + transp);
-
-            if (pickedColour.alpha() != 0)
+            if (mPickedColor.alpha() != 0)
             {
-                mScribbleArea->setCursor(cursor(pickedColour));
+                mScribbleArea->setCursor(cursor(mPickedColor));
             }
             else
             {
                 mScribbleArea->setCursor(cursor());
             }
-        }
-        else
-        {
-            mScribbleArea->setCursor(cursor());
-        }
+//        }
+//        else
+//        {
+//            mScribbleArea->setCursor(cursor());
+//        }
     }
-    if (layer->type() == Layer::VECTOR)
-    {
-        VectorImage* vectorImage = ((LayerVector *)layer)->getLastVectorImageAtFrame(mEditor->currentFrame(), 0);
-        int colourNumber = vectorImage->getColourNumber(getCurrentPoint());
-        if (colourNumber != -1)
-        {
-            mScribbleArea->setCursor(cursor(mEditor->object()->getColour(colourNumber).colour));
-        }
-        else
-        {
-            mScribbleArea->setCursor(cursor());
-        }
-    }
+//    if (layer->type() == Layer::VECTOR)
+//    {
+//        VectorImage* vectorImage = ((LayerVector *)layer)->getLastVectorImageAtFrame(mEditor->currentFrame(), 0);
+//        int colourNumber = vectorImage->getColourNumber(getCurrentPoint());
+//        if (colourNumber != -1)
+//        {
+//            mScribbleArea->setCursor(cursor(mEditor->object()->getColour(colourNumber).colour));
+//        }
+//        else
+//        {
+//            mScribbleArea->setCursor(cursor());
+//        }
+//    }
 }
 
 void EyedropperTool::pointerReleaseEvent(PointerEvent* event)
@@ -137,29 +128,30 @@ void EyedropperTool::pointerReleaseEvent(PointerEvent* event)
 
 void EyedropperTool::updateFrontColor()
 {
-    Layer* layer = mEditor->layers()->currentLayer();
-    if (layer == nullptr) { return; }
-    if (layer->type() == Layer::BITMAP)
-    {
-        BitmapImage* targetImage = ((LayerBitmap*)layer)->getLastBitmapImageAtFrame(mEditor->currentFrame(), 0);
-        QColor pickedColour;
-        pickedColour.setRgba(targetImage->pixel(getLastPoint().x(), getLastPoint().y()));
-        int transp = 255 - pickedColour.alpha();
-        pickedColour.setRed(pickedColour.red() + transp);
-        pickedColour.setGreen(pickedColour.green() + transp);
-        pickedColour.setBlue(pickedColour.blue() + transp);
-        if (pickedColour.alpha() != 0)
-        {
-            mEditor->color()->setColor(pickedColour);
-        }
-    }
-    else if (layer->type() == Layer::VECTOR)
-    {
-        VectorImage* vectorImage = ((LayerVector*)layer)->getLastVectorImageAtFrame(mEditor->currentFrame(), 0);
-        int colourNumber = vectorImage->getColourNumber(getLastPoint());
-        if (colourNumber != -1)
-        {
-            mEditor->color()->setColorNumber(colourNumber);
-        }
-    }
+
+    mEditor->color()->setColor(mPickedColor);
+//    Layer* layer = mEditor->layers()->currentLayer();
+//    if (layer == nullptr) { return; }
+//    if (layer->type() == Layer::BITMAP)
+//    {
+//        BitmapImage* targetImage = ((LayerBitmap*)layer)->getLastBitmapImageAtFrame(mEditor->currentFrame(), 0);
+//        QColor pickedColour;
+//        pickedColour.setRgba(targetImage->pixel(getLastPoint().x(), getLastPoint().y()));
+//        int transp = 255 - pickedColour.alpha();
+//        pickedColour.setRed(pickedColour.red() + transp);
+//        pickedColour.setGreen(pickedColour.green() + transp);
+//        pickedColour.setBlue(pickedColour.blue() + transp);
+//        if (pickedColour.alpha() != 0)
+//        {
+//        }
+//    }
+//    else if (layer->type() == Layer::VECTOR)
+//    {
+//        VectorImage* vectorImage = ((LayerVector*)layer)->getLastVectorImageAtFrame(mEditor->currentFrame(), 0);
+//        int colourNumber = vectorImage->getColourNumber(getLastPoint());
+//        if (colourNumber != -1)
+//        {
+//            mEditor->color()->setColorNumber(colourNumber);
+//        }
+//    }
 }

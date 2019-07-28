@@ -1593,6 +1593,12 @@ void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float yt
 //    qDebug() << "seconds elapsed" << timer.elapsed();
 }
 
+QColor ScribbleArea::pickColorFromSurface(QPointF point, int radius)
+{
+
+    return mMyPaint->getSurfaceColor(point.x(), point.y(), radius);
+}
+
 void ScribbleArea::updateDirtyTiles()
 {
     QTransform v = mEditor->view()->getView();

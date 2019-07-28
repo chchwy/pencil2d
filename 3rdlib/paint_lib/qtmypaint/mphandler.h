@@ -65,6 +65,7 @@ public:
     void endStroke();
 
     float getBrushValue(MyPaintBrushSetting setting);
+    QColor getSurfaceColor(float x, float y, int radius);
 
     void setBrushColor(QColor newColor);
     void setBrushValue(MyPaintBrushSetting setting, float value);

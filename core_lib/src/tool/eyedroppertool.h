@@ -37,6 +37,9 @@ public:
 
     /** Updates front color for bitmap and color index for vector */
     void updateFrontColor();
+
+private:
+    QColor mPickedColor;
 };
 
 #endif // EYEDROPPERTOOL_H
