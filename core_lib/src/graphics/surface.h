@@ -4,22 +4,27 @@
 #include <QList>
 #include <QPixmap>
 
-typedef struct Surface
+inline uint qHash(const QPoint& key)
 {
-    QList<QPoint> positions;
-    QList<std::shared_ptr<QPixmap>> pixmaps;
+    return (static_cast<uint>(key.x()) << 16) + static_cast<uint>(key.y());
+}
+
+typedef QHash<QPoint, std::shared_ptr<QPixmap>> Tiles;
+
+struct Surface
+{
+
+    Tiles tiles;
     QRect bounds;
 
     Surface(){}
-    Surface(QList<QPoint> positions, QList<std::shared_ptr<QPixmap>> pixmaps, QRect bounds = QRect()) :
-        positions(positions), pixmaps(pixmaps), bounds(bounds)
+    Surface(Tiles tiles, QRect bounds = QRect()) :
+        tiles(tiles), bounds(bounds)
     {
     }
 
     Surface& operator+=(const Surface& rhs) {
-
-          pixmaps += rhs.pixmaps;
-          positions += rhs.positions;
+          tiles.unite(rhs.tiles);
           extendBoundaries(rhs.bounds);
           return *this;
     }
@@ -39,54 +44,42 @@ typedef struct Surface
 
     int countTiles() const
     {
-        Q_ASSERT(pixmaps.count() == positions.count());
-        return pixmaps.count();
+        return tiles.count();
     }
 
     bool isEmpty() {
-        return countTiles() == 0 ? true : false;
+        return tiles.count() == 0;
     }
 
-    QPixmap& pixmapAt(int index)
+    QPixmap& pixmapAtPos(const QPoint& pos)
     {
-        return *pixmaps[index];
+        return *tiles[pos];
     }
 
-
-    const QPixmap& pixmapAt(int index) const
+    const QPixmap& pixmapAtPos(const QPoint& pos) const
     {
-        return *pixmaps.at(index).get();
+        return *tiles.value(pos).get();
     }
 
-    const QPoint& pointAt(int index) const
+    const QPoint posFromPixmap(const std::shared_ptr<QPixmap>& pixmap) const
     {
-        return positions.at(index);
+        return tiles.key(pixmap);
     }
 
-    void appendPixmap(const QPixmap& pixmap)
+    void appendTile(const QPixmap& pixmap, const QPoint& pos)
     {
-        pixmaps.append(std::make_shared<QPixmap>(pixmap));
-    }
-
-    void appendPosition(const QPoint& pos)
-    {
-        positions.append(pos);
+        tiles.insert(pos, std::make_shared<QPixmap>(pixmap));
     }
 
     void clear()
     {
-        pixmaps.clear();
-        positions.clear();
+        tiles.clear();
         bounds = QRect();
     }
 
-    bool contains(const QPixmap& pixmap) const {
-        return pixmaps.contains(std::make_shared<QPixmap>(pixmap));
+    bool contains(const QPoint& pos) const {
+        return tiles.contains(pos);
     }
-
-    bool contains(const QPoint& point) const {
-        return positions.contains(point);
-    }
-} Surface;
+};
 
 #endif // SURFACE_H

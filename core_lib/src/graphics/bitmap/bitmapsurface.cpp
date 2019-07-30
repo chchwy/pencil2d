@@ -9,11 +9,8 @@
 BitmapSurface::BitmapSurface()
 {
 
-    QList<QPoint> positions;
-    positions.append(QPoint(0,0));
-    QList<std::shared_ptr<QPixmap>> pixmaps;
-    pixmaps.append(std::make_shared<QPixmap>(QPixmap(0,0)));
-    mSurface = Surface(positions, pixmaps, QRect(0,0,1,1));
+    Tiles tiles;
+    mSurface = Surface(tiles, QRect(0,0,1,1));
 }
 
 BitmapSurface::BitmapSurface(const BitmapSurface& pieces) : KeyFrame (pieces),
@@ -50,11 +47,11 @@ void BitmapSurface::unloadFile()
 
 bool BitmapSurface::isLoaded()
 {
-    return (!mSurface.pixmaps.isEmpty());
+    return (!mSurface.tiles.isEmpty());
 }
 
 
-bool BitmapSurface::isTransparent(QImage& image)
+bool BitmapSurface::isTransparent(QImage image)
 {
     if (!image.hasAlphaChannel()) {
         image = image.convertToFormat(QImage::Format_ARGB32);
@@ -62,9 +59,9 @@ bool BitmapSurface::isTransparent(QImage& image)
 
     for (int x = 0 ; x < image.width() ; x++) {
         for (int y = 0 ; y < image.height() ; y++) {
-            QRgb currentPixel = (image.pixel(x, y));
+            const QRgb pixelColor = *(reinterpret_cast<const QRgb*>(image.constScanLine(x))+y);
 
-            if (qAlpha(currentPixel) != 0) {
+            if (qAlpha(pixelColor) != 0) {
                 return false;
             }
         }
@@ -104,16 +101,16 @@ void BitmapSurface::createNewSurfaceFromImage(const QImage& image, const QPoint&
             painter.drawImage(QPoint(), tileImage);
             painter.end();
 
-            mSurface.appendPixmap(paintTo);
-            mSurface.appendPosition(topLeft+tilePos);
+            if (!isTransparent(tileImage)) {
+                mSurface.appendTile(paintTo, topLeft+tilePos);
+            }
         }
     }
 }
 
-void BitmapSurface::appendBitmapSurface(const QPixmap& pixmap, const QPoint& pos)
+void BitmapSurface::addTileToSurface(const QPixmap& pixmap, const QPoint& pos)
 {
-    mSurface.appendPixmap(pixmap);
-    mSurface.appendPosition(pos);
+    mSurface.appendTile(pixmap, pos);
 
     extendBoundaries(QRect(pos, pixmap.size()));
     mImageCacheValid = false;
@@ -166,8 +163,7 @@ void BitmapSurface::paintSurfaceUsing(const QPixmap& inPixmap, const QPoint& new
             continue;
         }
 
-        outSurface.appendPixmap(outPix);
-        outSurface.appendPosition(touchedPoint);
+        outSurface.appendTile(outPix, touchedPoint);
         outSurface.bounds = adjustedPixRect;
     }
 
@@ -175,18 +171,23 @@ void BitmapSurface::paintSurfaceUsing(const QPixmap& inPixmap, const QPoint& new
 
     // paint new tiles on previous tiles if possible, otherwise
     // prepare to be added to bitmapsurface
-    for (int t = 0; t < outSurface.countTiles(); t++)
-    {
-        QPixmap newPix = outSurface.pixmapAt(t);
-        QPoint newPos = outSurface.pointAt(t);
+    QHashIterator<QPoint, std::shared_ptr<QPixmap>> newTiles(outSurface.tiles);
+    while (newTiles.hasNext()) {
+        newTiles.next();
+
+        QPixmap newPix = outSurface.pixmapAtPos(newTiles.key());
+        const QPoint& newPos = outSurface.posFromPixmap(newTiles.value());
         QPixmap paintToPix = QPixmap(newPix.size());
         paintToPix.fill(Qt::transparent);
 
         bool noMatch = false;
-        for (int i = 0; i < this->mSurface.countTiles(); i++)
+        QHashIterator<QPoint, std::shared_ptr<QPixmap>> cuTiles(mSurface.tiles);
+        while (cuTiles.hasNext())
         {
-            QPixmap& existingPix = mSurface.pixmapAt(i);
-            QPoint existingPos = mSurface.pointAt(i);
+            cuTiles.next();
+
+            QPixmap& existingPix = mSurface.pixmapAtPos(cuTiles.key());
+            const QPoint existingPos = mSurface.posFromPixmap(cuTiles.value());
 
             if (existingPos == newPos) {
                 QPainter painter(&existingPix);
@@ -204,8 +205,7 @@ void BitmapSurface::paintSurfaceUsing(const QPixmap& inPixmap, const QPoint& new
 
         if (noMatch)
         {
-            extraSurface.appendPixmap(newPix);
-            extraSurface.appendPosition(newPos);
+            extraSurface.appendTile(newPix, newPos);
             extraSurface.bounds = outSurface.bounds;
             noMatch = false;
         }
@@ -314,8 +314,7 @@ void BitmapSurface::drawRect(QRect rect, QColor color)
             painter.drawImage(QPoint(), tileImage);
             painter.end();
 
-            mSurface.appendPixmap(paintTo);
-            mSurface.appendPosition(tilePos);
+            mSurface.appendTile(paintTo, tilePos);
         }
     }
 }
@@ -336,10 +335,11 @@ QImage BitmapSurface::surfaceAsImage()
     QPainter painter(&paintedImage);
     painter.translate(-mSurface.topLeft());
 
-    for (int i = 0; i < mSurface.countTiles(); i++)
-    {
-        const QPixmap& pix = mSurface.pixmapAt(i);
-        const QPoint& pos = mSurface.pointAt(i);
+    QHashIterator<QPoint, std::shared_ptr<QPixmap>> cuTiles(mSurface.tiles);
+    while (cuTiles.hasNext()) {
+        cuTiles.next();
+        const QPixmap& pix = mSurface.pixmapAtPos(cuTiles.key());
+        const QPoint& pos = mSurface.posFromPixmap(cuTiles.value());
         painter.drawPixmap(pos, pix);
     }
     painter.end();
@@ -354,10 +354,12 @@ void BitmapSurface::eraseSelection(const QPoint pos, QPixmap& pixmap, const QRec
 
 void BitmapSurface::eraseSelection(const QRect selection)
 {
-    for (int i = 0; i < mSurface.countTiles(); i++) {
+    QHashIterator<QPoint, std::shared_ptr<QPixmap>> cuTiles(mSurface.tiles);
+    while (cuTiles.hasNext()) {
+        cuTiles.next();
 
-        QPixmap& pixmap = *mSurface.pixmaps[i].get();
-        const QPoint& pos = mSurface.pointAt(i);
+        QPixmap& pixmap = mSurface.pixmapAtPos(cuTiles.key());
+        const QPoint& pos = mSurface.posFromPixmap(cuTiles.value());
         eraseSelection(pos, pixmap, selection);
     }
 }
@@ -377,14 +379,15 @@ void BitmapSurface::fillSelection(const QPoint& pos, QPixmap& pixmap, QColor col
 Surface BitmapSurface::intersectedSurface(const QRect rect)
 {
     Surface outSurface;
-    for (int i = 0; i < mSurface.countTiles(); i++)
+    QHashIterator<QPoint, std::shared_ptr<QPixmap>> cuTiles(mSurface.tiles);
+    while (cuTiles.hasNext())
     {
-        const QPixmap& pix = mSurface.pixmapAt(i);
-        const QPoint& pos = mSurface.pointAt(i);
+        cuTiles.next();
+        const QPixmap& pix = mSurface.pixmapAtPos(cuTiles.key());
+        const QPoint& pos = mSurface.posFromPixmap(cuTiles.value());
 
         if (getRectForPoint(pos, pix.size()).intersects(rect)) {
-            outSurface.appendPixmap(pix);
-            outSurface.appendPosition(pos);
+            outSurface.appendTile(pix, pos);
             outSurface.bounds = rect;
         }
     }
@@ -405,10 +408,13 @@ QPixmap BitmapSurface::cutSurfaceAsPixmap(const QRect selection)
 
     QPainter painter(&paintedImage);
     painter.translate(-selection.topLeft());
-    for (int i = 0; i < intersectSurface.countTiles(); i++)
+
+    QHashIterator<QPoint, std::shared_ptr<QPixmap>> interTiles(intersectSurface.tiles);
+    while(interTiles.hasNext())
     {
-        const QPixmap& pix = intersectSurface.pixmapAt(i);
-        const QPoint& pos = intersectSurface.pointAt(i);
+        interTiles.next();
+        const QPixmap& pix = intersectSurface.pixmapAtPos(interTiles.key());
+        const QPoint& pos = intersectSurface.posFromPixmap(interTiles.value());
         painter.drawPixmap(pos, pix);
     }
     return paintedImage;
@@ -425,10 +431,12 @@ QPixmap BitmapSurface::copySurfaceAsPixmap(const QRect selection)
 
     QPainter painter(&paintedImage);
     painter.translate(-selection.topLeft());
-    for (int i = 0; i < intersectSurface.countTiles(); i++)
+    QHashIterator<QPoint, std::shared_ptr<QPixmap>> interTiles(intersectSurface.tiles);
+    while(interTiles.hasNext())
     {
-        const QPixmap& pix = intersectSurface.pixmapAt(i);
-        const QPoint& pos = intersectSurface.pointAt(i);
+        interTiles.next();
+        const QPixmap& pix = intersectSurface.pixmapAtPos(interTiles.key());
+        const QPoint& pos = intersectSurface.posFromPixmap(interTiles.value());
         painter.drawPixmap(pos, pix);
     }
     return paintedImage;
@@ -436,14 +444,12 @@ QPixmap BitmapSurface::copySurfaceAsPixmap(const QRect selection)
 
 QList<QPoint> BitmapSurface::tilePositions()
 {
-    if (mSurface.countTiles() == 0) { return QList<QPoint>(); }
-    return mSurface.positions;
+    return mSurface.tiles.keys();
 }
 
 QList<std::shared_ptr<QPixmap>> BitmapSurface::pixmaps()
 {
-    if (mSurface.countTiles() == 0) { return QList<std::shared_ptr<QPixmap>>(); }
-    return mSurface.pixmaps;
+    return mSurface.tiles.values();
 }
 
 void BitmapSurface::clear()
@@ -464,24 +470,12 @@ Status BitmapSurface::writeFile(const QString& filename)
         return Status::SAFE;
     }
 
-    if (mSurface.pixmaps.first()) {
+    if (mSurface.tiles.values().first()) {
         const QImage& image = surfaceAsImage();
         bool b = image.save(filename);
         return (b) ? Status::OK : Status::FAIL;
     }
     return Status::FAIL;
-}
-
-const QPixmap BitmapSurface::getPixmapFromTilePos(const QPoint& pos)
-{
-    for (int i = 0; i < mSurface.countTiles(); i++) {
-        const QPoint& tilePos = mSurface.pointAt(i);
-
-        if (tilePos == pos) {
-            return mSurface.pixmapAt(i);
-        }
-    }
-    return QPixmap();
 }
 
 const QRect BitmapSurface::getRectForPoint(const QPoint& point, const QSize size)

@@ -31,7 +31,7 @@ public:
 
     Status writeFile(const QString& filename);
 
-    void appendBitmapSurface(const QPixmap& pixmap, const QPoint& pos);
+    void addTileToSurface(const QPixmap& pixmap, const QPoint& pos);
     void appendBitmapSurface(const Surface& surface);
 
     /**
@@ -61,7 +61,7 @@ public:
     void createNewSurfaceFromImage(const QImage& image, const QPoint& topLeft);
     void createNewSurfaceFromImage(const QString& path, const QPoint& topLeft);
 
-    bool isTransparent(QImage& image);
+    bool isTransparent(QImage image);
 
     /**
      * @brief extendBoundaries
@@ -114,7 +114,6 @@ public slots:
 
 private:
 
-    const QPixmap getPixmapFromTilePos(const QPoint& pos);
     inline QPoint getTilePos(const QPoint& idx);
     inline QPoint getTileIndex(const QPoint& pos);
     inline QPointF getTileFIndex(const QPoint& pos);

@@ -112,9 +112,4 @@ protected:
     QHash<QPoint, MPTile*> m_Tiles;
 };
 
-inline uint qHash (const QPoint & key)
-{
-    return qHash (QPair<int,int>(key.x(), key.y()) );
-}
-
 #endif // MPSURFACE_H

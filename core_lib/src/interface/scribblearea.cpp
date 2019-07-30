@@ -293,14 +293,13 @@ void ScribbleArea::placeSurfaceOnCanvas(const BitmapSurface& surfaceImage)
     // render surface image to to tile
     // tile is then rendered in paintEvent
     const Surface& surface = surfaceImage.readOnlySurface();
-    for (int i = 0; i < surface.countTiles(); i++) {
+    QHashIterator<QPoint, std::shared_ptr<QPixmap>> surfaceIt(surface.tiles);
+    while(surfaceIt.hasNext()) {
+        surfaceIt.next();
 
-        const QPixmap& pixmap = surface.pixmapAt(i);
-        const QPoint& pos = surface.pointAt(i);
+        const QPixmap& pixmap = surface.pixmapAtPos(surfaceIt.key());
+        const QPoint& pos = surface.posFromPixmap(surfaceIt.value());
         MPTile* tile = getTileFromPos(pos);
-
-//        qDebug() << "mp tile pos: " << tile->pos();
-//        tile->setImage(pixmap.toImage());
         tile->setPixmap(pixmap);
     }
 }
@@ -989,7 +988,8 @@ void ScribbleArea::paintBitmapBuffer()
         // adds content from canvas and saves to surfaceimage
         for (MPTile* item : mBufferTiles.values()) {
             QPixmap tilePixmap = item->pixmap();
-            surfaceImage->appendBitmapSurface(tilePixmap, item->pos().toPoint());
+
+            surfaceImage->addTileToSurface(tilePixmap, item->pos().toPoint());
 
             // load the new tiles from buffer into mypaint
             mMyPaint->loadTile(tilePixmap, item->pos().toPoint());

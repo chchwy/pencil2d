@@ -361,3 +361,8 @@ inline QPointF MPSurface::getTileFIndex(const QPoint& pos)
 {
     return QPointF((qreal)pos.x()/MYPAINT_TILE_SIZE, (qreal)pos.y()/MYPAINT_TILE_SIZE);
 }
+
+inline uint qHash (const QPoint & key)
+{
+    return qHash (QPair<int,int>(key.x(), key.y()) );
+}

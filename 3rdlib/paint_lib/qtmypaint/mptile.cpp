@@ -75,9 +75,7 @@ void MPTile::updateCache()
 
 void MPTile::setPixmap(const QPixmap& pixmap)
 {
-
     QSize tileSize = this->boundingRect().size().toSize();
-
     if (pixmap.isNull()) { return; }
 
     updateMyPaintBuffer(tileSize, pixmap);
