@@ -221,8 +221,6 @@ void SmudgeTool::pointerMoveEvent(PointerEvent* event)
             selectMan->setVertices(vectorImage->getVerticesCloseTo(getCurrentPoint(), selectMan->selectionTolerance()));
         }
     }
-    mScribbleArea->update();
-    mScribbleArea->setAllDirty();
 }
 
 void SmudgeTool::pointerReleaseEvent(PointerEvent* event)
@@ -237,7 +235,10 @@ void SmudgeTool::pointerReleaseEvent(PointerEvent* event)
         if (layer->type() == Layer::BITMAP)
         {
             drawStroke();
+
+            mScribbleArea->paintBitmapBuffer();
             mScribbleArea->setAllDirty();
+            mScribbleArea->clearBitmapBuffer();
             endStroke();
         }
         else if (layer->type() == Layer::VECTOR)
@@ -253,92 +254,6 @@ void SmudgeTool::pointerReleaseEvent(PointerEvent* event)
                 vectorImage->curve(curveNumber).smoothCurve();
             }
             mScribbleArea->setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
-        }
-    }
-}
-
-void SmudgeTool::drawStroke()
-{
-    if (!mScribbleArea->isLayerPaintable()) return;
-
-    Layer* layer = mEditor->layers()->currentLayer();
-    if (layer == NULL) { return; }
-
-    BitmapImage *targetImage = ((LayerBitmap *)layer)->getLastBitmapImageAtFrame(mEditor->currentFrame(), 0);
-    StrokeTool::drawStroke();
-    QList<QPointF> p = strokeManager()->interpolateStroke();
-
-    for (int i = 0; i < p.size(); i++)
-    {
-        p[i] = mEditor->view()->mapScreenToCanvas(p[i]);
-    }
-
-    qreal opacity = 1.0;
-    mCurrentWidth = properties.width;
-    qreal brushWidth = mCurrentWidth + 0.0 * properties.feather;
-    qreal offset = qMax(0.0, mCurrentWidth - 0.5 * properties.feather) / brushWidth;
-    //opacity = currentPressure; // todo: Probably not interesting?!
-    //brushWidth = brushWidth * opacity;
-
-    BlitRect rect;
-    QPointF a = mLastBrushPoint;
-    QPointF b = getCurrentPoint();
-
-
-    if (toolMode == 1) // liquify hard
-    {
-        qreal brushStep = 2;
-        qreal distance = QLineF(b, a).length() / 2.0;
-        int steps = qRound(distance / brushStep);
-        int rad = qRound(brushWidth / 2.0) + 2;
-
-        QPointF sourcePoint = mLastBrushPoint;
-        for (int i = 0; i < steps; i++)
-        {
-            QPointF targetPoint = mLastBrushPoint + (i + 1) * (brushStep) * (b - mLastBrushPoint) / distance;
-            rect.extend(targetPoint.toPoint());
-            mScribbleArea->liquifyBrush(targetImage,
-                                        sourcePoint,
-                                        targetPoint,
-                                        brushWidth,
-                                        offset,
-                                        opacity);
-
-            if (i == (steps - 1))
-            {
-                mLastBrushPoint = targetPoint;
-            }
-            sourcePoint = targetPoint;
-//            mScribbleArea->paintBitmapBufferRect(rect);
-            mScribbleArea->refreshBitmap(rect, rad);
-        }
-    }
-    else // liquify smooth
-    {
-        qreal brushStep = 2.0;
-        qreal distance = QLineF(b, a).length();
-        int steps = qRound(distance / brushStep);
-        int rad = qRound(brushWidth / 2.0) + 2;
-
-        QPointF sourcePoint = mLastBrushPoint;
-        for (int i = 0; i < steps; i++)
-        {
-            QPointF targetPoint = mLastBrushPoint + (i + 1) * (brushStep) * (b - mLastBrushPoint) / distance;
-            rect.extend(targetPoint.toPoint());
-            mScribbleArea->blurBrush(targetImage,
-                                     sourcePoint,
-                                     targetPoint,
-                                     brushWidth,
-                                     offset,
-                                     opacity);
-
-            if (i == (steps - 1))
-            {
-                mLastBrushPoint = targetPoint;
-            }
-            sourcePoint = targetPoint;
-//            mScribbleArea->paintBitmapBufferRect(rect);
-            mScribbleArea->refreshBitmap(rect, rad);
         }
     }
 }
