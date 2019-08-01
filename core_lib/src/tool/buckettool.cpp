@@ -133,7 +133,7 @@ void BucketTool::pointerReleaseEvent(PointerEvent* event)
 
     if (event->button() == Qt::LeftButton)
     {
-        mEditor->backup(typeName());
+//        mEditor->backup(typeName());
 
         switch (layer->type())
         {
@@ -148,21 +148,21 @@ void BucketTool::pointerReleaseEvent(PointerEvent* event)
 
 void BucketTool::paintBitmap(Layer* layer)
 {
-    Layer* targetLayer = layer; // by default
-    int layerNumber = editor()->layers()->currentLayerIndex(); // by default
+//    Layer* targetLayer = layer; // by default
+//    int layerNumber = editor()->layers()->currentLayerIndex(); // by default
 
-    BitmapImage* targetImage = ((LayerBitmap*)targetLayer)->getLastBitmapImageAtFrame(editor()->currentFrame(), 0);
+//    BitmapImage* targetImage = ((LayerBitmap*)targetLayer)->getLastBitmapImageAtFrame(editor()->currentFrame(), 0);
 
-    QPoint point = QPoint(qFloor(getLastPoint().x()), qFloor(getLastPoint().y()));
-    QRect cameraRect = mScribbleArea->getCameraRect().toRect();
-    BitmapImage::floodFill(targetImage,
-                           cameraRect,
-                           point,
-                           qPremultiply(mEditor->color()->frontColor().rgba()),
-                           properties.tolerance);
+//    QPoint point = QPoint(qFloor(getLastPoint().x()), qFloor(getLastPoint().y()));
+//    QRect cameraRect = mScribbleArea->getCameraRect().toRect();
+//    BitmapImage::floodFill(targetImage,
+//                           cameraRect,
+//                           point,
+//                           qPremultiply(mEditor->color()->frontColor().rgba()),
+//                           properties.tolerance);
 
-    mScribbleArea->setModified(layerNumber, mEditor->currentFrame());
-    mScribbleArea->setAllDirty();
+//    mScribbleArea->setModified(layerNumber, mEditor->currentFrame());
+//    mScribbleArea->setAllDirty();
 }
 
 void BucketTool::paintVector(Layer* layer)
