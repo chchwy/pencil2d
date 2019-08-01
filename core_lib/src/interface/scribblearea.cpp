@@ -239,8 +239,6 @@ void ScribbleArea::didCreateNewFrame(int frame)
 void ScribbleArea::prepareForDrawing()
 {
     qDebug() << "prepare for drawing";
-    mMyPaint->clearSurface();
-    refreshSurface();
 
     // This loads the whole surface image into mypaint backend
     // should be used with caution, highly dependent on surface since.
@@ -262,7 +260,6 @@ void ScribbleArea::prepareForDrawing()
         default:
             break;
     }
-
 }
 
 void ScribbleArea::showBitmapFrame(Layer* layer)
@@ -270,11 +267,8 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
     BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
 
     clearSurfaceBuffer();
-    mMyPaint->clearSurface();
-    refreshSurface();
     if (surfaceImage->isModified()) {
         qDebug() << "keyframe has been modified";
-        prepareForDrawing();
         surfaceImage->setModified(false);
 
         // render tiles to image for faster playback
@@ -1000,7 +994,6 @@ void ScribbleArea::paintBitmapBuffer()
         surfaceImage->renderSurfaceImage();
     }
 
-    refreshSurface();
     update();
 
     layer->setModified(frameNumber, true);
