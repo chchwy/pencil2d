@@ -77,35 +77,24 @@ void BitmapSurface::createNewSurfaceFromImage(const QString& path, const QPoint&
 
 void BitmapSurface::createNewSurfaceFromImage(const QImage& image, const QPoint& topLeft)
 {
-    float imageWidth = static_cast<float>(image.width());
-    float imageHeight = static_cast<float>(image.height());
-    float tileWidth = static_cast<float>(TILESIZE.width());
-    float tileHeight = static_cast<float>(TILESIZE.height());
-    int nbTilesOnWidth = static_cast<int>(ceil(imageWidth / tileWidth));
-    int nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
-
     QPixmap paintTo(TILESIZE);
     mSurface = Surface();
     mSurface.bounds = QRect(topLeft, image.size());
 
-    for (int h=0; h < nbTilesOnHeight; h++) {
-        for (int w=0; w < nbTilesOnWidth; w++) {
-            paintTo.fill(Qt::transparent);
-            const QPoint& idx = QPoint(w, h);
-            const QPoint& tilePos = getTilePos(idx);
-            QPoint adjustedTopLeft = getTileIndex(topLeft);
-            adjustedTopLeft = getTilePos(adjustedTopLeft);
+    QList<QPoint> touchedPoints = touchedTiles(bounds());
+    for (int point = 0; point < touchedPoints.count(); point++) {
 
-            const QRect& tileRect = QRect(tilePos, TILESIZE);
-            const QImage& tileImage = image.copy(tileRect);
+        const QPoint& touchedPoint = touchedPoints.at(point);
 
-            QPainter painter(&paintTo);
-            painter.drawImage(QPoint(), tileImage);
-            painter.end();
+        paintTo.fill(Qt::transparent);
+        QPainter painter(&paintTo);
 
-            if (!isTransparent(tileImage)) {
-                mSurface.appendTile(paintTo, adjustedTopLeft+tilePos);
-            }
+        painter.save();
+        painter.translate(-touchedPoint);
+        painter.drawImage(topLeft, image);
+        painter.restore();
+        if (!isTransparent(paintTo.toImage())) {
+            mSurface.appendTile(paintTo, touchedPoint);
         }
     }
 }
@@ -247,7 +236,7 @@ QList<QPoint> BitmapSurface::scanForSurroundingTiles(const QRect& rect)
     return points;
 }
 
-QList<QPoint> BitmapSurface::scanForTilesAtSelection(const QRect& rect)
+QList<QPoint> BitmapSurface::scanForTilesAtRect(const QRect& rect)
 {
     const float& imageWidth = static_cast<float>(rect.width());
     const float& imageHeight = static_cast<float>(rect.height());
@@ -285,7 +274,7 @@ QList<QPoint> BitmapSurface::scanForTilesAtSelection(const QRect& rect)
 
 QList<QPoint> BitmapSurface::touchedTiles(const QRect& rect)
 {
-    return scanForTilesAtSelection(rect);
+    return scanForTilesAtRect(rect);
 }
 
 void BitmapSurface::drawRect(QRect rect, QColor color)

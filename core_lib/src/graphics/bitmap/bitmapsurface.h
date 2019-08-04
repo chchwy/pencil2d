@@ -152,7 +152,7 @@ private:
     Surface intersectedSurface(const QRect rect);
 
     QList<QPoint> scanForSurroundingTiles(const QRect& rect);
-    QList<QPoint> scanForTilesAtSelection(const QRect& rect);
+    QList<QPoint> scanForTilesAtRect(const QRect& rect);
 
     const QSize TILESIZE = QSize(64,64);
 
