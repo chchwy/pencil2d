@@ -93,6 +93,8 @@ void BitmapSurface::createNewSurfaceFromImage(const QImage& image, const QPoint&
             paintTo.fill(Qt::transparent);
             const QPoint& idx = QPoint(w, h);
             const QPoint& tilePos = getTilePos(idx);
+            QPoint adjustedTopLeft = getTileIndex(topLeft);
+            adjustedTopLeft = getTilePos(adjustedTopLeft);
 
             const QRect& tileRect = QRect(tilePos, TILESIZE);
             const QImage& tileImage = image.copy(tileRect);
@@ -102,7 +104,7 @@ void BitmapSurface::createNewSurfaceFromImage(const QImage& image, const QPoint&
             painter.end();
 
             if (!isTransparent(tileImage)) {
-                mSurface.appendTile(paintTo, topLeft+tilePos);
+                mSurface.appendTile(paintTo, adjustedTopLeft+tilePos);
             }
         }
     }
@@ -263,10 +265,10 @@ QList<QPoint> BitmapSurface::scanForTilesAtSelection(const QRect& rect)
     for (int h=0; h < nbTilesOnHeight; h++) {
         for (int w=0; w < nbTilesOnWidth; w++) {
 
-            const QPoint& tileIndex = QPoint(TILESIZE.width()*w,TILESIZE.height()*h);
+            const QPoint& tilePos = getTilePos(QPoint(w,h));
             for (int i = 0; i < corners.count(); i++) {
                 QPoint movedPos = getTileIndex(corners[i]-cornerOffset);
-                movedPos = getTilePos(movedPos)+tileIndex;
+                movedPos = getTilePos(movedPos)+tilePos;
 
                 if (points.contains(movedPos)) {
                     continue;
