@@ -678,6 +678,7 @@ Status Editor::setObject(Object* newObject)
 
 void Editor::updateObject()
 {
+    emit newFrameCreated(mObject->data()->getCurrentFrame());
     scrubTo(mObject->data()->getCurrentFrame());
     setCurrentLayerIndex(mObject->data()->getCurrentLayer());
 

@@ -18,6 +18,12 @@ BitmapSurface::BitmapSurface(const BitmapSurface& pieces) : KeyFrame (pieces),
 {
 }
 
+BitmapSurface::BitmapSurface(const QRect bounds)
+{
+    Tiles tiles;
+    mSurface = Surface(tiles, bounds);
+}
+
 BitmapSurface::~BitmapSurface()
 {
 }

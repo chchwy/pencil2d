@@ -23,6 +23,8 @@ GNU General Public License for more details.
 #include "layer.h"
 #include "layervector.h"
 #include "layerbitmap.h"
+#include "bitmapsurface.h"
+#include "layerbitmapsurface.h"
 #include "layermanager.h"
 #include "colormanager.h"
 #include "strokemanager.h"
@@ -30,7 +32,7 @@ GNU General Public License for more details.
 #include "vectorimage.h"
 #include "editor.h"
 #include "scribblearea.h"
-
+#include "bitmaputils.h"
 
 BucketTool::BucketTool(QObject* parent) : StrokeTool(parent)
 {
@@ -111,7 +113,6 @@ void BucketTool::pointerPressEvent(PointerEvent* event)
     {
         mScribbleArea->setAllDirty();
     }
-    startStroke();
 }
 
 void BucketTool::pointerMoveEvent(PointerEvent* event)
@@ -148,21 +149,38 @@ void BucketTool::pointerReleaseEvent(PointerEvent* event)
 
 void BucketTool::paintBitmap(Layer* layer)
 {
-//    Layer* targetLayer = layer; // by default
-//    int layerNumber = editor()->layers()->currentLayerIndex(); // by default
+    Layer* targetLayer = layer; // by default
+    int layerNumber = editor()->layers()->currentLayerIndex(); // by default
 
-//    BitmapImage* targetImage = ((LayerBitmap*)targetLayer)->getLastBitmapImageAtFrame(editor()->currentFrame(), 0);
+    BitmapSurface* targetImage = static_cast<LayerBitmapSurface*>(targetLayer)->getLastBitmapImageAtFrame(editor()->currentFrame(), 0);
 
-//    QPoint point = QPoint(qFloor(getLastPoint().x()), qFloor(getLastPoint().y()));
-//    QRect cameraRect = mScribbleArea->getCameraRect().toRect();
-//    BitmapImage::floodFill(targetImage,
-//                           cameraRect,
-//                           point,
-//                           qPremultiply(mEditor->color()->frontColor().rgba()),
-//                           properties.tolerance);
+    QPoint point = QPoint(qFloor(getLastPoint().x()), qFloor(getLastPoint().y()));
+    QRect cameraRect = mScribbleArea->getCameraRect().toRect();
 
-//    mScribbleArea->setModified(layerNumber, mEditor->currentFrame());
-//    mScribbleArea->setAllDirty();
+    QPixmap cameraImage = QPixmap(cameraRect.size());
+    cameraImage.fill(Qt::transparent);
+
+    targetImage->extendBoundaries(cameraRect);
+    targetImage->paintSurfaceUsing(cameraImage,cameraRect.topLeft());
+    QImage image = targetImage->surfaceAsImage();
+    QRect bounds = targetImage->bounds();
+
+    // If the point we are supposed to fill is outside the image and camera bounds, do nothing
+    if(!cameraRect.united(bounds).contains(point)) { return; }
+
+    BitmapUtils::floodFill(image,
+                           bounds,
+                           point,
+                           qPremultiply(mEditor->color()->frontColor().rgba()),
+                           static_cast<int>(properties.tolerance));
+
+    targetImage->createNewSurfaceFromImage(image, bounds.topLeft());
+
+    mScribbleArea->setModified(layerNumber, mEditor->currentFrame());
+    mScribbleArea->setAllDirty();
+
+    // hack: update current frame
+    mScribbleArea->showCurrentFrame();
 }
 
 void BucketTool::paintVector(Layer* layer)

@@ -16,6 +16,7 @@ class BitmapSurface : public KeyFrame
 public:
     BitmapSurface();
     BitmapSurface(const BitmapSurface& pieces);
+    BitmapSurface(const QRect bounds);
     ~BitmapSurface() override;
 
     // Keyframe
@@ -108,6 +109,8 @@ public:
 
     Surface surface() { return mSurface; }
     const Surface readOnlySurface() const {return mSurface; }
+
+    bool isValid() { return !mSurface.tiles.isEmpty(); }
 
 public slots:
     void setSurfaceFromFuture(int index);

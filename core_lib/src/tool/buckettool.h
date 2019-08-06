@@ -51,4 +51,9 @@ private:
     VectorImage* vectorImage = nullptr;
 };
 
+inline bool operator<= (const QSize& lhs, const QSize& rhs)
+{
+    return (lhs.width() <= rhs.width() && lhs.height() <= rhs.height());
+}
+
 #endif // BUCKETTOOL_H

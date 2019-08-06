@@ -171,6 +171,7 @@ void BrushTool::pointerPressEvent(PointerEvent*)
     mLastBrushPoint = getCurrentPoint();
 
     startStroke();
+    drawStroke();
 }
 
 void BrushTool::pointerMoveEvent(PointerEvent* event)

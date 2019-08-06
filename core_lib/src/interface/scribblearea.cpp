@@ -229,13 +229,6 @@ void ScribbleArea::applyBackgroundShadow(QPainter& painter)
     }
 }
 
-void ScribbleArea::didCreateNewFrame(int frame)
-{
-    Q_UNUSED(frame);
-    mMyPaint->clearSurface();
-    update();
-}
-
 void ScribbleArea::prepareForDrawing()
 {
     qDebug() << "prepare for drawing";
@@ -337,6 +330,8 @@ void ScribbleArea::drawCanvas(int frame)
         tilesToBeRendered = mTiles;
     }
 
+    qDebug() << tilesToBeRendered.size();
+
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvas );
     mCanvasPainter.setViewTransform( mEditor->view()->getView());
@@ -390,6 +385,15 @@ QString ScribbleArea::getCachedFrameKey(int frame)
 
 /************************************************************************************/
 // update methods
+
+
+void ScribbleArea::didCreateNewFrame(int frame)
+{
+    Q_UNUSED(frame);
+    mMyPaint->clearSurface();
+    clearSurfaceBuffer();
+    qDebug() << "create new frame";
+}
 
 void ScribbleArea::updateCurrentFrame()
 {
@@ -1468,7 +1472,6 @@ void ScribbleArea::setGaussianGradient(QGradient &gradient, QColor colour, qreal
 void ScribbleArea::loadMPBrush(const QByteArray &content)
 {
     mMyPaint->loadBrush(content);
-    refreshSurface();
 }
 
 void ScribbleArea::newTileCreated(MPSurface *surface, MPTile *tile)
@@ -2036,6 +2039,7 @@ void ScribbleArea::clearCanvas()
     {
         return; // skip updates when nothing changes
     }
+
     setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
     mMyPaint->clearSurface();
 
