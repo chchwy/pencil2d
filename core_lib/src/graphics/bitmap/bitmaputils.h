@@ -115,12 +115,6 @@ static void floodFill(QImage& targetImage,
     bool spanLeft = false;
     bool spanRight = false;
 
-    // Extend to size of Camera
-
-    // TODO: should extend bounds of surface image...
-//    targetImage->extend(cameraRect);
-
-
     queue.append(point);
     // Preparations END
 

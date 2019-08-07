@@ -99,9 +99,10 @@ void CanvasPainter::initPaint(const Object *object, int layer, int frame, QPaint
 //    painter.setWorldMatrixEnabled( true );
 }
 
-void CanvasPainter::paint(QPainter& painter, const Object* object, int layerIndex, int frameIndex, QList<MPTile*> tilesToBeRendered)
+void CanvasPainter::paint(QPainter& painter, const Object* object, int layerIndex, int frameIndex, QList<MPTile*> tilesToBeRendered, bool isPainting)
 {
 
+    mIsPainting = isPainting;
     // Paint Canvas
     initPaint(object, layerIndex, frameIndex, painter);
     mTilesToBeRendered = tilesToBeRendered;
@@ -198,38 +199,34 @@ void CanvasPainter::paintOnionSkin(QPainter& painter)
 void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameIndex, bool colorizeOnionSkin)
 {
 
-//    LayerBitmapSurface* bitmapLayer = static_cast<LayerBitmapSurface*>(layer);
-//    BitmapSurface* bitmapSurface = nullptr;
-//    if (useLastKeyFrame)
-//    {
-//        bitmapSurface = bitmapLayer->getLastBitmapImageAtFrame(nFrame, 0);
-//    }
-//    else
-//    {
-//    bitmapSurface = bitmapLayer->getBitmapImageAtFrame(frameIndex);
-//    }
+    LayerBitmap* bitmapLayer = static_cast<LayerBitmap*>(layer);
+    BitmapImage* bitmapImage = bitmapLayer->getLastBitmapImageAtFrame(frameIndex);
 
     if (colorizeOnionSkin) {
         paintColoredOnionSkin(painter, frameIndex);
     }
 
-
     QTransform v = mViewTransform;
-    for (MPTile* item : mTilesToBeRendered) {
+    if (mIsPainting) {
+        for (MPTile* item : mTilesToBeRendered) {
 
-        QRectF tileRect = QRectF(item->pos(),
-                               QSizeF(item->boundingRect().width(),
-                                     item->boundingRect().height()));
-        tileRect = v.mapRect(tileRect);
+            QRectF tileRect = QRectF(item->pos(),
+                                   QSizeF(item->boundingRect().width(),
+                                         item->boundingRect().height()));
+            tileRect = v.mapRect(tileRect);
 
-        QPixmap pix = item->pixmap();
+            QPixmap pix = item->pixmap();
 
-        prescaleSurface(painter, pix, tileRect);
+            prescaleSurface(painter, pix, tileRect);
 
-        QRect alignedRect = tileRect.toRect();
-        if (isRectInsideCanvas(alignedRect)) {
-            painter.drawPixmap(alignedRect, pix);
+            QRect alignedRect = tileRect.toRect();
+            if (isRectInsideCanvas(alignedRect)) {
+                painter.drawPixmap(alignedRect, pix);
+            }
         }
+    } else {
+        const QRect& mappedBounds = v.mapRect(bitmapImage->bounds());
+        painter.drawImage(mappedBounds, *bitmapImage->image());
     }
 
     if (mRenderTransform) {
@@ -444,8 +441,8 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
     if (layer->type() == Layer::BITMAP)
     {
         // Get the transformed image
-        BitmapSurface* bitmapSurface = dynamic_cast<LayerBitmapSurface*>(layer)->getLastBitmapImageAtFrame(mFrameNumber, 0);
-        QPixmap pixmap = bitmapSurface->copySurfaceAsPixmap(mSelection);
+        BitmapImage* bitmapImage = dynamic_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(mFrameNumber, 0);
+        BitmapImage transformedImage = bitmapImage->transformed(mSelection, mSelectionTransform, mOptions.antiAliasingEnabled);
 
         QRect selection = mViewTransform.mapRect(mSelection);
         QRect movingSelection = mViewTransform.mapRect(mMovingSelection);
@@ -457,7 +454,7 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
         painter.fillRect(selection, QColor(255,255,255,255));
 
         // Draw the selection image separately and on top
-        painter.drawPixmap(movingSelection, pixmap);
+        painter.drawImage(movingSelection, *transformedImage.image());
         painter.restore();
     }
 }

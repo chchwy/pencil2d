@@ -241,8 +241,8 @@ void ScribbleArea::prepareForDrawing()
     switch(layer->type()) {
         case Layer::BITMAP:
         {
-            BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
-            mMyPaint->loadTiles(surfaceImage->pixmaps(), surfaceImage->tilePositions());
+//            BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
+//            mMyPaint->loadTiles(surfaceImage->pixmaps(), surfaceImage->tilePositions());
             break;
         }
         case Layer::VECTOR:
@@ -257,38 +257,38 @@ void ScribbleArea::prepareForDrawing()
 
 void ScribbleArea::showBitmapFrame(Layer* layer)
 {
-    BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
+//    BitmapImage* bitmapImage = currentBitmapImage(layer);
 
-    clearSurfaceBuffer();
-    if (surfaceImage->isModified()) {
-        qDebug() << "keyframe has been modified";
-        surfaceImage->setModified(false);
+//    clearSurfaceBuffer();
+//    if (bitmapImage->isModified()) {
+//        qDebug() << "keyframe has been modified";
+//        bitmapImage->setModified(false);
 
-        // render tiles to image for faster playback
-        surfaceImage->renderSurfaceImage();
-    } else {
-        frameFirstLoad = true;
-    }
+//    } else {
+//        frameFirstLoad = true;
+//    }
 
-    placeSurfaceOnCanvas(*surfaceImage);
+    drawCanvas(mEditor->currentFrame());
+
+//    placeSurfaceOnCanvas(*surfaceImage);
 }
 
-void ScribbleArea::placeSurfaceOnCanvas(const BitmapSurface& surfaceImage)
+void ScribbleArea::placeSurfaceOnCanvas(const BitmapSurface& bitmapImage)
 {
     qDebug() << "show current frame";
 
     // render surface image to to tile
-    // tile is then rendered in paintEvent
-    const Surface& surface = surfaceImage.readOnlySurface();
-    QHashIterator<QPoint, std::shared_ptr<QPixmap>> surfaceIt(surface.tiles);
-    while(surfaceIt.hasNext()) {
-        surfaceIt.next();
+//    // tile is then rendered in paintEvent
+//    const Surface& surface = surfaceImage.readOnlySurface();
+//    QHashIterator<QPoint, std::shared_ptr<QPixmap>> surfaceIt(surface.tiles);
+//    while(surfaceIt.hasNext()) {
+//        surfaceIt.next();
 
-        const QPixmap& pixmap = surface.pixmapAtPos(surfaceIt.key());
-        const QPoint& pos = surface.posFromPixmap(surfaceIt.value());
-        MPTile* tile = getTileFromPos(pos);
-        tile->setPixmap(pixmap);
-    }
+//        const QPixmap& pixmap = surface.pixmapAtPos(surfaceIt.key());
+//        const QPoint& pos = surface.posFromPixmap(surfaceIt.value());
+//        MPTile* tile = getTileFromPos(pos);
+//        tile->setPixmap(pixmap);
+//    }
 }
 
 void ScribbleArea::showCurrentFrame()
@@ -326,16 +326,16 @@ void ScribbleArea::drawCanvas(int frame)
 
     if (mIsPainting) {
         tilesToBeRendered = mTempTiles;
-    } else {
-        tilesToBeRendered = mTiles;
     }
+//        tilesToBeRendered = mTiles;
+//    }
 
     qDebug() << tilesToBeRendered.size();
 
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvas );
     mCanvasPainter.setViewTransform( mEditor->view()->getView());
-    mCanvasPainter.paint(painter, object, mEditor->layers()->currentLayerIndex(), frame, tilesToBeRendered.values());
+    mCanvasPainter.paint(painter, object, mEditor->layers()->currentLayerIndex(), frame, tilesToBeRendered.values(), mIsPainting);
 
     // Cache current frame for faster render
     //
@@ -946,8 +946,7 @@ void ScribbleArea::showLayerNotVisibleWarning()
 
 void ScribbleArea::paintBitmapBuffer()
 {
-//    LayerBitmap* layer = static_cast<LayerBitmap*>(mEditor->layers()->currentLayer());
-    LayerBitmapSurface* layer = static_cast<LayerBitmapSurface*>(mEditor->layers()->currentLayer());
+    LayerBitmap* layer = static_cast<LayerBitmap*>(mEditor->layers()->currentLayer());
     Q_ASSERT(layer);
     Q_ASSERT(layer->type() == Layer::BITMAP);
 
@@ -962,41 +961,37 @@ void ScribbleArea::paintBitmapBuffer()
     }
 
     // Clear the temporary pixel path
-//    BitmapImage* targetImage = currentBitmapImage(layer);
-    BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
-    if (surfaceImage != nullptr)
+    BitmapImage* targetImage = currentBitmapImage(layer);
+    if (targetImage == nullptr) { return; }
+
+    // We use source here because mypaint contains the same image as target image..
+    QPainter::CompositionMode cm = QPainter::CompositionMode_Source;
+    switch (currentTool()->type())
     {
-        // We use source here because mypaint contains the same image as target image..
-        QPainter::CompositionMode cm = QPainter::CompositionMode_Source;
-        switch (currentTool()->type())
+    case ERASER:
+    case BRUSH:
+    case PEN:
+    case PENCIL:
+        if (getTool(currentTool()->type())->properties.preserveAlpha)
         {
-        case ERASER:
-        case BRUSH:
-        case PEN:
-        case PENCIL:
-            if (getTool(currentTool()->type())->properties.preserveAlpha)
-            {
-                cm = QPainter::CompositionMode_SourceAtop;
-            }
-            break;
-        default: //nothing
-            break;
+            cm = QPainter::CompositionMode_SourceAtop;
         }
-
-        // adds content from canvas and saves to surfaceimage
-        for (MPTile* item : mBufferTiles.values()) {
-            QPixmap tilePixmap = item->pixmap();
-
-            surfaceImage->addTileToSurface(tilePixmap, item->pos().toPoint());
-
-            // load the new tiles from buffer into mypaint
-            mMyPaint->loadTile(tilePixmap, item->pos().toPoint());
-        }
-        mBufferTiles.clear();
-
-        // render tiles to image for faster playback
-        surfaceImage->renderSurfaceImage();
+        break;
+    default: //nothing
+        break;
     }
+
+    // adds content from canvas and saves to bitmapimage
+    for (MPTile* item : mBufferTiles.values()) {
+        QPixmap tilePixmap = item->pixmap();
+
+        // load the new tiles from buffer into mypaint
+
+        // temporary disabled... not sure if neccesary
+//            mMyPaint->loadTile(tilePixmap, item->pos().toPoint());
+        targetImage->paste(tilePixmap, item->pos().toPoint(), cm);
+    }
+    mBufferTiles.clear();
 
     update();
 
@@ -1634,113 +1629,10 @@ void ScribbleArea::endStroke()
     qDebug() << "end stroke";
 }
 
-//void ScribbleArea::drawPen(QPointF thePoint, qreal brushWidth, QColor fillColour, bool useAA)
-//{
-//    QRectF rectangle(thePoint.x() - 0.5 * brushWidth, thePoint.y() - 0.5 * brushWidth, brushWidth, brushWidth);
-
-//    mBufferImg->drawEllipse(rectangle, Qt::NoPen, QBrush(fillColour, Qt::SolidPattern),
-//                            QPainter::CompositionMode_Source, useAA);
-//}
-
-//void ScribbleArea::drawPencil(QPointF thePoint, qreal brushWidth, qreal fixedBrushFeather, QColor fillColour, qreal opacity)
-//{
-//    drawBrush(thePoint, brushWidth, fixedBrushFeather, fillColour, opacity, true);
-//}
-
-//void ScribbleArea::drawBrush(QPointF thePoint, qreal brushWidth, qreal mOffset, QColor fillColour, qreal opacity, bool usingFeather, int useAA)
-//{
-//    QRectF rectangle(thePoint.x() - 0.5 * brushWidth, thePoint.y() - 0.5 * brushWidth, brushWidth, brushWidth);
-
-//    if (usingFeather)
-//    {
-//        QRadialGradient radialGrad(thePoint, 0.5 * brushWidth);
-//        setGaussianGradient(radialGrad, fillColour, opacity, mOffset);
-
-//        mBufferImg->drawEllipse(rectangle, Qt::NoPen, radialGrad,
-//                                QPainter::CompositionMode_SourceOver, false);
-//    }
-//    else
-//    {
-//        mBufferImg->drawEllipse(rectangle, Qt::NoPen, QBrush(fillColour, Qt::SolidPattern),
-//                                QPainter::CompositionMode_SourceOver, useAA);
-//    }
-//}
-
 void ScribbleArea::flipSelection(bool flipVertical)
 {
     mEditor->select()->flipSelection(flipVertical);
     paintTransformedSelection();
-}
-
-
-
-void ScribbleArea::blurBrush(BitmapImage *bmiSource_, QPointF srcPoint_, QPointF thePoint_, qreal brushWidth_, qreal mOffset_, qreal opacity_)
-{
-    QRadialGradient radialGrad(thePoint_, 0.5 * brushWidth_);
-    setGaussianGradient(radialGrad, QColor(255, 255, 255, 127), opacity_, mOffset_);
-
-    QRectF srcRect(srcPoint_.x() - 0.5 * brushWidth_, srcPoint_.y() - 0.5 * brushWidth_, brushWidth_, brushWidth_);
-    QRectF trgRect(thePoint_.x() - 0.5 * brushWidth_, thePoint_.y() - 0.5 * brushWidth_, brushWidth_, brushWidth_);
-
-    BitmapImage bmiSrcClip = bmiSource_->copy(srcRect.toRect());
-    BitmapImage bmiTmpClip = bmiSrcClip; // TODO: find a shorter way
-
-    bmiTmpClip.drawRect(srcRect, Qt::NoPen, radialGrad, QPainter::CompositionMode_Source, mPrefs->isOn(SETTING::ANTIALIAS));
-    bmiSrcClip.bounds().moveTo(trgRect.topLeft().toPoint());
-    bmiTmpClip.paste(&bmiSrcClip, QPainter::CompositionMode_SourceAtop);
-    mBufferImg->paste(&bmiTmpClip);
-}
-
-void ScribbleArea::liquifyBrush(BitmapImage *bmiSource_, QPointF srcPoint_, QPointF thePoint_, qreal brushWidth_, qreal mOffset_, qreal opacity_)
-{
-    QPointF delta = (thePoint_ - srcPoint_); // increment vector
-    QRectF trgRect(thePoint_.x() - 0.5 * brushWidth_, thePoint_.y() - 0.5 * brushWidth_, brushWidth_, brushWidth_);
-
-    QRadialGradient radialGrad(thePoint_, 0.5 * brushWidth_);
-    setGaussianGradient(radialGrad, QColor(255, 255, 255, 255), opacity_, mOffset_);
-
-    // Create gradient brush
-    BitmapImage bmiTmpClip;
-    bmiTmpClip.drawRect(trgRect, Qt::NoPen, radialGrad, QPainter::CompositionMode_Source, mPrefs->isOn(SETTING::ANTIALIAS));
-
-    // Slide texture/pixels of the source image
-    qreal factor, factorGrad;
-
-    for (int yb = bmiTmpClip.top(); yb < bmiTmpClip.bottom(); yb++)
-    {
-        for (int xb = bmiTmpClip.left(); xb < bmiTmpClip.right(); xb++)
-        {
-            QColor color;
-            color.setRgba(bmiTmpClip.pixel(xb, yb));
-            factorGrad = color.alphaF(); // any from r g b a is ok
-
-            int xa = xb - factorGrad * delta.x();
-            int ya = yb - factorGrad * delta.y();
-
-            color.setRgba(bmiSource_->pixel(xa, ya));
-            factor = color.alphaF();
-
-            if (factor > 0.0)
-            {
-                color.setRed(color.red() / factor);
-                color.setGreen(color.green() / factor);
-                color.setBlue(color.blue() / factor);
-                color.setAlpha(255); // Premultiplied color
-
-                color.setRed(color.red()*factorGrad);
-                color.setGreen(color.green()*factorGrad);
-                color.setBlue(color.blue()*factorGrad);
-                color.setAlpha(255 * factorGrad); // Premultiplied color
-
-                bmiTmpClip.setPixel(xb, yb, color.rgba());
-            }
-            else
-            {
-                bmiTmpClip.setPixel(xb, yb, qRgba(255, 255, 255, 255));
-            }
-        }
-    }
-    mBufferImg->paste(&bmiTmpClip);
 }
 
 void ScribbleArea::drawPolyline(QPainterPath path, QPen pen, bool useAA)
@@ -1840,7 +1732,9 @@ void ScribbleArea::applyTransformedSelection()
 
         if (layer->type() == Layer::BITMAP)
         {
-            moveBitmapSurface();
+            BitmapImage* bitmapImage = currentBitmapImage(layer);
+            bitmapImage->moveSelectionTransform(selectMan->mySelectionRect().toRect(),
+                                   selectMan->selectionTransform());
         }
         else if (layer->type() == Layer::VECTOR)
         {
@@ -1853,19 +1747,6 @@ void ScribbleArea::applyTransformedSelection()
     }
 
     updateCurrentFrame();
-}
-
-void ScribbleArea::moveBitmapSurface()
-{
-    auto selectMan = mEditor->select();
-    auto layer = mEditor->layers()->currentLayer();
-    BitmapSurface* bitmapSurface = currentBitmapSurfaceImage(layer);
-    QPixmap pixmap = bitmapSurface->copySurfaceAsPixmap(selectMan->mySelectionRect().toRect());
-    bitmapSurface->eraseSelection(selectMan->mySelectionRect().toRect());
-
-    QPoint topLeft = selectMan->myTempTransformedSelectionRect().topLeft().toPoint();
-
-    bitmapSurface->paintSurfaceUsing(pixmap, topLeft);
 }
 
 void ScribbleArea::cancelTransformedSelection()
@@ -2033,7 +1914,7 @@ void ScribbleArea::clearCanvas()
     else if (layer->type() == Layer::BITMAP)
     {
 //        mEditor->backup(tr("Clear Image", "Undo step text"));
-        currentBitmapSurfaceImage(layer)->clear();
+        currentBitmapImage(layer)->clear();
     }
     else
     {
@@ -2042,8 +1923,7 @@ void ScribbleArea::clearCanvas()
 
     setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
     mMyPaint->clearSurface();
-
-    updateCurrentFrame();
+    clearSurfaceBuffer();
 }
 
 void ScribbleArea::setPrevTool()

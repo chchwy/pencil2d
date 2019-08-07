@@ -48,15 +48,18 @@ public:
     BitmapImage copy();
     BitmapImage copy(QRect rectangle);
     void paste(BitmapImage*, QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver);
+    void paste(QPixmap& pixmap, QPoint point, QPainter::CompositionMode cm);
 
     void moveTopLeft(QPoint point);
     void moveTopLeft(QPointF point) { moveTopLeft(point.toPoint()); }
     void transform(QRect rectangle, bool smoothTransform);
     void transform(QRectF rectangle, bool smoothTransform) { transform(rectangle.toRect(), smoothTransform); }
-    void transform(QTransform transform, bool smoothTransform);
+    void transform(const QRect& selection, const QTransform& transform);
     BitmapImage transformed(QRect selection, QTransform transform, bool smoothTransform);
     BitmapImage transformed(QRect rectangle, bool smoothTransform);
     BitmapImage transformed(QRectF rectangle, bool smoothTransform) { return transformed(rectangle.toRect(), smoothTransform); }
+    void moveSelectionTransform(const QRect& selection, const QTransform& transform);
+
 
     bool contains(QPoint P) { return mBounds.contains(P); }
     bool contains(QPointF P) { return contains(P.toPoint()); }

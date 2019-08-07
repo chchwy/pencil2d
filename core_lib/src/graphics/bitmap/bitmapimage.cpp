@@ -151,6 +151,22 @@ BitmapImage BitmapImage::copy(QRect rectangle)
     return result;
 }
 
+void BitmapImage::paste(QPixmap& pixmap, QPoint point, QPainter::CompositionMode cm)
+{
+    if(pixmap.width() <= 0 || pixmap.height() <= 0)
+    {
+        return;
+    }
+    extend(QRect(point, pixmap.size()));
+
+    QPainter painter(image());
+    painter.setCompositionMode(cm);
+    painter.drawPixmap(point-topLeft(), pixmap);
+    painter.end();
+
+    modification();
+}
+
 void BitmapImage::paste(BitmapImage* bitmapImage, QPainter::CompositionMode cm)
 {
     if(bitmapImage->width() <= 0 || bitmapImage->height() <= 0)
@@ -177,22 +193,17 @@ void BitmapImage::moveTopLeft(QPoint point)
     modification();
 }
 
-void BitmapImage::transform(QTransform transform, bool smoothTransform)
+/**
+ * @brief BitmapImage::moveSelectionTransform
+ * Uses the input selection and transformation to move a part of the image somewhere else
+ * @param selection
+ * @param transform
+ */
+void BitmapImage::moveSelectionTransform(const QRect& selection, const QTransform& transform)
 {
-    QRectF transformedRect = transform.mapRect(mBounds);
-    mBounds = transformedRect.toRect();
-
-    QImage* newImage;
-
-    if (smoothTransform) {
-        newImage = new QImage(mImage->transformed(transform, Qt::SmoothTransformation));
-    }
-    else {
-        newImage = new QImage(mImage->transformed(transform));
-    }
-
-    mImage = std::shared_ptr<QImage>(newImage);
-
+        BitmapImage transformedImage = transformed(selection, transform, false);
+        clear(selection);
+        paste(&transformedImage, QPainter::CompositionMode_SourceOver);
 }
 
 void BitmapImage::transform(QRect newBoundaries, bool smoothTransform)
