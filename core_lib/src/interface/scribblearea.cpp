@@ -1467,6 +1467,7 @@ void ScribbleArea::setGaussianGradient(QGradient &gradient, QColor colour, qreal
 void ScribbleArea::loadMPBrush(const QByteArray &content)
 {
     mMyPaint->loadBrush(content);
+    mMyPaint->refreshSurface();
 }
 
 void ScribbleArea::newTileCreated(MPSurface *surface, MPTile *tile)
