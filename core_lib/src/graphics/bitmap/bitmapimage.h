@@ -62,18 +62,9 @@ public:
     bool contains(QPointF P) { return contains(P.toPoint()); }
     void autoCrop();
 
-    QRgb pixel(int x, int y);
-    QRgb pixel(QPoint p);
-    void setPixel(int x, int y, QRgb colour);
-    void setPixel(QPoint p, QRgb colour);
-    QRgb constScanLine(int x, int y);
-    void scanLine(int x, int y, QRgb colour);
     void clear();
     void clear(QRect rectangle);
     void clear(QRectF rectangle) { clear(rectangle.toRect()); }
-
-    static bool compareColor(QRgb newColor, QRgb oldColor, int tolerance, QHash<QRgb, bool> *cache);
-    static void floodFill(BitmapImage* targetImage, QRect cameraRect, QPoint point, QRgb newColor, int tolerance);
 
     void drawLine(QPointF P1, QPointF P2, QPen pen, QPainter::CompositionMode cm, bool antialiasing);
     void drawRect(QRectF rectangle, QPen pen, QBrush brush, QPainter::CompositionMode cm, bool antialiasing);
@@ -109,6 +100,9 @@ public:
     void enableAutoCrop(bool b) { mEnableAutoCrop = b; }
 
     Status writeFile(const QString& filename);
+
+    void extendBoundaries(const QPoint& point);
+    void extendBoundaries(const QRect& rect);
 
 protected:
     void updateBounds(QRect rectangle);

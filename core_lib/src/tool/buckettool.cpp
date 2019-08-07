@@ -134,7 +134,7 @@ void BucketTool::pointerReleaseEvent(PointerEvent* event)
 
     if (event->button() == Qt::LeftButton)
     {
-//        mEditor->backup(typeName());
+        mEditor->backup(typeName());
 
         switch (layer->type())
         {
@@ -149,32 +149,26 @@ void BucketTool::pointerReleaseEvent(PointerEvent* event)
 
 void BucketTool::paintBitmap(Layer* layer)
 {
-    Layer* targetLayer = layer; // by default
     int layerNumber = editor()->layers()->currentLayerIndex(); // by default
 
-    BitmapSurface* targetImage = static_cast<LayerBitmapSurface*>(targetLayer)->getLastBitmapImageAtFrame(editor()->currentFrame(), 0);
+    BitmapImage* targetImage = static_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(editor()->currentFrame(), 0);
 
     QPoint point = QPoint(qFloor(getLastPoint().x()), qFloor(getLastPoint().y()));
     QRect cameraRect = mScribbleArea->getCameraRect().toRect();
 
-    QPixmap cameraImage = QPixmap(cameraRect.size());
-    cameraImage.fill(Qt::transparent);
-
     targetImage->extendBoundaries(cameraRect);
-    targetImage->paintSurfaceUsing(cameraImage,cameraRect.topLeft());
-    QImage image = targetImage->surfaceAsImage();
-    QRect bounds = targetImage->bounds();
 
+    QRect bounds = targetImage->bounds();
     // If the point we are supposed to fill is outside the image and camera bounds, do nothing
     if(!cameraRect.united(bounds).contains(point)) { return; }
 
-    BitmapUtils::floodFill(image,
+    QImage* image = targetImage->image();
+
+    BitmapUtils::floodFill(*image,
                            bounds,
                            point,
                            qPremultiply(mEditor->color()->frontColor().rgba()),
                            static_cast<int>(properties.tolerance));
-
-    targetImage->createNewSurfaceFromImage(image, bounds.topLeft());
 
     mScribbleArea->setModified(layerNumber, mEditor->currentFrame());
     mScribbleArea->setAllDirty();
