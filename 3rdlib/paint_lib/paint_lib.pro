@@ -76,7 +76,7 @@ DEPENDPATH += $$PWD/libmypaint
 
 # json-c
 
-jsonlibpath = $$PWD/json-c
+jsonlibpath = \"$$PWD\"/json-c
 # HACK: Copy config.h that fits the respective platform, created by configure in another build
 exists($$jsonlibpath/config.h) {
     message("config.h moved to correct folder")
