@@ -70,7 +70,7 @@ public:
 
     MPTile* getTileFromPos(const QPoint& pos);
     MPTile* getTileFromIdx(const QPoint& idx);
-    inline bool checkIndex(uint n);
+    inline bool checkIndex(int n);
     inline QPoint getTilePos(const QPoint& idx);
     inline QPoint getTileIndex(const QPoint& pos);
     inline QPointF getTileFIndex(const QPoint& pos);
@@ -105,7 +105,6 @@ private:
     int width; // width in pixels
     int height; // height in pixels
 
-    MPBrush*    m_brush;
     QColor      m_color;
 
 protected:

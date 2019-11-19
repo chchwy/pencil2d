@@ -40,10 +40,10 @@ static void freeTiledSurface(MyPaintSurface *surface)
     free(self);
 }
 
-static void defaultUpdateFonction(MPSurface *surface, MPTile *tile)
+static void defaultUpdateFunction(MPSurface *surface, MPTile *tile)
 {
-    Q_UNUSED(surface);
-    Q_UNUSED(tile);
+    Q_UNUSED(surface)
+    Q_UNUSED(tile)
     // Things to do if no update callback has been affected
 }
 
@@ -96,8 +96,8 @@ MPSurface::MPSurface(QSize size)
 {
     // Init callbacks
     //
-    this->onUpdateTileFunction   = defaultUpdateFonction;
-    this->onNewTileFunction      = defaultUpdateFonction;
+    this->onUpdateTileFunction   = defaultUpdateFunction;
+    this->onNewTileFunction      = defaultUpdateFunction;
 
     // MPSurface vfuncs
     this->parent.destroy = freeTiledSurface;
@@ -110,7 +110,6 @@ MPSurface::MPSurface(QSize size)
 
 MPSurface::~MPSurface()
 {
-
 }
 
 void MPSurface::setOnUpdateTile(MPOnUpdateTileFunction onUpdateFunction)
@@ -159,8 +158,10 @@ void MPSurface::loadImage(const QImage &image)
 {
     QSize tileSize = QSize(MYPAINT_TILE_SIZE, MYPAINT_TILE_SIZE);
 
-    int nbTilesOnWidth = ceil((float)this->width / (float)tileSize.width());
-    int nbTilesOnHeight = ceil((float)this->height / (float)tileSize.height());
+    float numOfTilesX = static_cast<float>(this->width / tileSize.width());
+    float numOfTilesY = static_cast<float>(this->height / tileSize.height());
+    int nbTilesOnWidth = static_cast<int>(ceil(numOfTilesX));
+    int nbTilesOnHeight = static_cast<int>(ceil(numOfTilesY));
 
     const QImage& sourceImage = image.scaled(this->size(), Qt::IgnoreAspectRatio);
     const QPixmap& sourcePixmap = QPixmap::fromImage(sourceImage);
@@ -320,19 +321,19 @@ MPTile* MPSurface::getTileFromPos(const QPoint& pos)
 MPTile* MPSurface::getTileFromIdx(const QPoint& idx)
 {
 
-    MPTile* selectedTile = NULL;
+    MPTile* selectedTile = nullptr;
     // Which tile index is it ?
     if (checkIndex(idx.x()) && checkIndex(idx.y())) { // out of range ?
 
         // Ok, valid index. Does it exist already ?
-        selectedTile = m_Tiles.value(idx, NULL);
+        selectedTile = m_Tiles.value(idx, nullptr);
 
         if (!selectedTile) {
             // Time to allocate it, update table:
             selectedTile = new MPTile();
             m_Tiles.insert(idx, selectedTile);
 
-            QPoint tilePos ( getTilePos(idx) );
+            QPoint tilePos (getTilePos(idx));
             selectedTile->setPos(tilePos);
         }
 
@@ -342,9 +343,9 @@ MPTile* MPSurface::getTileFromIdx(const QPoint& idx)
     return selectedTile;
 }
 
-inline bool MPSurface::checkIndex(uint n)
+inline bool MPSurface::checkIndex(int n)
 {
-    return ((int)n<k_max);
+    return static_cast<int>(n)<k_max;
 }
 
 inline QPoint MPSurface::getTilePos(const QPoint& idx)
@@ -359,7 +360,7 @@ inline QPoint MPSurface::getTileIndex(const QPoint& pos)
 
 inline QPointF MPSurface::getTileFIndex(const QPoint& pos)
 {
-    return QPointF((qreal)pos.x()/MYPAINT_TILE_SIZE, (qreal)pos.y()/MYPAINT_TILE_SIZE);
+    return QPointF(static_cast<qreal>(pos.x())/MYPAINT_TILE_SIZE, static_cast<qreal>(pos.y())/MYPAINT_TILE_SIZE);
 }
 
 inline uint qHash (const QPoint & key)

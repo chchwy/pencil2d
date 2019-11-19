@@ -47,8 +47,8 @@ protected:
     qreal mCurrentWidth    = 0.0;
     qreal mCurrentPressure = 0.5;
 
-    int mCurrentXTilt;
-    int mCurrentYTilt;
+    float mCurrentXTilt = .0f;
+    float mCurrentYTilt = .0f;
 
     bool isBrushDab = false;
 

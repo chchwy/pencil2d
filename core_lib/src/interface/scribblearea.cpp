@@ -72,9 +72,9 @@ bool ScribbleArea::init()
     mDoubleClickTimer = new QTimer(this);
     mMyPaint = MPHandler::handler();
 
-    connect(mMyPaint, SIGNAL(newTile(MPSurface*, MPTile*)), this, SLOT(newTileCreated(MPSurface*, MPTile*)));
-    connect(mMyPaint, SIGNAL(updateTile(MPSurface*, MPTile*)), this, SLOT(existingTileUpdated(MPSurface*, MPTile*)));
-    connect(mMyPaint, SIGNAL(clearedSurface(MPSurface*)), this, SLOT(onClearedSurface(MPSurface*)));
+    connect(mMyPaint, &MPHandler::newTile, this, &ScribbleArea::updateTile);
+    connect(mMyPaint, &MPHandler::updateTile, this, &ScribbleArea::updateTile);
+    connect(mMyPaint, &MPHandler::clearedSurface, this, &ScribbleArea::onClearedSurface);
 
 //    mScene.setSceneRect(this->rect());
 //    setScene(&mScene);
@@ -1228,7 +1228,6 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 //        }
 //    }
 
-    calculateDeltaTime();
 
 //    paintCanvasCursor();
     drawCanvas(mEditor->currentFrame());
@@ -1472,12 +1471,12 @@ void ScribbleArea::loadMPBrush(const QByteArray &content)
 
 void ScribbleArea::newTileCreated(MPSurface *surface, MPTile *tile)
 {
-    updateTile(surface, tile);
+//    updateTile(surface, tile);
 }
 
 void ScribbleArea::existingTileUpdated(MPSurface *surface, MPTile *tile)
 {
-    updateTile(surface, tile);
+//    updateTile(surface, tile);
 }
 
 void ScribbleArea::onClearedSurface(MPSurface* surface)
@@ -1488,7 +1487,7 @@ void ScribbleArea::onClearedSurface(MPSurface* surface)
 
 void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 {
-    Q_UNUSED(surface);
+    Q_UNUSED(surface)
 
     QPointF pos = tile->pos();
 
@@ -1573,7 +1572,7 @@ void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float yt
     timer.start();
     point = mEditor->view()->mapScreenToCanvas(point);
 
-    mMyPaint->strokeTo(point.x(), point.y(), pressure, xtilt, ytilt, deltaTime);
+    mMyPaint->strokeTo(static_cast<float>(point.x()), static_cast<float>(point.y()), pressure, xtilt, ytilt, calculateDeltaTime());
 //    qDebug() << "stroke to: <<<< \n";
 //    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
 //    qDebug() << "seconds elapsed" << timer.elapsed();
@@ -1588,7 +1587,7 @@ void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float yt
 QColor ScribbleArea::pickColorFromSurface(QPointF point, int radius)
 {
 
-    return mMyPaint->getSurfaceColor(point.x(), point.y(), radius);
+    return mMyPaint->getSurfaceColor(static_cast<float>(point.x()), static_cast<float>(point.y()), radius);
 }
 
 void ScribbleArea::updateDirtyTiles()
@@ -1940,11 +1939,11 @@ void ScribbleArea::paletteColorChanged(QColor color)
     updateAllVectorLayersAtCurrentFrame();
 }
 
-void ScribbleArea::calculateDeltaTime()
+qreal ScribbleArea::calculateDeltaTime()
 {
-    lastFrameTime = currentFrameTime;
-    currentFrameTime = deltaTimer.nsecsElapsed();
-    deltaTime = (currentFrameTime - lastFrameTime)/1000000000.f;
+    deltaTime = deltaTimer.nsecsElapsed() * 1e-9;
+    deltaTimer.restart();
+    return deltaTime;
 }
 
 

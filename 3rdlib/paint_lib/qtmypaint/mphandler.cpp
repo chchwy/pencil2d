@@ -45,21 +45,21 @@ static void
 onUpdatedTile(MPSurface *surface, MPTile *tile)
 {
     MPHandler* handler = MPHandler::handler();
-    handler->requestUpdateTile(surface, tile);
+    emit handler->updateTile(surface, tile);
 }
 
 static void
 onNewTile(MPSurface *surface, MPTile *tile)
 {
     MPHandler* handler = MPHandler::handler();
-    handler->hasNewTile(surface, tile);
+    emit handler->newTile(surface, tile);
 }
 
 static void
 onClearedSurface(MPSurface *surface)
 {
     MPHandler* handler = MPHandler::handler();
-    handler->hasClearedSurface(surface);
+    emit handler->clearedSurface(surface);
 }
 
 MPHandler *
@@ -93,23 +93,6 @@ MPHandler::~MPHandler()
     mypaint_surface_unref((MyPaintSurface *)m_surface);
 }
 
-void
-MPHandler::requestUpdateTile(MPSurface *surface, MPTile *tile)
-{
-    emit updateTile(surface, tile);
-}
-
-void
-MPHandler::hasNewTile(MPSurface *surface, MPTile *tile)
-{
-    emit newTile(surface, tile);
-}
-
-void MPHandler::hasClearedSurface(MPSurface *surface)
-{
-    emit clearedSurface(surface);
-}
-
 void MPHandler::setSurfaceSize(QSize size)
 {
     m_surface->setSize(size);
@@ -140,11 +123,6 @@ void MPHandler::loadTile(const QPixmap& pixmap, const QPoint pos)
     m_surface->loadTile(pixmap, pos);
 }
 
-void MPHandler::loadTiles(const QList<std::shared_ptr<QPixmap>>& pixmaps, const QList<QPoint>& pos)
-{
-    m_surface->loadTiles(pixmaps, pos);
-}
-
 void MPHandler::loadBrush(const QByteArray &content)
 {
     m_brush->load(content);
@@ -157,18 +135,20 @@ void MPHandler::setBrushWidth(float width)
 
 void
 MPHandler::
-strokeTo(double x, double y, float pressure, float xtilt, float ytilt, double dtime)
+strokeTo(float x, float y, float pressure, float xtilt, float ytilt, double dtime)
 {
     auto surface = reinterpret_cast<MyPaintSurface*>(m_surface);
 
     mypaint_surface_begin_atomic(surface);
     mypaint_brush_stroke_to(m_brush->brush, surface,
-                            static_cast<float>(x),
-                            static_cast<float>(y),
+                            x,
+                            y,
                             pressure,
                             xtilt,
                             ytilt,
                             dtime/*, 1.0, 1.0, .0*/);
+
+
     MyPaintRectangle roi;
     mypaint_surface_end_atomic(surface, &roi);
 }

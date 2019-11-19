@@ -237,7 +237,7 @@ private:
      * calculates the number of seconds that has passed between the previous and current frame
      * should be called from paintEvent
      */
-    void calculateDeltaTime();
+    qreal calculateDeltaTime();
 
     QString getCachedFrameKey(int frame);
 
