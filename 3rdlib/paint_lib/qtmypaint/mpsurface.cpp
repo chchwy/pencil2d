@@ -154,36 +154,36 @@ void MPSurface::loadTiles(const QList<std::shared_ptr<QPixmap>>& pixmaps, const 
     }
 }
 
-void MPSurface::loadImage(const QImage &image)
+void MPSurface::loadImage(const QImage &image, const QPoint pos)
 {
     QSize tileSize = QSize(MYPAINT_TILE_SIZE, MYPAINT_TILE_SIZE);
 
-    float numOfTilesX = static_cast<float>(this->width / tileSize.width());
-    float numOfTilesY = static_cast<float>(this->height / tileSize.height());
+    float numOfTilesX = static_cast<float>(image.width() / tileSize.width());
+    float numOfTilesY = static_cast<float>(image.height() / tileSize.height());
     int nbTilesOnWidth = static_cast<int>(ceil(numOfTilesX));
     int nbTilesOnHeight = static_cast<int>(ceil(numOfTilesY));
 
-    const QImage& sourceImage = image.scaled(this->size(), Qt::IgnoreAspectRatio);
-    const QPixmap& sourcePixmap = QPixmap::fromImage(sourceImage);
+    const QPixmap& sourcePixmap = QPixmap::fromImage(image);
 
     for (int h=0; h < nbTilesOnHeight; h++) {
 
         for (int w=0; w < nbTilesOnWidth; w++) {
 
             const QPoint& idx = QPoint(w, h);
-            const QPoint& tilePos = getTilePos(idx) ;
+            const QPoint& tilePos = getTilePos(idx);
 
             const QRect& tileRect = QRect(tilePos, tileSize);
             const QPixmap& tilePix = sourcePixmap.copy(tileRect);
-            const QImage& tileImage = sourceImage.copy(tileRect);
+            const QImage& tileImage = image.copy(tileRect);
 
             // Optimization : Fully transparent (empty) tiles
             // don't need to be created.
             //
             if (!isFullyTransparent(tileImage)) {
 
-                MPTile *tile = getTileFromIdx(idx);
+                MPTile *tile = getTileFromPos(tilePos+pos);
                 tile->setPixmap(tilePix);
+                tile->updateMyPaintBuffer(tile->boundingRect().size().toSize(),tilePix);
 
                 this->onUpdateTileFunction(this, tile);
             }

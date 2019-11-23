@@ -113,9 +113,9 @@ void MPHandler::clearSurface()
     m_surface->clear();
 }
 
-void MPHandler::loadImage(const QImage &image)
+void MPHandler::loadImage(const QImage &image, const QPoint pos)
 {
-    m_surface->loadImage(image);
+    m_surface->loadImage(image, pos);
 }
 
 void MPHandler::loadTile(const QPixmap& pixmap, const QPoint pos)

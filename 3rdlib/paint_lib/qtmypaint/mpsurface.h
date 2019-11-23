@@ -92,7 +92,7 @@ public:
 
     void clear();
 
-    void loadImage(const QImage &image);
+    void loadImage(const QImage &image, const QPoint pos);
 
 private:
     void resetNullTile();
