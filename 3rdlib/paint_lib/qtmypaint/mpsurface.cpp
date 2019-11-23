@@ -249,7 +249,7 @@ int MPSurface::getHeight()
 
 void MPSurface::resetNullTile()
 {
-    memset(this->null_tile, 0, this->tile_size);
+    memset(this->null_tile, 0, static_cast<size_t>(this->tile_size));
 }
 
 void MPSurface::resetSurface(QSize size)
@@ -262,25 +262,25 @@ void MPSurface::resetSurface(QSize size)
 
     const int tile_size_pixels = MYPAINT_TILE_SIZE;
 
-    const int tiles_width = ceil((float)width / tile_size_pixels);
-    const int tiles_height = ceil((float)height / tile_size_pixels);
+    const int tiles_width = static_cast<int>(ceil(static_cast<float>(width) / tile_size_pixels));
+    const int tiles_height = static_cast<int>(ceil(static_cast<float>(height) / tile_size_pixels));
 
     const size_t tile_size = tile_size_pixels * tile_size_pixels * 4 * sizeof(uint16_t);
-    const size_t buffer_size = tiles_width * tiles_height * tile_size;
+    const size_t buffer_size = static_cast<size_t>(tiles_width * tiles_height) * tile_size;
 
     assert(tile_size_pixels*tiles_width >= width);
     assert(tile_size_pixels*tiles_height >= height);
-    assert(buffer_size >= width*height*4*sizeof(uint16_t));
+    assert(buffer_size >= static_cast<size_t>(width*height)*4*sizeof(uint16_t));
 
-    uint16_t* buffer = (uint16_t *)malloc(buffer_size);
+    uint16_t* buffer = static_cast<uint16_t*>(malloc(buffer_size));
     if (!buffer)
-        fprintf(stderr, "CRITICAL: unable to allocate enough memory: %Zu bytes", buffer_size);
+        fprintf(stderr, "CRITICAL: unable to allocate enough memory: %lu bytes", buffer_size);
 
     memset(buffer, 255, buffer_size);
 
     this->tile_buffer = buffer;
     this->tile_size = tile_size;
-    this->null_tile = (uint16_t *)malloc(tile_size);
+    this->null_tile = static_cast<uint16_t*>(malloc(tile_size));
     this->tiles_width = tiles_width;
     this->tiles_height = tiles_height;
 

@@ -39,27 +39,27 @@ extern "C" {
 #define DEFAULT_BRUSHES_PATH ":brushes"
 
 bool MPHandler::instanceFlag = false;
-MPHandler* MPHandler::currentHandler = NULL;
+MPHandler* MPHandler::currentHandler = nullptr;
 
 static void
 onUpdatedTile(MPSurface *surface, MPTile *tile)
 {
     MPHandler* handler = MPHandler::handler();
-    emit handler->updateTile(surface, tile);
+    handler->updateTile(surface, tile);
 }
 
 static void
 onNewTile(MPSurface *surface, MPTile *tile)
 {
     MPHandler* handler = MPHandler::handler();
-    emit handler->newTile(surface, tile);
+    handler->newTile(surface, tile);
 }
 
 static void
 onClearedSurface(MPSurface *surface)
 {
     MPHandler* handler = MPHandler::handler();
-    emit handler->clearedSurface(surface);
+    handler->clearedSurface(surface);
 }
 
 MPHandler *
@@ -77,8 +77,7 @@ MPHandler::handler()
 
 MPHandler::MPHandler()
 {
-    QSize defaultSize = QSize(  QTMYPAINT_SURFACE_WIDTH,
-                                QTMYPAINT_SURFACE_HEIGHT ) ;
+    QSize defaultSize = QSize(QTMYPAINT_SURFACE_WIDTH, QTMYPAINT_SURFACE_HEIGHT);
 
     m_brush = new MPBrush();
     m_surface = new MPSurface(defaultSize);
@@ -90,7 +89,7 @@ MPHandler::MPHandler()
 
 MPHandler::~MPHandler()
 {
-    mypaint_surface_unref((MyPaintSurface *)m_surface);
+    mypaint_surface_unref(reinterpret_cast<MyPaintSurface*>(m_surface));
 }
 
 void MPHandler::setSurfaceSize(QSize size)
@@ -179,11 +178,12 @@ MPHandler::startStroke()
 }
 
 void
-MPHandler::strokeTo(double x, double y)
+MPHandler::strokeTo(float x, float y)
 {
     float pressure = 1.0;
     float xtilt = 0.0;
     float ytilt = 0.0;
+
     strokeTo(x, y, pressure, xtilt, ytilt, 1.0);
 }
 

@@ -14,7 +14,7 @@ MPTile::MPTile(const MPTile* tile):
     m_cache_img(k_tile_dim,k_tile_dim,QImage::Format_ARGB32_Premultiplied),
     m_cache_pix(k_tile_dim, k_tile_dim)
 {
-    Q_UNUSED(tile);
+    Q_UNUSED(tile)
     clear(); //Default tiles are transparent
 }
 
@@ -75,10 +75,7 @@ void MPTile::updateCache()
 
 void MPTile::setPixmap(const QPixmap& pixmap)
 {
-    QSize tileSize = this->boundingRect().size().toSize();
     if (pixmap.isNull()) { return; }
-
-    updateMyPaintBuffer(tileSize, pixmap);
 
     m_cache_pix = pixmap;
     m_cache_valid = true;
@@ -88,7 +85,6 @@ void MPTile::setPixmap(const QPixmap& pixmap)
 void MPTile::updateMyPaintBuffer(const QSize& tileSize, const QPixmap& pixmap)
 {
     QImage image = pixmap.toImage();
-    QRgb pixelColor = *(reinterpret_cast<const QRgb*>(image.bits()));
     for (int y = 0 ; y < tileSize.height(); y++) {
          for (int x = 0 ; x < tileSize.width() ; x++) {
 
