@@ -25,6 +25,7 @@ unix:!macx {
 
 QMAKE_CFLAGS += -std=c99
 QMAKE_CFLAGS += -D_XOPEN_SOURCE=600
+QMAKE_CFLAGS += -Ofast
 QMAKE_CC = gcc
 
 # libmypaint
