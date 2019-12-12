@@ -84,7 +84,6 @@ void BrushTool::setWidth(const qreal width)
     // Set current property
     properties.width = width;
     mCurrentWidth = width;
-        mScribbleArea->setBrushWidth(mCurrentWidth);
 
     // Update settings
     QSettings settings(PENCIL2D, PENCIL2D);

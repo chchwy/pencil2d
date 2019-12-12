@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include "strokemanager.h"
 #include "viewmanager.h"
 #include "editor.h"
+#include "qmath.h"
 
 #ifdef Q_OS_MAC
 extern "C" {
@@ -105,12 +106,10 @@ void StrokeTool::drawStroke()
 {
     QPointF pixel = getCurrentPixel();
 
-    mScribbleArea->strokeTo(pixel, mCurrentPressure, mCurrentXTilt,  mCurrentYTilt);
-//    if (isBrushDab) { // FIXME: doesn't work correctly... only works on some zoom levels??
+    const float width = static_cast<float>(qLn(properties.width));
+    const float pressure = static_cast<float>(mCurrentPressure);
+    mScribbleArea->strokeTo(pixel, width, pressure, mCurrentXTilt,  mCurrentYTilt);
 
-//        QPoint offset = QPoint(pixel.x()+1,pixel.y()+1);
-//        mScribbleArea->strokeTo(offset, mCurrentPressure, mCurrentXTilt,  mCurrentYTilt);
-//    }
     if ( pixel != mLastPixel || !mFirstDraw )
     {
         mLastPixel = pixel;

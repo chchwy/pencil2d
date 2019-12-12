@@ -1567,11 +1567,12 @@ void ScribbleArea::setBrushWidth(float width)
 }
 
 QElapsedTimer timer;
-void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float ytilt)
+void ScribbleArea::strokeTo(QPointF point, float width, float pressure, float xtilt, float ytilt)
 {
     timer.start();
     point = mEditor->view()->mapScreenToCanvas(point);
 
+    mMyPaint->setBrushWidth(width);
     mMyPaint->strokeTo(static_cast<float>(point.x()), static_cast<float>(point.y()), pressure, xtilt, ytilt, calculateDeltaTime());
 //    qDebug() << "stroke to: <<<< \n";
 //    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
