@@ -77,21 +77,21 @@ DEPENDPATH += $$PWD/libmypaint
 
 # json-c
 
-jsonlibpath = \"$$PWD\"/json-c
+jsonlibpath = $$PWD/json-c
 # HACK: Copy config.h that fits the respective platform, created by configure in another build
 exists($$jsonlibpath/config.h) {
     message("config.h moved to correct folder")
 } else {
     win32 {
         system(echo "testing win32 ")
-        system(echo $$jsonlibpath/config/win32/config.h)
-        system(echo $$QMAKE_COPY $$jsonlibpath/config/win32/config.h $$jsonlibpath/config.h)
-        system($$QMAKE_COPY $$jsonlibpath/config/win32/config.h $$jsonlibpath/config.h)
-        QMAKE_CLEAN += -r $$jsonlibpath/config.h
+        system(echo \"$$jsonlibpath\config\win32\config.h\")
+        system(echo $$QMAKE_COPY \"$$jsonlibpath\config\win32\config.h\" \"$$jsonlibpath\config.h\")
+        system($$QMAKE_COPY \"$$jsonlibpath\config\win32\config.h\" \"$$jsonlibpath\config.h\")
+        QMAKE_CLEAN += -r $$jsonlibpath\config.h
     }
     macx|unix {
         system(echo "testing macx and unix ")
-        system($$QMAKE_COPY $$jsonlibpath/config/macxunix/config.h $$jsonlibpath $$escape_expand(\\n))
+        system($$QMAKE_COPY \"$$jsonlibpath/config/macxunix/config.h\" \"$$jsonlibpath\" $$escape_expand(\\n))
         QMAKE_CLEAN += -r $$jsonlibpath/config.h
     }
 }
