@@ -103,10 +103,6 @@ void MPBrush::setColor(QColor newColor)
 
 void MPBrush::setWidth(const float size)
 {
-    qDebug() << size;
-//    float newSize = size *;
-//    qreal normalizedValue = -2.f  + ((5.f-(-2.f))/(200.f-1.f)) * (size-1.f);
-//    qDebug() << normalizedValue;
     setValue(MYPAINT_BRUSH_SETTING_RADIUS_LOGARITHMIC, size);
 }
 
