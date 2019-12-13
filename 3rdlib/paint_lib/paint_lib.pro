@@ -84,8 +84,8 @@ exists($$jsonlibpath/config.h) {
 } else {
     win32 {
         system(echo "testing win32 ")
-        system($$QMAKE_COPY \"$$jsonlibpath\\config\\win32\\config.h\" \"$$jsonlibpath\\config.h\" $$escape_expand(\\n))
-        QMAKE_CLEAN += -r $$jsonlibpath\\config.h
+        system($$QMAKE_COPY $$jsonlibpath\/config\/win32\/config.h $$jsonlibpath\/config.h $$escape_expand(\\n))
+        QMAKE_CLEAN += -r $$jsonlibpath\/config.h
     }
     macx|unix {
         system(echo "testing macx and unix ")
