@@ -50,6 +50,7 @@ void StrokeTool::startStroke()
     }
 
     mScribbleArea->startStroke();
+    mScribbleArea->setBrushWidth(static_cast<float>(qLn(properties.width)));
 
     mFirstDraw = true;
     mLastPixel = getCurrentPixel();
@@ -106,9 +107,8 @@ void StrokeTool::drawStroke()
 {
     QPointF pixel = getCurrentPixel();
 
-    const float width = static_cast<float>(qLn(properties.width));
     const float pressure = static_cast<float>(mCurrentPressure);
-    mScribbleArea->strokeTo(pixel, width, pressure, mCurrentXTilt,  mCurrentYTilt);
+    mScribbleArea->strokeTo(pixel, pressure, mCurrentXTilt,  mCurrentYTilt);
 
     if ( pixel != mLastPixel || !mFirstDraw )
     {

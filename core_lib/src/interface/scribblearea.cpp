@@ -325,12 +325,12 @@ void ScribbleArea::drawCanvas(int frame)
     QHash<QString, MPTile*> tilesToBeRendered;
 
     if (mIsPainting) {
-        tilesToBeRendered = mTempTiles;
+        tilesToBeRendered = mBufferTiles;
     }
-//        tilesToBeRendered = mTiles;
-//    }
 
-    qDebug() << tilesToBeRendered.size();
+//    qDebug() << "bufferTiles " << mBufferTiles.size();
+//    qDebug() << "tempTiles " << mTempTiles.size();
+//    qDebug() << tilesToBeRendered.size();
 
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvas );
@@ -984,73 +984,68 @@ void ScribbleArea::paintBitmapBuffer()
     // adds content from canvas and saves to bitmapimage
     for (MPTile* item : mBufferTiles.values()) {
         QPixmap tilePixmap = item->pixmap();
-
-        // load the new tiles from buffer into mypaint
-
-        // temporary disabled... not sure if neccesary
-//            mMyPaint->loadTile(tilePixmap, item->pos().toPoint());
         targetImage->paste(tilePixmap, item->pos().toPoint(), cm);
     }
     mBufferTiles.clear();
 
-    update();
+//    update();
 
     layer->setModified(frameNumber, true);
     emit modification(frameNumber);
 }
 
-void ScribbleArea::paintBitmapBufferRect(const QRect& rect)
-{
-//    if (allowSmudging() || mEditor->playback()->isPlaying())
-//    {
-        Layer* layer = mEditor->layers()->currentLayer();
-        Q_ASSERT(layer);
+//void ScribbleArea::paintBitmapBufferRect(const QRect& rect)
+//{
+////    if (allowSmudging() || mEditor->playback()->isPlaying())
+////    {
+//        Layer* layer = mEditor->layers()->currentLayer();
+//        Q_ASSERT(layer);
 
-        BitmapImage* targetImage = currentBitmapImage(layer);
+//        BitmapImage* targetImage = currentBitmapImage(layer);
 
-        if (targetImage != nullptr)
-        {
-            QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver;
-            switch (currentTool()->type())
-            {
-            case ERASER:
-                cm = QPainter::CompositionMode_DestinationOut;
-                break;
-            case BRUSH:
-            case PEN:
-            case PENCIL:
-                if (getTool(currentTool()->type())->properties.preserveAlpha)
-                {
-                    cm = QPainter::CompositionMode_SourceAtop;
-                }
-                break;
-            default: //nothing
-                break;
-            }
-            targetImage->paste(mBufferImg, cm);
+//        if (targetImage != nullptr)
+//        {
+//            QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver;
+//            switch (currentTool()->type())
+//            {
+//            case ERASER:
+//                cm = QPainter::CompositionMode_DestinationOut;
+//                break;
+//            case BRUSH:
+//            case PEN:
+//            case PENCIL:
+//                if (getTool(currentTool()->type())->properties.preserveAlpha)
+//                {
+//                    cm = QPainter::CompositionMode_SourceAtop;
+//                }
+//                break;
+//            default: //nothing
+//                break;
+//            }
+//            targetImage->paste(mBufferImg, cm);
 
-//            QImage* strokeImage = new QImage(mMyPaint->renderImage(mEditor->view()->getView()));
+////            QImage* strokeImage = new QImage(mMyPaint->renderImage(mEditor->view()->getView()));
 
-//            QRect rect = mEditor->view()->mapScreenToCanvas(strokeImage->rect()).toRect();
+////            QRect rect = mEditor->view()->mapScreenToCanvas(strokeImage->rect()).toRect();
 
-//            mBufferImg->setImage(strokeImage);
-//            mBufferImg->transform(rect, false);
-//            drawCanvas(1, this->rect());
-//            mCanvasPainter.paintBuffer(mBufferImg);
-        }
+////            mBufferImg->setImage(strokeImage);
+////            mBufferImg->transform(rect, false);
+////            drawCanvas(1, this->rect());
+////            mCanvasPainter.paintBuffer(mBufferImg);
+//        }
 
-        // Clear the buffer
-        mBufferImg->clear();
+//        // Clear the buffer
+//        mBufferImg->clear();
 
-        int frameNumber = mEditor->currentFrame();
-        layer->setModified(frameNumber, true);
+//        int frameNumber = mEditor->currentFrame();
+//        layer->setModified(frameNumber, true);
 
-        QPixmapCache::remove(mPixmapCacheKeys[static_cast<unsigned>(frameNumber)]);
-        mPixmapCacheKeys[static_cast<unsigned>(frameNumber)] = QPixmapCache::Key();
+//        QPixmapCache::remove(mPixmapCacheKeys[static_cast<unsigned>(frameNumber)]);
+//        mPixmapCacheKeys[static_cast<unsigned>(frameNumber)] = QPixmapCache::Key();
 
-//        drawCanvas(frameNumber, rect.adjusted(-1, -1, 1, 1));
-//    }
-}
+////        drawCanvas(frameNumber, rect.adjusted(-1, -1, 1, 1));
+////    }
+//}
 
 void ScribbleArea::clearBitmapBuffer()
 {
@@ -1567,22 +1562,15 @@ void ScribbleArea::setBrushWidth(float width)
 }
 
 QElapsedTimer timer;
-void ScribbleArea::strokeTo(QPointF point, float width, float pressure, float xtilt, float ytilt)
+void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float ytilt)
 {
     timer.start();
     point = mEditor->view()->mapScreenToCanvas(point);
 
-    mMyPaint->setBrushWidth(width);
     mMyPaint->strokeTo(static_cast<float>(point.x()), static_cast<float>(point.y()), pressure, xtilt, ytilt, calculateDeltaTime());
-//    qDebug() << "stroke to: <<<< \n";
-//    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
-//    qDebug() << "seconds elapsed" << timer.elapsed();
 
     // update dirty region
     updateDirtyTiles();
-//    qDebug() << "\n updated tiles: <<<<";
-//    qDebug() << "nsencs elapsed" << timer.nsecsElapsed();
-//    qDebug() << "seconds elapsed" << timer.elapsed();
 }
 
 QColor ScribbleArea::pickColorFromSurface(QPointF point, int radius)
@@ -1939,6 +1927,11 @@ void ScribbleArea::paletteColorChanged(QColor color)
     mMyPaint->setBrushColor(color);
     updateAllVectorLayersAtCurrentFrame();
 }
+
+//void ScribbleArea::brushSettingChanged(MyPaintBrushSetting setting)
+//{
+//    mMyPaint->setB
+//}
 
 qreal ScribbleArea::calculateDeltaTime()
 {

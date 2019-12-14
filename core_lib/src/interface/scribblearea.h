@@ -188,7 +188,7 @@ protected:
 
 public:
     void startStroke();
-    void strokeTo(QPointF point, float width, float pressure, float xtilt, float ytilt);
+    void strokeTo(QPointF point, float pressure, float xtilt, float ytilt);
     void setBrushWidth(float width);
     void endStroke();
     QColor pickColorFromSurface(QPointF point, int radius);
@@ -198,7 +198,7 @@ public:
     void drawPath(QPainterPath path, QPen pen, QBrush brush, QPainter::CompositionMode cm);
 
     void paintBitmapBuffer();
-    void paintBitmapBufferRect(const QRect& rect);
+//    void paintBitmapBufferRect(const QRect& rect);
     void paintCanvasCursor();
     void clearBitmapBuffer();
     void refreshBitmap(const QRectF& rect, int rad);
