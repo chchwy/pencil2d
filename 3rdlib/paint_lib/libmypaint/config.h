@@ -1,18 +1,6 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if you are compiling for PowerPC. */
-/* #undef ARCH_PPC */
-
-/* Define to 1 if you are compiling for PowerPC64. */
-/* #undef ARCH_PPC64 */
-
-/* Define to 1 if you are compiling for ix86. */
-#define ARCH_X86 1
-
-/* Define to 1 if you are compiling for amd64. */
-#define ARCH_X86_64 1
-
 /* always defined to indicate that i18n is enabled */
 #define ENABLE_NLS 1
 
@@ -88,7 +76,7 @@
 #define PACKAGE_NAME "libmypaint"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "libmypaint 1.3.0"
+#define PACKAGE_STRING "libmypaint 1.4.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "libmypaint"
@@ -97,10 +85,7 @@
 #define PACKAGE_URL "https://github.com/mypaint/libmypaint"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.3.0"
-
-/* define to 1 if compiling for Mac OS X */
-#define PLATFORM_OSX 1
+#define PACKAGE_VERSION "1.4.0"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

@@ -1,17 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if you are compiling for PowerPC. */
-#undef ARCH_PPC
-
-/* Define to 1 if you are compiling for PowerPC64. */
-#undef ARCH_PPC64
-
-/* Define to 1 if you are compiling for ix86. */
-#undef ARCH_X86
-
-/* Define to 1 if you are compiling for amd64. */
-#undef ARCH_X86_64
-
 /* always defined to indicate that i18n is enabled */
 #undef ENABLE_NLS
 
@@ -97,9 +85,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* define to 1 if compiling for Mac OS X */
-#undef PLATFORM_OSX
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

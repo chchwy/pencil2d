@@ -3,7 +3,7 @@ AC_PREREQ(2.62)
 
 # API version: see https://github.com/mypaint/libmypaint/wiki/Versioning
 m4_define([libmypaint_api_major], [1])
-m4_define([libmypaint_api_minor], [3])
+m4_define([libmypaint_api_minor], [4])
 m4_define([libmypaint_api_micro], [0])
 m4_define([libmypaint_api_prerelease], [])  # may be blank
 # The platform version is "major.minor" only.
@@ -73,91 +73,27 @@ AM_MAINTAINER_MODE([enable])
 PKG_PROG_PKG_CONFIG(0.16)
 
 ###########################
-# Check host architecture
+# Check host and platform
 ###########################
 
 AC_CANONICAL_HOST
 
-case "$host_cpu" in
-  i*86)
-    have_x86=yes
-    AC_DEFINE(ARCH_X86, 1, [Define to 1 if you are compiling for ix86.])
-    ;;
-  x86_64)
-    have_x86=yes
-    AC_DEFINE(ARCH_X86, 1, [Define to 1 if you are compiling for ix86.])
-    AC_DEFINE(ARCH_X86_64, 1, [Define to 1 if you are compiling for amd64.])
-    ;;
-  ppc | powerpc)
-    have_ppc=yes
-    AC_DEFINE(ARCH_PPC, 1, [Define to 1 if you are compiling for PowerPC.])
-    ;;
-  ppc64 | powerpc64)
-    have_ppc=yes
-    AC_DEFINE(ARCH_PPC, 1, [Define to 1 if you are compiling for PowerPC.])
-    AC_DEFINE(ARCH_PPC64, 1, [Define to 1 if you are compiling for PowerPC64.])
-    ;;
-  *)
-    ;;
-esac
-
-#################
-# Check for Win32
-#################
-
-AC_MSG_CHECKING([for some Win32 platform])
+AC_MSG_CHECKING([for platform])
+platform_win32=no
+platform_osx=no
 case "$host_os" in
   mingw* | cygwin*)
-    platform_win32=yes
-    ;;
-  *)
-    platform_win32=no
-    ;;
-esac
-AC_MSG_RESULT([$platform_win32])
-AM_CONDITIONAL(PLATFORM_WIN32, test "$platform_win32" = "yes")
-
-AC_MSG_CHECKING([for native Win32])
-case "$host_os" in
-  mingw*)
-    os_win32=yes
-    case "$host_cpu" in
-      x86_64)
-	;;
-      *)
-	WIN32_LARGE_ADDRESS_AWARE='-Wl,--large-address-aware'
-	;;
-    esac
-    PATHSEP=';'
-    ;;
-  *)
-    os_win32=no
-    PATHSEP=':'
-    ;;
-esac
-AC_MSG_RESULT([$os_win32])
-AC_SUBST(WIN32_LARGE_ADDRESS_AWARE)
-AC_SUBST(PATHSEP)
-AM_CONDITIONAL(OS_WIN32, test "$os_win32" = "yes")
-AM_CONDITIONAL(OS_UNIX, test "$os_win32" != "yes")
-
-####################
-# Check for Mac OS X
-####################
-
-platform_osx=no
-AC_MSG_CHECKING([if compiling for Mac OS X])
-case "$host_os" in
+     AC_MSG_RESULT([win32])
+     platform_win32=yes
+     ;;
   darwin*)
-     AC_MSG_RESULT(yes)
-     AC_DEFINE(PLATFORM_OSX, 1, [define to 1 if compiling for Mac OS X])
+     AC_MSG_RESULT([osx])
      platform_osx=yes
      ;;
   *)
-     AC_MSG_RESULT(no)
-     ;;
+     AC_MSG_RESULT([unix])
 esac
-
+AM_CONDITIONAL(PLATFORM_WIN32, test "$platform_win32" = "yes")
 AM_CONDITIONAL(PLATFORM_OSX, test "x$platform_osx" = xyes)
 
 # Define strdup() in string.h under glibc >= 2.10 (POSIX.1-2008)
@@ -255,6 +191,7 @@ AC_SUBST(JSON_CFLAGS)
 AC_SEARCH_LIBS([floorf], [m], [], AC_MSG_ERROR([no floorf]))
 AC_SEARCH_LIBS([powf], [m], [], AC_MSG_ERROR([no powf]))
 AC_SEARCH_LIBS([expf], [m], [], AC_MSG_ERROR([no expf]))
+AC_SEARCH_LIBS([fabsf], [m], [], AC_MSG_ERROR([no fabsf]))
 
 ## Additional compile flags ##
 
@@ -324,7 +261,6 @@ AC_CONFIG_FILES([
   gegl/libmypaint-gegl.pc:gegl/libmypaint-gegl.pc.in
   gegl/Makefile
   libmypaint.pc:libmypaint.pc.in
-  m4macros/Makefile
   Makefile
   po/Makefile.in
   tests/Makefile

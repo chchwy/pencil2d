@@ -8,16 +8,16 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-07-04 18:33+0100\n"
-"PO-Revision-Date: 2015-07-02 22:07+0200\n"
-"Last-Translator: tommis <tommivs@gmail.com>\n"
-"Language-Team: Finnish <https://hosted.weblate.org/projects/mypaint/"
-"libmypaint/fi/>\n"
+"PO-Revision-Date: 2016-12-27 03:28+0000\n"
+"Last-Translator: Lari Oesch <lari@oesch.me>\n"
+"Language-Team: Finnish "
+"<https://hosted.weblate.org/projects/mypaint/libmypaint/fi/>\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2.4-dev\n"
+"X-Generator: Weblate 2.11-dev\n"
 
 #: ../brushsettings-gen.h:4
 msgid "Opacity"
@@ -28,10 +28,12 @@ msgid ""
 "0 means brush is transparent, 1 fully visible\n"
 "(also known as alpha or opacity)"
 msgstr ""
+"0 tarkoittaa että sivellin on läpinäkyvä, 1 tarkoittaa täysin näkyvää\n"
+"(kutsutaan myös alphaksi tai peittävyydeksi)"
 
 #: ../brushsettings-gen.h:5
 msgid "Opacity multiply"
-msgstr ""
+msgstr "Läpinäkyvyyden kerroin"
 
 #: ../brushsettings-gen.h:5
 msgid ""
@@ -72,7 +74,6 @@ msgstr ""
 " 3.0 tarkoitaa 20 pikseliä"
 
 #: ../brushsettings-gen.h:8
-#, fuzzy
 msgid "Hardness"
 msgstr "Kovuus"
 
@@ -84,9 +85,10 @@ msgstr ""
 
 #: ../brushsettings-gen.h:9
 msgid "Pixel feather"
-msgstr ""
+msgstr "Pikselisulka"
 
 #: ../brushsettings-gen.h:9
+#, fuzzy
 msgid ""
 "This setting decreases the hardness when necessary to prevent a pixel "
 "staircase effect (aliasing) by making the dab more blurred.\n"
@@ -94,6 +96,11 @@ msgid ""
 " 1.0 blur one pixel (good value)\n"
 " 5.0 notable blur, thin strokes will disappear"
 msgstr ""
+"This setting decreases the hardness when necessary to prevent a pixel "
+"staircase effect (aliasing) by making the dab more blurred.\n"
+" 0.0 posita käytöstä (todella vahva)\n"
+" 1.0 sumenna yksi pikseli (hyvä arvo)\n"
+" 5.0 kuomattava sumennus, ohuet viivat katoavat"
 
 #: ../brushsettings-gen.h:10
 msgid "Dabs per basic radius"
