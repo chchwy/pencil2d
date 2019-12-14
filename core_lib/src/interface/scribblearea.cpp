@@ -986,7 +986,6 @@ void ScribbleArea::paintBitmapBuffer()
         QPixmap tilePixmap = item->pixmap();
         targetImage->paste(tilePixmap, item->pos().toPoint(), cm);
     }
-    mBufferTiles.clear();
 
     layer->setModified(frameNumber, true);
     emit modification(frameNumber);
@@ -1533,8 +1532,6 @@ void ScribbleArea::updateDirtyTiles()
 
             tile->setDirty(false);
             mBufferTiles.insert(i.key(), i.value());
-        } else {
-            mBufferTiles.remove(i.key());
         }
     }
 }
