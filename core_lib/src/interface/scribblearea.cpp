@@ -988,76 +988,14 @@ void ScribbleArea::paintBitmapBuffer()
     }
     mBufferTiles.clear();
 
-//    update();
-
     layer->setModified(frameNumber, true);
     emit modification(frameNumber);
 }
-
-//void ScribbleArea::paintBitmapBufferRect(const QRect& rect)
-//{
-////    if (allowSmudging() || mEditor->playback()->isPlaying())
-////    {
-//        Layer* layer = mEditor->layers()->currentLayer();
-//        Q_ASSERT(layer);
-
-//        BitmapImage* targetImage = currentBitmapImage(layer);
-
-//        if (targetImage != nullptr)
-//        {
-//            QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver;
-//            switch (currentTool()->type())
-//            {
-//            case ERASER:
-//                cm = QPainter::CompositionMode_DestinationOut;
-//                break;
-//            case BRUSH:
-//            case PEN:
-//            case PENCIL:
-//                if (getTool(currentTool()->type())->properties.preserveAlpha)
-//                {
-//                    cm = QPainter::CompositionMode_SourceAtop;
-//                }
-//                break;
-//            default: //nothing
-//                break;
-//            }
-//            targetImage->paste(mBufferImg, cm);
-
-////            QImage* strokeImage = new QImage(mMyPaint->renderImage(mEditor->view()->getView()));
-
-////            QRect rect = mEditor->view()->mapScreenToCanvas(strokeImage->rect()).toRect();
-
-////            mBufferImg->setImage(strokeImage);
-////            mBufferImg->transform(rect, false);
-////            drawCanvas(1, this->rect());
-////            mCanvasPainter.paintBuffer(mBufferImg);
-//        }
-
-//        // Clear the buffer
-//        mBufferImg->clear();
-
-//        int frameNumber = mEditor->currentFrame();
-//        layer->setModified(frameNumber, true);
-
-//        QPixmapCache::remove(mPixmapCacheKeys[static_cast<unsigned>(frameNumber)]);
-//        mPixmapCacheKeys[static_cast<unsigned>(frameNumber)] = QPixmapCache::Key();
-
-////        drawCanvas(frameNumber, rect.adjusted(-1, -1, 1, 1));
-////    }
-//}
 
 void ScribbleArea::clearBitmapBuffer()
 {
     mBufferImg->clear();
 }
-
-//void ScribbleArea::clearSurfaceBuffer()
-//{
-//    if (!mTiles.isEmpty()) {
-//        mTiles.clear();
-//    }
-//}
 
 void ScribbleArea::drawLine(QPointF P1, QPointF P2, QPen pen, QPainter::CompositionMode cm)
 {
@@ -1512,7 +1450,7 @@ MPTile *ScribbleArea::getTileFromPos(QPointF point)
     if (mTiles.contains(posString)) {
         MPTile* tile = mTiles.value(posString);
 
-        mTempTiles.insert(posString, tile);
+        mBufferTiles.insert(posString, tile);
         return tile;
     }
     else {
@@ -1523,7 +1461,7 @@ MPTile *ScribbleArea::getTileFromPos(QPointF point)
         MPTile *item = new MPTile(emptyImage);
         item->setPos(point);
         mTiles.insert(posString, item);
-        mTempTiles.insert(posString, item);
+        mBufferTiles.insert(posString, item);
 
 
         return item;
@@ -1544,11 +1482,11 @@ void ScribbleArea::startStroke()
     // because we don't want to load mypaint
 //    removeSurfaceBuffer();
 
-    if (frameFirstLoad) {
-        qDebug() << "frame first load";
-        prepareForDrawing();
-        frameFirstLoad = false;
-    }
+//    if (frameFirstLoad) {
+//        qDebug() << "frame first load";
+//        prepareForDrawing();
+//        frameFirstLoad = false;
+//    }
     mMyPaint->startStroke();
     mIsPainting = true;
 
@@ -1582,7 +1520,7 @@ QColor ScribbleArea::pickColorFromSurface(QPointF point, int radius)
 void ScribbleArea::updateDirtyTiles()
 {
     QTransform v = mEditor->view()->getView();
-    QHashIterator<QString, MPTile*> i(mTempTiles);
+    QHashIterator<QString, MPTile*> i(mBufferTiles);
     while (i.hasNext()) {
         i.next();
         MPTile* tile = i.value();
@@ -1596,7 +1534,7 @@ void ScribbleArea::updateDirtyTiles()
             tile->setDirty(false);
             mBufferTiles.insert(i.key(), i.value());
         } else {
-            mTempTiles.remove(i.key());
+            mBufferTiles.remove(i.key());
         }
     }
 }
@@ -1610,8 +1548,8 @@ void ScribbleArea::refreshSurface()
 void ScribbleArea::endStroke()
 {
     // clear the temp tiles buffer
-    if (!mTempTiles.isEmpty()) {
-        mTempTiles.clear();
+    if (!mBufferTiles.isEmpty()) {
+        mBufferTiles.clear();
     }
     mIsPainting = false;
     mMyPaint->endStroke();

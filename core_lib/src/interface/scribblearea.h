@@ -308,7 +308,6 @@ private:
     // mypaint
     QHash<QString, MPTile*> mTiles;
     QHash<QString, MPTile*> mBufferTiles;
-    QHash<QString, MPTile*> mTempTiles;
 
     bool isInPreviewMode = false;
     bool mNeedQuickUpdate = false;
