@@ -186,17 +186,6 @@ void BrushTool::pointerMoveEvent(PointerEvent* event)
 
 void BrushTool::pointerReleaseEvent(PointerEvent*)
 {
-    Layer* layer = mEditor->layers()->currentLayer();
-//    mEditor->backup(typeName());
-
-    qreal distance = QLineF(getCurrentPoint(), mMouseDownPoint).length();
-    if (distance < 1) { isBrushDab = true; } else { isBrushDab = false; }
-
-    if (layer->type() == Layer::BITMAP)
-        paintBitmapStroke();
-    else if (layer->type() == Layer::VECTOR)
-        paintVectorStroke();
-
     endStroke();
 }
 
@@ -320,47 +309,3 @@ void BrushTool::paintAt(QPointF point)
 //    }
 //}
 
-void BrushTool::paintBitmapStroke()
-{
-    mScribbleArea->paintBitmapBuffer();
-    mScribbleArea->setAllDirty();
-    mScribbleArea->clearBitmapBuffer();
-}
-
-// This function uses the points from DrawStroke
-// and turns them into vector lines.
-void BrushTool::paintVectorStroke()
-{
-    if (mStrokePoints.empty())
-        return;
-
-    Layer* layer = mEditor->layers()->currentLayer();
-
-    if (layer->type() == Layer::VECTOR && mStrokePoints.size() > -1)
-    {
-        // Clear the temporary pixel path
-        mScribbleArea->clearBitmapBuffer();
-        qreal tol = mScribbleArea->getCurveSmoothing() / mEditor->view()->scaling();
-
-        BezierCurve curve(mStrokePoints, mStrokePressures, tol);
-        curve.setWidth(properties.width);
-        curve.setFeather(properties.feather);
-        curve.setFilled(false);
-        curve.setInvisibility(properties.invisibility);
-        curve.setVariableWidth(properties.pressure);
-        curve.setColourNumber(mEditor->color()->frontColorNumber());
-
-        VectorImage* vectorImage = static_cast<VectorImage*>(layer->getLastKeyFrameAtPosition(mEditor->currentFrame()));
-        vectorImage->addCurve(curve, mEditor->view()->scaling(), false);
-
-        if (vectorImage->isAnyCurveSelected() || mEditor->select()->somethingSelected())
-        {
-            mEditor->deselectAll();
-        }
-
-        vectorImage->setSelected(vectorImage->getLastCurveNumber(), true);
-
-        mScribbleArea->setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
-        mScribbleArea->setAllDirty();
-    }
-}

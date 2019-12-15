@@ -51,7 +51,6 @@ public:
 
 protected:
     QPointF mLastBrushPoint;
-    QPointF mMouseDownPoint;
 
     QColor mCurrentPressuredColor;
     qreal mOpacity = 1.0;

@@ -35,6 +35,9 @@ public:
     void drawStroke();
     void endStroke();
 
+    void paintBitmapStroke();
+    void paintVectorStroke();
+
     bool keyPressEvent(QKeyEvent* event) override;
     bool keyReleaseEvent(QKeyEvent* event) override;
 
@@ -46,6 +49,7 @@ protected:
 
     qreal mCurrentWidth    = 0.0;
     qreal mCurrentPressure = 0.5;
+    QPointF mMouseDownPoint;
 
     float mCurrentXTilt = .0f;
     float mCurrentYTilt = .0f;
