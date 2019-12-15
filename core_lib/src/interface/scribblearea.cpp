@@ -260,7 +260,6 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
 {
 //    BitmapImage* bitmapImage = currentBitmapImage(layer);
 
-//    clearSurfaceBuffer();
 //    if (bitmapImage->isModified()) {
 //        qDebug() << "keyframe has been modified";
 //        bitmapImage->setModified(false);
@@ -276,7 +275,6 @@ void ScribbleArea::showCurrentFrame()
 {
     Layer* layer = mEditor->layers()->currentLayer();
 
-    clearSurfaceBuffer();
     mMyPaint->clearSurface();
 
     switch (layer->type())
@@ -374,7 +372,6 @@ void ScribbleArea::didCreateNewFrame(int frame)
 {
     Q_UNUSED(frame)
 //    mMyPaint->clearSurface();
-//    clearSurfaceBuffer();
 //    refreshSurface();
 //    qDebug() << "create new frame";
 }
@@ -968,7 +965,7 @@ void ScribbleArea::paintBitmapBuffer()
     // adds content from canvas and saves to bitmapimage
     for (MPTile* item : mBufferTiles.values()) {
         QPixmap tilePixmap = item->pixmap();
-        targetImage->paste(tilePixmap, item->pos().toPoint(), cm);
+        targetImage->paste(tilePixmap, item->pos(), cm);
     }
 
     layer->setModified(frameNumber, true);
@@ -1407,48 +1404,8 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 
     QPointF pos = tile->pos();
 
-    MPTile *item = getTileFromPos(pos);
-    item->setDirty(true);
-    item->setPixmap(tile->pixmap());
-}
-
-void ScribbleArea::clearSurfaceBuffer()
-{
-    QMutableHashIterator<QString, MPTile*> i(mTiles);
-    while (i.hasNext()) {
-        i.next();
-        MPTile *tile = i.value();
-        if (tile)
-        {
-            // clear content and remove tile
-            tile->clear();
-            i.remove();
-        }
-    }
-}
-
-MPTile *ScribbleArea::getTileFromPos(QPointF point)
-{
-    QString posString = QString::number(point.x())+"_"+QString::number(point.y());
-    if (mTiles.contains(posString)) {
-        MPTile* tile = mTiles.value(posString);
-
-        mBufferTiles.insert(posString, tile);
-        return tile;
-    }
-    else {
-//        qDebug() << "creating new tiles";
-        QPixmap emptyImage = QPixmap(MYPAINT_TILE_SIZE, MYPAINT_TILE_SIZE);
-        emptyImage.fill(Qt::transparent);
-
-        MPTile *item = new MPTile(emptyImage);
-        item->setPos(point);
-        mTiles.insert(posString, item);
-        mBufferTiles.insert(posString, item);
-
-
-        return item;
-    }
+    tile->setDirty(true);
+    mBufferTiles.insert(QString::number(pos.x())+"_"+QString::number(pos.y()), tile);
 }
 
 /************************************************************************************/
@@ -1474,10 +1431,8 @@ void ScribbleArea::setBrushWidth(float width)
     mMyPaint->setBrushWidth(width);
 }
 
-QElapsedTimer timer;
 void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float ytilt)
 {
-    timer.start();
     point = mEditor->view()->mapScreenToCanvas(point);
 
     mMyPaint->strokeTo(static_cast<float>(point.x()), static_cast<float>(point.y()), pressure, xtilt, ytilt, calculateDeltaTime());
@@ -1514,7 +1469,6 @@ void ScribbleArea::updateDirtyTiles()
 
 void ScribbleArea::refreshSurface()
 {
-    clearSurfaceBuffer();
     mMyPaint->refreshSurface();
 }
 
@@ -1823,7 +1777,6 @@ void ScribbleArea::clearCanvas()
 
     setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
     mMyPaint->clearSurface();
-    clearSurfaceBuffer();
 }
 
 void ScribbleArea::setPrevTool()

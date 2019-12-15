@@ -66,11 +66,8 @@ public:
     void setTilesWidth(int newWidth) { tiles_width = newWidth; }
     void setTilesHeight(int newHeight) { tiles_height = newHeight; }
 
-    enum { k_center = 50, k_max = 2*k_center};
-
     MPTile* getTileFromPos(const QPoint& pos);
     MPTile* getTileFromIdx(const QPoint& idx);
-    inline bool checkIndex(int n);
     inline QPoint getTilePos(const QPoint& idx);
     inline QPoint getTileIndex(const QPoint& pos);
     inline QPointF getTileFIndex(const QPoint& pos);
@@ -108,7 +105,7 @@ private:
     QColor      m_color;
 
 protected:
-    QHash<QPoint, MPTile*> m_Tiles;
+    QHash<QString, MPTile*> m_Tiles;
 };
 
 #endif // MPSURFACE_H

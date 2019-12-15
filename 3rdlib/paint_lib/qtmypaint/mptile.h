@@ -55,8 +55,8 @@ public:
 
     bool isDirty() { return m_dirty; }
     void setDirty(bool dirty) { m_dirty = dirty; }
-    void setPos(const QPointF& pos) { m_pos = pos; }
-    QPointF pos() const { return m_pos; }
+    void setPos(const QPoint& pos) { m_pos = pos; }
+    QPoint pos() const { return m_pos; }
 
 private:
 
@@ -65,7 +65,7 @@ private:
     QPixmap m_cache_pix;
     bool      m_cache_valid;
     bool m_dirty = false;
-    QPointF m_pos;
+    QPoint m_pos;
 };
 
 #endif // TILE_H

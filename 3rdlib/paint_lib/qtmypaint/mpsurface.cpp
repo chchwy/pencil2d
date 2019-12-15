@@ -206,7 +206,7 @@ QSize MPSurface::size()
 
 void MPSurface::clear()
 {
-    QHashIterator<QPoint, MPTile*> i(m_Tiles);
+    QHashIterator<QString, MPTile*> i(m_Tiles);
 
     if (!m_Tiles.isEmpty()) {
         m_Tiles.clear();
@@ -322,30 +322,24 @@ MPTile* MPSurface::getTileFromIdx(const QPoint& idx)
 {
 
     MPTile* selectedTile = nullptr;
-    // Which tile index is it ?
-    if (checkIndex(idx.x()) && checkIndex(idx.y())) { // out of range ?
 
-        // Ok, valid index. Does it exist already ?
-        selectedTile = m_Tiles.value(idx, nullptr);
+    // convert point to strign to check index
+    // it's faster to iterate qstring than a qpoint...
+    QString idxString = QString::number(idx.x())+"_"+QString::number(idx.y());
+    selectedTile = m_Tiles.value(idxString, nullptr);
 
-        if (!selectedTile) {
-            // Time to allocate it, update table:
-            selectedTile = new MPTile();
-            m_Tiles.insert(idx, selectedTile);
+    if (!selectedTile) {
+        // Time to allocate it, update table:
+        selectedTile = new MPTile();
+        m_Tiles.insert(idxString, selectedTile);
 
-            QPoint tilePos (getTilePos(idx));
-            selectedTile->setPos(tilePos);
-        }
-
-        this->onNewTileFunction(this, selectedTile);
+        QPoint tilePos (getTilePos(idx));
+        selectedTile->setPos(tilePos);
     }
 
-    return selectedTile;
-}
+    this->onNewTileFunction(this, selectedTile);
 
-inline bool MPSurface::checkIndex(int n)
-{
-    return static_cast<int>(n)<k_max;
+    return selectedTile;
 }
 
 inline QPoint MPSurface::getTilePos(const QPoint& idx)
@@ -361,9 +355,4 @@ inline QPoint MPSurface::getTileIndex(const QPoint& pos)
 inline QPointF MPSurface::getTileFIndex(const QPoint& pos)
 {
     return QPointF(static_cast<qreal>(pos.x())/MYPAINT_TILE_SIZE, static_cast<qreal>(pos.y())/MYPAINT_TILE_SIZE);
-}
-
-inline uint qHash (const QPoint & key)
-{
-    return qHash (QPair<int,int>(key.x(), key.y()) );
 }

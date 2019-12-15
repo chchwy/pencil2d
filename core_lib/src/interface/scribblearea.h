@@ -139,8 +139,6 @@ public:
 
     // mypaint
     void loadMPBrush(const QByteArray &content);
-    MPTile* getTileFromPos(QPointF point);
-    void clearSurfaceBuffer();
 
     void keyEvent(QKeyEvent* event);
     void keyEventForSelection(QKeyEvent* event);
@@ -305,7 +303,7 @@ private:
     std::deque<clock_t> mDebugTimeQue;
 
     // mypaint
-    QHash<QString, MPTile*> mTiles;
+//    QHash<QString, MPTile*> mTiles;
     QHash<QString, MPTile*> mBufferTiles;
 
     bool isInPreviewMode = false;
