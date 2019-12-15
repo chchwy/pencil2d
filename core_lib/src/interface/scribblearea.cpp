@@ -558,12 +558,7 @@ void ScribbleArea::wheelEvent(QWheelEvent* event)
     {
         float delta = pixels.y();
         float currentScale = mEditor->view()->scaling();
-
-//        qDebug() << delta;
-//        int newD = delta > 0 ? 2 : -2;
         float newScale = currentScale * (1.f + (delta * 0.01f));
-//        float newScale = currentScale * (1.f + (newD * 0.02f));
-//        qDebug() << newScale;
         mEditor->view()->scale(newScale);
     }
     else if (!angle.isNull())
@@ -582,7 +577,7 @@ void ScribbleArea::wheelEvent(QWheelEvent* event)
     event->accept();
 
     update();
-//    updateCanvasCursor();
+    updateCanvasCursor();
 }
 
 void ScribbleArea::tabletEvent(QTabletEvent *e)
@@ -734,6 +729,7 @@ void ScribbleArea::pointerReleaseEvent(PointerEvent* event)
     {
         setPrevTool();
     }
+    updateCanvasCursor();
 }
 
 void ScribbleArea::handleDoubleClick()
@@ -958,9 +954,6 @@ void ScribbleArea::paintCanvasCursor()
                               static_cast<int>(mTransformedCursorPos.y() - mCursorCenterPos.y())),
                        mCursorImg);
 
-    // update center of transformed img for rect only
-    mTransCursImg = mCursorImg.transformed(view);
-
     mCursorCenterPos.setX(centerCal);
     mCursorCenterPos.setY(centerCal);
 }
@@ -988,8 +981,7 @@ void ScribbleArea::updateCanvasCursor()
     QPoint translatedPos = QPoint(static_cast<int>(mTransformedCursorPos.x() - mCursorCenterPos.x()),
                                   static_cast<int>(mTransformedCursorPos.y() - mCursorCenterPos.y()));
 
-    update(mTransCursImg.rect().adjusted(-1, -1, 1, 1)
-           .translated(translatedPos));
+    update(mCursorImg.rect().translated(translatedPos));
 
 }
 
