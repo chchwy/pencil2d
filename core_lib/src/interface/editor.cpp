@@ -116,11 +116,6 @@ int Editor::currentFrame()
     return mFrame;
 }
 
-int Editor::previousFrame()
-{
-    return mLastTouchedFrame;
-}
-
 int Editor::fps()
 {
     return mPlaybackManager->fps();
@@ -678,7 +673,6 @@ Status Editor::setObject(Object* newObject)
 
 void Editor::updateObject()
 {
-    emit newFrameCreated(mObject->data()->getCurrentFrame());
     scrubTo(mObject->data()->getCurrentFrame());
     setCurrentLayerIndex(mObject->data()->getCurrentLayer());
 
@@ -950,11 +944,8 @@ void Editor::setCurrentLayerIndex(int i)
 void Editor::scrubTo(int frame)
 {
     if (frame < 1) { frame = 1; }
-    mLastTouchedFrame = mFrame;
-    qDebug() << "lastTouchedFrame: " << mLastTouchedFrame;
     mFrame = frame;
 
-    Q_EMIT previousFrameChanged(mLastTouchedFrame);
     Q_EMIT currentFrameChanged(frame);
 
     // FIXME: should not emit Timeline update here.
@@ -1008,7 +999,6 @@ KeyFrame* Editor::addKeyFrame(int layerNumber, int frameIndex)
     bool ok = layer->addNewKeyFrameAt(frameIndex);
     if (ok)
     {
-        emit newFrameCreated(frameIndex);
         scrubTo(frameIndex); // currentFrameChanged() emit inside.
     }
     return layer->getKeyFrameAt(frameIndex);

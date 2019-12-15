@@ -1304,7 +1304,6 @@ void MainWindow2::makeConnections(Editor* editor, ScribbleArea* scribbleArea)
 //    connect( editor->tools(), &ToolManager::toolChanged, editor, &Editor::setCurrentTool );
 
     connect( editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::showCurrentFrame );
-    connect( editor, &Editor::newFrameCreated, scribbleArea, &ScribbleArea::didCreateNewFrame);
     connect( editor->layers(), &LayerManager::currentLayerChanged, scribbleArea, &ScribbleArea::updateAllFrames );
 
 //    connect( editor, &Editor::toggleOnionPrev, scribbleArea, &ScribbleArea::toggleOnionPrev );

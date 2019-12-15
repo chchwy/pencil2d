@@ -367,15 +367,6 @@ QString ScribbleArea::getCachedFrameKey(int frame)
 /************************************************************************************/
 // update methods
 
-
-void ScribbleArea::didCreateNewFrame(int frame)
-{
-    Q_UNUSED(frame)
-//    mMyPaint->clearSurface();
-//    refreshSurface();
-//    qDebug() << "create new frame";
-}
-
 void ScribbleArea::updateCurrentFrame()
 {
     updateFrame(mEditor->currentFrame());
@@ -1382,19 +1373,19 @@ void ScribbleArea::loadMPBrush(const QByteArray &content)
     mMyPaint->refreshSurface();
 }
 
-void ScribbleArea::newTileCreated(MPSurface *surface, MPTile *tile)
+void ScribbleArea::newTileCreated(MPSurface *, MPTile *)
 {
 //    updateTile(surface, tile);
 }
 
-void ScribbleArea::existingTileUpdated(MPSurface *surface, MPTile *tile)
+void ScribbleArea::existingTileUpdated(MPSurface *, MPTile *)
 {
 //    updateTile(surface, tile);
 }
 
 void ScribbleArea::onClearedSurface(MPSurface* surface)
 {
-    Q_UNUSED(surface);
+    Q_UNUSED(surface)
 //    qDebug() << "surface cleared?";
 }
 
