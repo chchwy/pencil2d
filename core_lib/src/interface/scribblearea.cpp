@@ -233,7 +233,7 @@ void ScribbleArea::prepareForDrawing()
 {
     qDebug() << "prepare for drawing";
 
-    // This loads the whole surface image into mypaint backend
+    // This loads an image into mypaint backend
     // should be used with caution, highly dependent on surface since.
     // if possible only load when frame changes.
     Layer* layer = mEditor->layers()->currentLayer();
@@ -241,8 +241,9 @@ void ScribbleArea::prepareForDrawing()
     switch(layer->type()) {
         case Layer::BITMAP:
         {
-//            BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
-//            mMyPaint->loadTiles(surfaceImage->pixmaps(), surfaceImage->tilePositions());
+            BitmapImage* bitmapImage = currentBitmapImage(layer);
+            const QImage* image = bitmapImage->image();
+            mMyPaint->loadImage(*image, bitmapImage->topLeft());
             break;
         }
         case Layer::VECTOR:
@@ -269,31 +270,14 @@ void ScribbleArea::showBitmapFrame(Layer* layer)
 //    }
 
     drawCanvas(mEditor->currentFrame());
-
-//    placeSurfaceOnCanvas(*surfaceImage);
-}
-
-void ScribbleArea::placeSurfaceOnCanvas(const BitmapSurface& bitmapImage)
-{
-    qDebug() << "show current frame";
-
-    // render surface image to to tile
-//    // tile is then rendered in paintEvent
-//    const Surface& surface = surfaceImage.readOnlySurface();
-//    QHashIterator<QPoint, std::shared_ptr<QPixmap>> surfaceIt(surface.tiles);
-//    while(surfaceIt.hasNext()) {
-//        surfaceIt.next();
-
-//        const QPixmap& pixmap = surface.pixmapAtPos(surfaceIt.key());
-//        const QPoint& pos = surface.posFromPixmap(surfaceIt.value());
-//        MPTile* tile = getTileFromPos(pos);
-//        tile->setPixmap(pixmap);
-//    }
 }
 
 void ScribbleArea::showCurrentFrame()
 {
     Layer* layer = mEditor->layers()->currentLayer();
+
+    clearSurfaceBuffer();
+    mMyPaint->clearSurface();
 
     switch (layer->type())
     {
@@ -329,7 +313,6 @@ void ScribbleArea::drawCanvas(int frame)
     }
 
 //    qDebug() << "bufferTiles " << mBufferTiles.size();
-//    qDebug() << "tempTiles " << mTempTiles.size();
 //    qDebug() << tilesToBeRendered.size();
 
     mCanvasPainter.setOptions( getRenderOptions() );
@@ -389,10 +372,11 @@ QString ScribbleArea::getCachedFrameKey(int frame)
 
 void ScribbleArea::didCreateNewFrame(int frame)
 {
-    Q_UNUSED(frame);
-    mMyPaint->clearSurface();
-    clearSurfaceBuffer();
-    qDebug() << "create new frame";
+    Q_UNUSED(frame)
+//    mMyPaint->clearSurface();
+//    clearSurfaceBuffer();
+//    refreshSurface();
+//    qDebug() << "create new frame";
 }
 
 void ScribbleArea::updateCurrentFrame()
@@ -1472,19 +1456,11 @@ MPTile *ScribbleArea::getTileFromPos(QPointF point)
 
 void ScribbleArea::startStroke()
 {
-//    mBufferImg->clear();
-//    mMyPaint->clearSurface();
-//    Layer* layer = mEditor->layers()->currentLayer();
-//    BitmapSurface* surfaceImage = currentBitmapSurfaceImage(layer);
-//    mMyPaint->loadTiles(surfaceImage->pixmaps(), surfaceImage->tilePositions());
-
-    // because we don't want to load mypaint
-//    removeSurfaceBuffer();
 
 //    if (frameFirstLoad) {
 //        qDebug() << "frame first load";
-//        prepareForDrawing();
-//        frameFirstLoad = false;
+        prepareForDrawing();
+        frameFirstLoad = false;
 //    }
     mMyPaint->startStroke();
     mIsPainting = true;
