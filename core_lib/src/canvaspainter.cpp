@@ -27,11 +27,6 @@ GNU General Public License for more details.
 #include "vectorimage.h"
 #include "util.h"
 
-
-
-// TODO: rendering not working
-// keep looking through feeeef's git log..
-// something must be missing -.-
 CanvasPainter::CanvasPainter(QObject* parent) : QObject(parent)
 , mLog("CanvasRenderer")
 {
@@ -76,7 +71,7 @@ void CanvasPainter::ignoreTransformedSelection()
 }
 
 
-void CanvasPainter::initPaint(const Object *object, int layer, int frame, QPainter& painter)
+void CanvasPainter::initPaint(const Object *object, int layer, int frame)
 {
     Q_ASSERT( object );
     mObject = object;
@@ -86,33 +81,21 @@ void CanvasPainter::initPaint(const Object *object, int layer, int frame, QPaint
 
     // Clear Canvas
     mCanvas->fill( Qt::transparent );
-
-//    if (!quick) {
-//        painter.setRenderHint( QPainter::SmoothPixmapTransform, mOptions.bAntiAlias );
-//        painter.setRenderHint( QPainter::Antialiasing, true );
-//    }
-//    else {
-//        painter.setRenderHint( QPainter::SmoothPixmapTransform, false );
-//        painter.setRenderHint( QPainter::Antialiasing, false );
-//    }
-
-//    painter.setWorldMatrixEnabled( true );
 }
 
 void CanvasPainter::paint(QPainter& painter, const Object* object, int layerIndex, int frameIndex, QList<MPTile*> tilesToBeRendered, bool isPainting)
 {
 
     mIsPainting = isPainting;
-    // Paint Canvas
-    initPaint(object, layerIndex, frameIndex, painter);
     mTilesToBeRendered = tilesToBeRendered;
 
-    paintCurrentFrame( painter, RENDER_LEVEL::ALL );
-    paintCameraBorder( painter );
+    initPaint(object, layerIndex, frameIndex);
+
+    paintCurrentFrame(painter);
+    paintCameraBorder(painter);
 
     // post effects
     paintPostEffects(painter);
-    painter.end();
 }
 
 void CanvasPainter::paintPostEffects(QPainter& painter)
@@ -459,27 +442,14 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
     }
 }
 
-void CanvasPainter::paintCurrentFrame(QPainter& painter, RENDER_LEVEL renderLevel)
+void CanvasPainter::paintCurrentFrame(QPainter& painter)
 {
     //bool isCamera = mObject->getLayer(mCurrentLayerIndex)->type() == Layer::CAMERA;
     painter.setOpacity(1.0);
 
-    int layerIndex = mCurrentLayerIndex;
     for (int i = 0; i < mObject->getLayerCount(); ++i)
     {
-
-        if (renderLevel == RENDER_LEVEL::CACHED) {
-            paintCachedFrameAtLayer(painter, i);
-        } else {
-            paintCurrentFrameAtLayer(painter, i);
-        }
-//        if ( renderLevel == RENDER_LEVEL::ALL ||
-//             ((renderLevel == RENDER_LEVEL::BACK_ONLY) && (i < layerIndex)) ||
-//             ((renderLevel == RENDER_LEVEL::CURRENT_LAYER_ONLY) && (i == layerIndex)) ||
-//             ((renderLevel == RENDER_LEVEL::TOP_ONLY) && (i > layerIndex)) )
-//        {
-//            paintCurrentFrameAtLayer(painter, i);
-//        }
+        paintCurrentFrameAtLayer(painter, i);
     }
 }
 
@@ -496,21 +466,6 @@ void CanvasPainter::paintCurrentFrameAtLayer(QPainter& painter, int layerIndex)
         {
         case Layer::BITMAP: { paintBitmapFrame(painter, layer, mFrameNumber, false); break; }
 //        case Layer::VECTOR: { paintVectorFrame(painter, layer, mFrameNumber, false); break; }
-        default: break;
-        }
-    }
-}
-
-void CanvasPainter::paintCachedFrameAtLayer(QPainter& painter, int layerIndex)
-{
-    Layer* layer = mObject->getLayer(layerIndex);
-
-    if (layerIndex == mCurrentLayerIndex || mOptions.showLayersCount > 0)
-    {
-        switch (layer->type())
-        {
-        case Layer::BITMAP: { paintBitmapFrame(painter, layer, mFrameNumber, false, true); break; }
-        case Layer::VECTOR: { paintVectorFrame(painter, layer, mFrameNumber, false, true); break; }
         default: break;
         }
     }

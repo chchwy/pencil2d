@@ -89,7 +89,7 @@ public:
     void paintFrameAtLayer(QPixmap &image, Object* object, int layer, int frame);
     void renderGrid(QPainter& painter);
 
-    void initPaint(const Object *object, int layer, int frame, QPainter& painter);
+    void initPaint(const Object *object, int layer, int frame);
 
 private:
     void paintBackground(QPainter& painter);
@@ -97,7 +97,7 @@ private:
 
     void paintPostEffects(QPainter& painter);
 
-    void paintCurrentFrame(QPainter& painter, RENDER_LEVEL renderLevel);
+    void paintCurrentFrame(QPainter& painter);
     void paintCurrentFrameAtLayer(QPainter& painter, int layerIndex);
     void paintCachedFrameAtLayer(QPainter& painter, int layerIndex);
 

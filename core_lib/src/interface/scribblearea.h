@@ -125,7 +125,7 @@ public:
     bool isTemporaryTool() const { return mInstantTool; }
 
     void showCurrentFrame();
-    void showBitmapFrame(Layer* layer);
+    void showBitmapFrame();
 
     /**
      * @brief prepareForDrawing
@@ -165,10 +165,7 @@ public slots:
     void updateDirtyTiles();
     void refreshSurface();
 
-    void newTileCreated(MPSurface* surface, MPTile* tile);
-    void existingTileUpdated(MPSurface* surface, MPTile* tile);
     void updateTile(MPSurface* surface, MPTile* tile);
-    void onClearedSurface(MPSurface* surface);
 
 
 protected:
