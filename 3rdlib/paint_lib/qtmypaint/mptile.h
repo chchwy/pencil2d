@@ -37,7 +37,7 @@ public:
 
     QPixmap pixmap() { return m_cache_pix; }
 
-    QRectF boundingRect () const;
+    QRect boundingRect () const;
 
     uint16_t* Bits (bool readOnly);
     void drawPoint ( uint x, uint y, uint16_t r, uint16_t g, uint16_t b, uint16_t a );

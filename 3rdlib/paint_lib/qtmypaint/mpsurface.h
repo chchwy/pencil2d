@@ -89,12 +89,14 @@ public:
 
     void clear();
 
-    void loadImage(const QImage &image, const QPoint pos);
+    void loadImage(const QImage &image, const QPoint topLeft);
 
 private:
     void resetNullTile();
     void resetSurface(QSize size);
     bool isFullyTransparent(QImage image);
+
+    QList<QPoint> findCorrespondingTiles(const QRect& rect);
     std::string key;
 
     int tiles_width; // width in tiles

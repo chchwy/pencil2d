@@ -27,7 +27,7 @@ MPTile::~MPTile()
 {
 }
 
-QRectF MPTile::boundingRect() const 
+QRect MPTile::boundingRect() const
 {
     return m_cache_pix.rect();
 }
