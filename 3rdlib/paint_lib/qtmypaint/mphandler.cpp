@@ -190,7 +190,6 @@ MPHandler::strokeTo(float x, float y)
 void
 MPHandler::endStroke()
 {
-
 }
 
 float MPHandler::getBrushValue(MyPaintBrushSetting setting)

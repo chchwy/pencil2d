@@ -202,22 +202,19 @@ QList<QPoint> MPSurface::findCorrespondingTiles(const QRect& rect)
     QList<QPoint> corners;
     const QPoint& cornerOffset = QPoint(tileWidth, tileHeight);
 
-    corners.append({rect.topLeft(), rect.topRight(), rect.bottomLeft(), rect.bottomRight()});
     for (int h=0; h < nbTilesOnHeight; h++) {
         for (int w=0; w < nbTilesOnWidth; w++) {
 
             const QPoint tilePos = getTilePos(QPoint(w,h));
-            for (int i = 0; i < corners.count(); i++) {
-                QPoint movedPos = getTileIndex(corners[i]-cornerOffset);
-                movedPos = getTilePos(movedPos)+tilePos;
+            QPoint movedPos = getTileIndex(rect.topLeft()-cornerOffset);
+            movedPos = getTilePos(movedPos)+tilePos;
 
-                if (points.contains(movedPos)) {
-                    continue;
-                }
+            if (points.contains(movedPos)) {
+                continue;
+            }
 
-                if (QRect(movedPos, QSize(tileWidth,tileHeight)).intersects(rect)) {
-                    points.append(movedPos);
-                }
+            if (QRect(movedPos, QSize(tileWidth,tileHeight)).intersects(rect)) {
+                points.append(movedPos);
             }
         }
     }
@@ -322,17 +319,16 @@ void MPSurface::resetSurface(QSize size)
 
 bool MPSurface::isFullyTransparent(QImage image)
 {
-    image = image.convertToFormat(QImage::Format_ARGB32);
+    if (!image.hasAlphaChannel()) {
+        image = image.convertToFormat(QImage::Format_ARGB32);
+    }
 
     for (int x = 0 ; x < image.width() ; x++) {
-
         for (int y = 0 ; y < image.height() ; y++) {
+            const QRgb pixelColor = *(reinterpret_cast<const QRgb*>(image.constScanLine(x))+y);
 
-            QRgb currentPixel = (image.pixel(x, y));
-
-            if (qAlpha(currentPixel) != 0) {
+            if (qAlpha(pixelColor) != 0) {
                 return false;
-
             }
         }
     }
