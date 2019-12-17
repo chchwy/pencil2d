@@ -218,21 +218,28 @@ void ScribbleArea::applyBackgroundShadow(QPainter& painter)
     }
 }
 
+/**
+ * @brief ScribbleArea::updateMyPaintCanvas
+ * Loads an image into libmypaint
+   should preferably only be used when loading new content that is otherwise not added automatically.
+ */
+void ScribbleArea::updateMyPaintCanvas()
+{
+    Layer* layer = mEditor->layers()->currentLayer();
+    BitmapImage* bitmapImage = currentBitmapImage(layer);
+    mMyPaint->loadImage(*bitmapImage->image(), bitmapImage->topLeft());
+}
+
 void ScribbleArea::prepareForDrawing()
 {
     qDebug() << "prepare for drawing";
 
-    // This loads an image into mypaint backend
-    // should be used with caution, highly dependent on surface since.
-    // if possible only load when frame changes.
     Layer* layer = mEditor->layers()->currentLayer();
 
     switch(layer->type()) {
         case Layer::BITMAP:
         {
-            BitmapImage* bitmapImage = currentBitmapImage(layer);
-            const QImage* image = bitmapImage->image();
-            mMyPaint->loadImage(*image, bitmapImage->topLeft());
+            updateMyPaintCanvas();
             break;
         }
         case Layer::VECTOR:
@@ -245,32 +252,19 @@ void ScribbleArea::prepareForDrawing()
     }
 }
 
-void ScribbleArea::showBitmapFrame()
-{
-    drawCanvas(mEditor->currentFrame());
-}
-
+/**
+ * @brief ScribbleArea::showCurrentFrame
+ * Called when current frame change
+ */
 void ScribbleArea::showCurrentFrame()
 {
-    Layer* layer = mEditor->layers()->currentLayer();
     mMyPaint->clearSurface();
+    mFrameFirstLoad = true;
+    updateFrame();
+}
 
-    switch (layer->type())
-    {
-        case Layer::BITMAP:
-        {
-            showBitmapFrame();
-            break;
-        }
-        case Layer::VECTOR:
-        {
-            break;
-        }
-        default:
-        {
-            break;
-        }
-    }
+void ScribbleArea::updateFrame()
+{
     update();
 }
 
@@ -354,7 +348,7 @@ void ScribbleArea::updateFrame(int frame)
 
     qDebug() << "update frame";
     if (mEditor) {
-        showCurrentFrame();
+        updateFrame();
     }
 }
 
@@ -363,7 +357,7 @@ void ScribbleArea::updateAllFrames()
     QPixmapCache::clear();
 
     if (mEditor) {
-        showCurrentFrame();
+        updateFrame();
     }
     mNeedUpdateAll = false;
 }
@@ -1321,11 +1315,11 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 void ScribbleArea::startStroke()
 {
 
-//    if (frameFirstLoad) {
+    if (mFrameFirstLoad) {
 //        qDebug() << "frame first load";
         prepareForDrawing();
-        frameFirstLoad = false;
-//    }
+        mFrameFirstLoad = false;
+    }
     mMyPaint->startStroke();
     mIsPainting = true;
 
@@ -1350,7 +1344,6 @@ void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float yt
 
 QColor ScribbleArea::pickColorFromSurface(QPointF point, int radius)
 {
-
     return mMyPaint->getSurfaceColor(static_cast<float>(point.x()), static_cast<float>(point.y()), radius);
 }
 

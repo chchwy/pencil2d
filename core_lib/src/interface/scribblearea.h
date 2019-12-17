@@ -125,16 +125,12 @@ public:
     bool isTemporaryTool() const { return mInstantTool; }
 
     void showCurrentFrame();
-    void showBitmapFrame();
 
     /**
      * @brief prepareForDrawing
      * Used to get the current frame content into mypaint
      */
     void prepareForDrawing();
-
-    /// Used to load frame into mypaint. Should only be true if the user  scrubbed prior this
-    bool frameFirstLoad = false;
 
     // mypaint
     void loadMPBrush(const QByteArray &content);
@@ -216,10 +212,14 @@ public:
 
     MPHandler* mMyPaint = nullptr;
 private:
+
+    /// Used to load frame into mypaint. Should only be true if the user  scrubbed prior this
+    bool mFrameFirstLoad = false;
 //    void drawCanvas(int frame, QRect rect);
     void settingUpdated(SETTING setting);
     void paintSelectionAnchors();
 
+    void updateFrame();
     void drawCanvas(int frame);
     void applyBackgroundShadow(QPainter& painter);
 
@@ -260,6 +260,12 @@ private:
     QColor mOnionColor;
 
     bool mNeedUpdateAll = false;
+
+    /**
+     * @brief updateMyPaintCanvas
+     * Intended use is when moving pixels manually, eg. floodfilling or selection
+     */
+    void updateMyPaintCanvas();
 
 private:
     bool mKeyboardInUse = false;
