@@ -190,7 +190,7 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameI
     }
 
     QTransform v = mViewTransform;
-    if (mIsPainting) {
+    if (mIsPainting && !mTilesToBeRendered.isEmpty()) {
         for (MPTile* item : mTilesToBeRendered) {
 
             QRectF tileRect = QRectF(item->pos(),
