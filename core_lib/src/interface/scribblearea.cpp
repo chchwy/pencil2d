@@ -1037,11 +1037,10 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
         int curIndex = mEditor->currentFrame();
         int frameNumber = mEditor->layers()->LastFrameAtFrame(curIndex);
 
-        QPixmapCache::Key cachedKey = mPixmapCacheKeys[frameNumber];
+        QPixmapCache::Key cachedKey = mPixmapCacheKeys[static_cast<ulong>(frameNumber)];
 
         if (!QPixmapCache::find(cachedKey, &mCanvas))
         {
-//            drawCanvas(mEditor->currentFrame(), event->rect());
 
 //            mPixmapCacheKeys[frameNumber] = QPixmapCache::insert(mCanvas);
 //            //qDebug() << "Repaint canvas!";
@@ -1239,41 +1238,6 @@ VectorImage* ScribbleArea::currentVectorImage(Layer* layer) const
     return vectorLayer->getLastVectorImageAtFrame(mEditor->currentFrame(), 0);
 }
 
-//void ScribbleArea::drawCanvas(int frame, QRect rect)
-//{
-//    Object* object = mEditor->object();
-
-//    CanvasPainterOptions o;
-//    o.bPrevOnionSkin = mPrefs->isOn(SETTING::PREV_ONION);
-//    o.bNextOnionSkin = mPrefs->isOn(SETTING::NEXT_ONION);
-//    o.bColorizePrevOnion = mPrefs->isOn(SETTING::ONION_RED);
-//    o.bColorizeNextOnion = mPrefs->isOn(SETTING::ONION_BLUE);
-//    o.nPrevOnionSkinCount = mPrefs->getInt(SETTING::ONION_PREV_FRAMES_NUM);
-//    o.nNextOnionSkinCount = mPrefs->getInt(SETTING::ONION_NEXT_FRAMES_NUM);
-//    o.fOnionSkinMaxOpacity = mPrefs->getInt(SETTING::ONION_MAX_OPACITY);
-//    o.fOnionSkinMinOpacity = mPrefs->getInt(SETTING::ONION_MIN_OPACITY);
-//    o.bAntiAlias = mPrefs->isOn(SETTING::ANTIALIAS);
-//    o.bGrid = mPrefs->isOn(SETTING::GRID);
-//    o.nGridSizeW = mPrefs->getInt(SETTING::GRID_SIZE_W);
-//    o.nGridSizeH = mPrefs->getInt(SETTING::GRID_SIZE_H);
-//    o.bAxis = false;
-//    o.bThinLines = mPrefs->isOn(SETTING::INVISIBLE_LINES);
-//    o.bOutlines = mPrefs->isOn(SETTING::OUTLINES);
-//    o.nShowAllLayers = mShowAllLayers;
-//    o.bIsOnionAbsolute = (mPrefs->getString(SETTING::ONION_TYPE) == "absolute");
-//    o.scaling = mEditor->view()->scaling();
-//    o.onionWhilePlayback = mPrefs->getInt(SETTING::ONION_WHILE_PLAYBACK);
-//    o.isPlaying = mEditor->playback()->isPlaying() ? true : false;
-//    mCanvasPainter.setOptions(o);
-
-//    mCanvasPainter.setCanvas(&mCanvas);
-
-//    ViewManager* vm = mEditor->view();
-//    mCanvasPainter.setViewTransform(vm->getView(), vm->getViewInverse());
-
-//    mCanvasPainter.paint(object, mEditor->layers()->currentLayerIndex(), frame, rect);
-//}
-
 void ScribbleArea::setGaussianGradient(QGradient &gradient, QColor colour, qreal opacity, qreal offset)
 {
     if (offset < 0) { offset = 0; }
@@ -1362,7 +1326,6 @@ void ScribbleArea::updateDirtyTiles()
             update(mappedRect.toRect());
 
             tile->setDirty(false);
-            mBufferTiles.insert(i.key(), i.value());
         }
     }
 }
