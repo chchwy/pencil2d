@@ -90,6 +90,7 @@ public:
     void clear();
 
     void loadImage(const QImage &image, const QPoint topLeft);
+    void clearArea(const QRect& bounds);
 
 private:
     void resetNullTile();

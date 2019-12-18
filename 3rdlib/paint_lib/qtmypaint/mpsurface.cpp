@@ -183,6 +183,39 @@ void MPSurface::loadImage(const QImage &image, const QPoint topLeft)
 }
 
 /**
+ * @brief MPSurface::clearArea
+ * Clears surface area at the given rectangle
+ * @param bounds
+ */
+void MPSurface::clearArea(const QRect& bounds)
+{
+    QPixmap paintTo(MYPAINT_TILE_SIZE,MYPAINT_TILE_SIZE);
+    QPixmap transparenPix(MYPAINT_TILE_SIZE,MYPAINT_TILE_SIZE);
+    transparenPix.fill(Qt::transparent);
+
+    QList<QPoint> touchedPoints = findCorrespondingTiles(bounds);
+
+    for (int point = 0; point < touchedPoints.count(); point++) {
+
+        const QPoint touchedPoint = touchedPoints.at(point);
+
+        paintTo.fill(Qt::transparent);
+        QPainter painter(&paintTo);
+
+        painter.save();
+        QRect intersectedRect = bounds.intersected(QRect(touchedPoint, size()));
+        painter.translate(-touchedPoint);
+        painter.fillRect(intersectedRect, Qt::transparent);
+
+        MPTile *tile = getTileFromPos(touchedPoint);
+
+        // tile is updated here and the mypaint buffer is updated
+        tile->setPixmap(paintTo);
+        tile->updateMyPaintBuffer(tile->boundingRect().size(),paintTo);
+    }
+}
+
+/**
  * @brief MPSurface::findCorrespondingTiles
  * Finds corresponding tiles for the given rectangle
  * @param rect
@@ -202,19 +235,22 @@ QList<QPoint> MPSurface::findCorrespondingTiles(const QRect& rect)
     QList<QPoint> corners;
     const QPoint& cornerOffset = QPoint(tileWidth, tileHeight);
 
+    corners.append({rect.topLeft(), rect.topRight(), rect.bottomLeft(), rect.bottomRight()});
     for (int h=0; h < nbTilesOnHeight; h++) {
         for (int w=0; w < nbTilesOnWidth; w++) {
 
             const QPoint tilePos = getTilePos(QPoint(w,h));
-            QPoint movedPos = getTileIndex(rect.topLeft()-cornerOffset);
-            movedPos = getTilePos(movedPos)+tilePos;
+            for (int i = 0; i < corners.count(); i++) {
+                QPoint movedPos = getTileIndex(corners[i]-cornerOffset);
+                movedPos = getTilePos(movedPos)+tilePos;
 
-            if (points.contains(movedPos)) {
-                continue;
-            }
+                if (points.contains(movedPos)) {
+                    continue;
+                }
 
-            if (QRect(movedPos, QSize(tileWidth,tileHeight)).intersects(rect)) {
-                points.append(movedPos);
+                if (QRect(movedPos, QSize(tileWidth,tileHeight)).intersects(rect)) {
+                    points.append(movedPos);
+                }
             }
         }
     }

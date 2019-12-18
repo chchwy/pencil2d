@@ -80,6 +80,7 @@ public:
 
     void loadImage(const QImage &image, const QPoint pos);
     void loadTile(const QPixmap& pixmap, const QPoint pos);
+    void clearAreaFromSurface(const QRect& bounds);
 
 
 public slots:

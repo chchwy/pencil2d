@@ -265,7 +265,7 @@ private:
      * @brief updateMyPaintCanvas
      * Intended use is when moving pixels manually, eg. floodfilling or selection
      */
-    void updateMyPaintCanvas();
+    void updateMyPaintCanvas(BitmapImage* bitmapImage = nullptr);
 
 private:
     bool mKeyboardInUse = false;

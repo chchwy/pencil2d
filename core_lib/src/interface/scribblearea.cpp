@@ -223,10 +223,13 @@ void ScribbleArea::applyBackgroundShadow(QPainter& painter)
  * Loads an image into libmypaint
    should preferably only be used when loading new content that is otherwise not added automatically.
  */
-void ScribbleArea::updateMyPaintCanvas()
+void ScribbleArea::updateMyPaintCanvas(BitmapImage* bitmapImage)
 {
     Layer* layer = mEditor->layers()->currentLayer();
-    BitmapImage* bitmapImage = currentBitmapImage(layer);
+
+    if (!bitmapImage) {
+        bitmapImage = currentBitmapImage(layer);
+    }
     mMyPaint->loadImage(*bitmapImage->image(), bitmapImage->topLeft());
 }
 
@@ -1452,6 +1455,8 @@ void ScribbleArea::applyTransformedSelection()
             BitmapImage* bitmapImage = currentBitmapImage(layer);
             bitmapImage->moveSelectionTransform(selectMan->mySelectionRect().toRect(),
                                    selectMan->selectionTransform());
+            mMyPaint->clearAreaFromSurface(selectMan->mySelectionRect().toRect());
+            updateMyPaintCanvas(bitmapImage);
         }
         else if (layer->type() == Layer::VECTOR)
         {
