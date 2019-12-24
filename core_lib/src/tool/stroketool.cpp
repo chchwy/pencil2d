@@ -104,7 +104,7 @@ void StrokeTool::endStroke()
     mEditor->backup(typeName());
 
     Layer* layer = mEditor->layers()->currentLayer();
-    qreal distance = QLineF(getCurrentPoint(), mMouseDownPoint).length();
+    qreal distance = QLineF(getCurrentPixel(), mMouseDownPoint).length();
     if (distance < 1) { isBrushDab = true; } else { isBrushDab = false; }
 
     if (layer->type() == Layer::BITMAP)
@@ -122,9 +122,9 @@ void StrokeTool::endStroke()
     mScribbleArea->endStroke();
 }
 
-void StrokeTool::drawStroke()
+void StrokeTool::drawStroke(const QPointF pos)
 {
-    QPointF pixel = getCurrentPixel();
+    const QPointF pixel = pos;
 
     const float pressure = static_cast<float>(mCurrentPressure);
     mScribbleArea->strokeTo(pixel, pressure, mCurrentXTilt,  mCurrentYTilt);
@@ -139,6 +139,13 @@ void StrokeTool::drawStroke()
     {
         mFirstDraw = false;
     }
+}
+
+void StrokeTool::drawStroke()
+{
+    QPointF pixel = getCurrentPoint();
+
+    drawStroke(pixel);
 }
 
 

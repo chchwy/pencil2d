@@ -20,6 +20,7 @@ GNU General Public License for more details.
 
 #include "editor.h"
 #include "scribblearea.h"
+#include "mphandler.h"
 
 #include "strokemanager.h"
 #include "layermanager.h"
@@ -31,7 +32,7 @@ GNU General Public License for more details.
 #include "vectorimage.h"
 
 
-PolylineTool::PolylineTool(QObject* parent) : BaseTool(parent)
+PolylineTool::PolylineTool(QObject* parent) : StrokeTool(parent)
 {
 }
 
@@ -105,6 +106,7 @@ void PolylineTool::pointerPressEvent(PointerEvent* event)
 {
     Layer* layer = mEditor->layers()->currentLayer();
 
+    mEditor->backup(typeName());
     if (event->button() == Qt::LeftButton)
     {
         if (layer->type() == Layer::BITMAP || layer->type() == Layer::VECTOR)
@@ -119,10 +121,26 @@ void PolylineTool::pointerPressEvent(PointerEvent* event)
                     mScribbleArea->toggleThinLines();
                 }
             }
-            mPoints << getCurrentPoint();
-            mScribbleArea->setAllDirty();
+
+            if (!mPoints.isEmpty()) {
+                mPoints.takeAt(0);
+            }
+
+//            qDebug() << "polyline points: " << mPoints.count();
+            if (previousPoint.isNull()) {
+                mPoints << getCurrentPoint();
+            } else {
+                mPoints << previousPoint;
+            }
+//            drawStroke(mPoints.first());
+//            mScribbleArea->setAllDirty();
+
+//             paintBitmapStroke();
         }
     }
+
+    startStroke();
+    mScribbleArea->paintBitmapBuffer();
 }
 
 void PolylineTool::pointerMoveEvent(PointerEvent*)
@@ -132,17 +150,17 @@ void PolylineTool::pointerMoveEvent(PointerEvent*)
     {
         drawPolyline(mPoints, getCurrentPoint());
     }
+    previousPoint = getCurrentPoint();
 }
 
 void PolylineTool::pointerReleaseEvent(PointerEvent *)
-{}
+{
+}
 
 void PolylineTool::pointerDoubleClickEvent(PointerEvent*)
 {
     // include the current point before ending the line.
     mPoints << getCurrentPoint();
-
-//    mEditor->backup(typeName());
 
     endPolyline(mPoints);
     clearToolData();
@@ -180,47 +198,58 @@ bool PolylineTool::keyPressEvent(QKeyEvent* event)
 
 void PolylineTool::drawPolyline(QList<QPointF> points, QPointF endPoint)
 {
-    if (points.size() > 0)
-    {
-        QPen pen(mEditor->color()->frontColor(),
-                 properties.width,
-                 Qt::SolidLine,
-                 Qt::RoundCap,
-                 Qt::RoundJoin);
-        Layer* layer = mEditor->layers()->currentLayer();
+//    if (points.size() > 0)
+//    {
+//        QPen pen(mEditor->color()->frontColor(),
+//                 properties.width,
+//                 Qt::SolidLine,
+//                 Qt::RoundCap,
+//                 Qt::RoundJoin);
+//        Layer* layer = mEditor->layers()->currentLayer();
 
-        // Bitmap by default
-        QPainterPath tempPath;
-        if (properties.bezier_state)
-        {
-            tempPath = BezierCurve(points).getSimplePath();
+//        // Bitmap by default
+//        QPainterPath tempPath;
+//        if (properties.bezier_state)
+//        {
+//            tempPath = BezierCurve(points).getSimplePath();
+//        }
+//        else
+//        {
+//            tempPath = BezierCurve(points).getStraightPath();
+//        }
+//        tempPath.lineTo(endPoint);
+
+        mScribbleArea->mMyPaint->clearSurface();
+        mScribbleArea->prepareForDrawing();
+        mScribbleArea->mMyPaint->startStroke();
+        for(int i=0; i<points.size(); i++) {
+                drawStroke(points[i]);
         }
-        else
-        {
-            tempPath = BezierCurve(points).getStraightPath();
-        }
-        tempPath.lineTo(endPoint);
+        drawStroke(endPoint);
+        mScribbleArea->mMyPaint->endStroke();
+        mScribbleArea->updateCurrentFrame();
+
 
         // Vector otherwise
-        if (layer->type() == Layer::VECTOR)
-        {
-            if (mEditor->layers()->currentLayer()->type() == Layer::VECTOR)
-            {
-                tempPath = mEditor->view()->mapCanvasToScreen(tempPath);
-                if (mScribbleArea->makeInvisible() == true)
-                {
-                    pen.setWidth(0);
-                    pen.setStyle(Qt::DotLine);
-                }
-                else
-                {
-                    pen.setWidth(properties.width * mEditor->view()->scaling());
-                }
-            }
-        }
+//        if (layer->type() == Layer::VECTOR)
+//        {
+//            if (mEditor->layers()->currentLayer()->type() == Layer::VECTOR)
+//            {
+//                tempPath = mEditor->view()->mapCanvasToScreen(tempPath);
+//                if (mScribbleArea->makeInvisible() == true)
+//                {
+//                    pen.setWidth(0);
+//                    pen.setStyle(Qt::DotLine);
+//                }
+//                else
+//                {
+//                    pen.setWidth(properties.width * mEditor->view()->scaling());
+//                }
+//            }
+//        }
 
-        mScribbleArea->drawPolyline(tempPath, pen, properties.useAA);
-    }
+//        mScribbleArea->drawPolyline(tempPath, pen, properties.useAA);
+//    }
 }
 
 
@@ -255,9 +284,12 @@ void PolylineTool::endPolyline(QList<QPointF> points)
     if (layer->type() == Layer::BITMAP)
     {
         drawPolyline(points, points.last());
-        BitmapImage *bitmapImage = ((LayerBitmap *)layer)->getLastBitmapImageAtFrame(mEditor->currentFrame(), 0);
-        bitmapImage->paste(mScribbleArea->mBufferImg);
+
+        mScribbleArea->paintBitmapBuffer();
     }
     mScribbleArea->mBufferImg->clear();
     mScribbleArea->setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
+
+    mScribbleArea->prepareForDrawing();
+    mScribbleArea->endStroke();
 }

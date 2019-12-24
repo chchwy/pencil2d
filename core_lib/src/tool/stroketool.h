@@ -31,6 +31,7 @@ class StrokeTool : public BaseTool
 public:
     explicit StrokeTool(QObject* parent);
     
+    void drawStroke(const QPointF pos);
     void startStroke();
     void drawStroke();
     void endStroke();

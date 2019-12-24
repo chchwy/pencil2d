@@ -19,10 +19,11 @@ GNU General Public License for more details.
 #define POLYLINETOOL_H
 
 #include <QPointF>
+#include "stroketool.h"
 
 #include "basetool.h"
 
-class PolylineTool : public BaseTool
+class PolylineTool : public StrokeTool
 {
     Q_OBJECT
 public:
@@ -47,6 +48,7 @@ public:
 
 private:
     QList<QPointF> mPoints;
+    QPointF previousPoint;
 
     void drawPolyline(QList<QPointF> points, QPointF endPoint);
     void cancelPolyline();

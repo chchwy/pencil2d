@@ -185,6 +185,7 @@ void MPBrushSelector::typeChanged(ToolType eToolMode)
         toolName = "pen";
         break;
     case ToolType::BRUSH:
+    case ToolType::POLYLINE:
         toolName = "brush";
         break;
     case ToolType::SMUDGE:
