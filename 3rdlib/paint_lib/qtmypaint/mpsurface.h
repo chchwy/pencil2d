@@ -80,6 +80,8 @@ public:
     void setOnClearedSurface(MPOnUpdateSurfaceFunction onNewTileFunction);
     void refreshSurface();
 
+    void saveSurface(const QString path);
+
     MPOnUpdateTileFunction onUpdateTileFunction;
     MPOnUpdateTileFunction onNewTileFunction;
     MPOnUpdateSurfaceFunction onClearedSurfaceFunction;

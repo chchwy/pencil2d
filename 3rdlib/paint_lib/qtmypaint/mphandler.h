@@ -72,6 +72,7 @@ public:
     void setBrushWidth(float width);
 
     void refreshSurface();
+    void saveSurface(const QString path);
 
     void setSurfaceSize(QSize size);
     QSize surfaceSize();

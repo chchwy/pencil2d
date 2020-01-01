@@ -230,6 +230,8 @@ void ScribbleArea::updateMyPaintCanvas(BitmapImage* bitmapImage)
     if (!bitmapImage) {
         bitmapImage = currentBitmapImage(layer);
     }
+
+    if (bitmapImage->bounds().isNull()) { return; }
     mMyPaint->loadImage(*bitmapImage->image(), bitmapImage->topLeft());
 }
 

@@ -160,6 +160,8 @@ void MPSurface::loadImage(const QImage &image, const QPoint topLeft)
     QPixmap paintTo(MYPAINT_TILE_SIZE,MYPAINT_TILE_SIZE);
     QList<QPoint> touchedPoints = findCorrespondingTiles(QRect(topLeft, image.size()));
 
+    setSize(image.size());
+
     for (int point = 0; point < touchedPoints.count(); point++) {
 
         const QPoint touchedPoint = touchedPoints.at(point);
@@ -176,8 +178,6 @@ void MPSurface::loadImage(const QImage &image, const QPoint topLeft)
             MPTile *tile = getTileFromPos(touchedPoint);
             tile->setPixmap(paintTo);
             tile->updateMyPaintBuffer(tile->boundingRect().size(),paintTo);
-
-            this->onUpdateTileFunction(this, tile);
         }
     }
 }
@@ -216,6 +216,31 @@ void MPSurface::clearArea(const QRect& bounds)
 }
 
 /**
+ * @brief MPSurface::saveSurface
+ * Saves content of surface to an image and exports it to preferred destinaton
+ * @param path
+ */
+void MPSurface::saveSurface(const QString path)
+{
+    QImage paintedImage(size(), QImage::Format_ARGB32_Premultiplied);
+    paintedImage.fill(Qt::transparent);
+
+    QPainter painter(&paintedImage);
+    painter.translate(QPoint(width/2,height/2));
+
+    QHashIterator<QString, MPTile*> cuTiles(m_Tiles);
+    while (cuTiles.hasNext()) {
+        cuTiles.next();
+        const QPixmap& pix = cuTiles.value()->pixmap();
+        const QPoint& pos = cuTiles.value()->pos();
+        painter.drawPixmap(pos, pix);
+    }
+    painter.end();
+
+    paintedImage.save(path);
+}
+
+/**
  * @brief MPSurface::findCorrespondingTiles
  * Finds corresponding tiles for the given rectangle
  * @param rect
@@ -225,8 +250,8 @@ QList<QPoint> MPSurface::findCorrespondingTiles(const QRect& rect)
 {
     const int tileWidth = MYPAINT_TILE_SIZE;
     const int tileHeight = MYPAINT_TILE_SIZE;
-    const float imageWidth = static_cast<float>(rect.width());
-    const float imageHeight = static_cast<float>(rect.height());
+    const float imageWidth = rect.width();
+    const float imageHeight = rect.height();
     const int nbTilesOnWidth = static_cast<int>(ceil(imageWidth / tileWidth));
     const int nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
 

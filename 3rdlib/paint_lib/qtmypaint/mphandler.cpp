@@ -117,6 +117,17 @@ void MPHandler::loadImage(const QImage &image, const QPoint topLeft)
     m_surface->loadImage(image, topLeft);
 }
 
+
+/**
+ * @brief MPHandler::saveSurface
+ * Debug method to check the content of surface
+ * @param path
+ */
+void MPHandler::saveSurface(const QString path)
+{
+    m_surface->saveSurface(path);
+}
+
 void MPHandler::clearAreaFromSurface(const QRect& bounds)
 {
     m_surface->clearArea(bounds);
