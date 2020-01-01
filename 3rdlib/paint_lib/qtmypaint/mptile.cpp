@@ -69,7 +69,7 @@ void MPTile::updateCache()
          }
     }
 
-    m_cache_pix = QPixmap::fromImage(m_cache_img);
+    m_cache_pix = QPixmap::fromImage(m_cache_img, Qt::ImageConversionFlag::NoFormatConversion);
     m_cache_valid = true;
 }
 
