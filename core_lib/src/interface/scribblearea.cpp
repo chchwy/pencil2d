@@ -899,20 +899,11 @@ void ScribbleArea::paintBitmapBuffer()
         break;
     }
 
-//    qDebug() << mBufferTiles.count();
-
     // adds content from canvas and saves to bitmapimage
     for (MPTile* item : mBufferTiles.values()) {
         QPixmap tilePixmap = item->pixmap();
-
-//        qDebug() << "item pos: " <<  item->pos();
-//        qDebug() << "buffer key pos: " << mBufferTiles.key(item);
-//        qDebug() << "painting tile to target ";
         targetImage->paste(tilePixmap, item->pos(), cm);
-
     }
-//    targetImage->writeFile("/Users/CandyFace/Desktop/tiles/targetImage.png");
-
     layer->setModified(frameNumber, true);
     emit modification(frameNumber);
 }
@@ -1284,8 +1275,6 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 
     tile->setDirty(true);
     mBufferTiles.insert(QString::number(pos.x())+"_"+QString::number(pos.y()), tile);
-
-    qDebug() << "updating tile";
 }
 
 /************************************************************************************/
@@ -1313,8 +1302,6 @@ void ScribbleArea::setBrushWidth(float width)
 
 void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float ytilt)
 {
-//    point = mEditor->view()->mapScreenToCanvas(point);
-
     mMyPaint->strokeTo(static_cast<float>(point.x()), static_cast<float>(point.y()), pressure, xtilt, ytilt, calculateDeltaTime());
 
     // update dirty region
