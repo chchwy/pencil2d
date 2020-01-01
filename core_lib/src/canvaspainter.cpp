@@ -83,11 +83,12 @@ void CanvasPainter::initPaint(const Object *object, int layer, int frame)
     mCanvas->fill( Qt::transparent );
 }
 
-void CanvasPainter::paint(QPainter& painter, const Object* object, int layerIndex, int frameIndex, QList<MPTile*> tilesToBeRendered, bool isPainting)
+void CanvasPainter::paint(QPainter& painter, const Object* object, int layerIndex, int frameIndex, QList<MPTile*> tilesToBeRendered, bool isPainting, bool useCanvasBuffer)
 {
 
     mIsPainting = isPainting;
     mTilesToBeRendered = tilesToBeRendered;
+    mUseCanvasBuffer = useCanvasBuffer;
 
     initPaint(object, layerIndex, frameIndex);
 
@@ -191,6 +192,15 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameI
 
     QTransform v = mViewTransform;
     if (mIsPainting && !mTilesToBeRendered.isEmpty()) {
+
+        if (mUseCanvasBuffer) {
+            painter.save();
+            painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+            const QRect& mappedBounds = v.mapRect(bitmapImage->bounds());
+            painter.drawImage(mappedBounds, *bitmapImage->image());
+            painter.restore();
+        }
+
         for (MPTile* item : mTilesToBeRendered) {
 
             QRectF tileRect = QRectF(item->pos(),

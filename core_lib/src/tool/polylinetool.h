@@ -23,6 +23,8 @@ GNU General Public License for more details.
 
 #include "basetool.h"
 
+class BitmapImage;
+
 class PolylineTool : public StrokeTool
 {
     Q_OBJECT

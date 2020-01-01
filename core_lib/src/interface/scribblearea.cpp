@@ -290,7 +290,18 @@ void ScribbleArea::drawCanvas(int frame)
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvas );
     mCanvasPainter.setViewTransform( mEditor->view()->getView());
-    mCanvasPainter.paint(painter, object, mEditor->layers()->currentLayerIndex(), frame, tilesToBeRendered.values(), mIsPainting);
+
+    bool useCanvasBuffer = false;
+    if (currentTool()->type() == POLYLINE) {
+        useCanvasBuffer = true;
+    }
+    mCanvasPainter.paint(painter, object, mEditor->layers()->currentLayerIndex(), frame, tilesToBeRendered.values(), mIsPainting, useCanvasBuffer);
+
+    painter.save();
+    painter.setTransform(mEditor->view()->getView());
+    painter.setPen(Qt::red);
+    painter.drawRect(debugBlitRect);
+    painter.restore();
 
     // Cache current frame for faster render
     //
@@ -351,7 +362,6 @@ void ScribbleArea::updateFrame(int frame)
     QString cachedFrameKey = getCachedFrameKey(frame);
     QPixmapCache::remove( cachedFrameKey );
 
-    qDebug() << "update frame";
     if (mEditor) {
         updateFrame();
     }
@@ -862,7 +872,7 @@ void ScribbleArea::showLayerNotVisibleWarning()
                          QMessageBox::Ok);
 }
 
-void ScribbleArea::paintBitmapBuffer()
+void ScribbleArea::paintBitmapBuffer(QPainter::CompositionMode composition)
 {
     LayerBitmap* layer = static_cast<LayerBitmap*>(mEditor->layers()->currentLayer());
     Q_ASSERT(layer);
@@ -883,7 +893,7 @@ void ScribbleArea::paintBitmapBuffer()
     if (targetImage == nullptr) { return; }
 
     // We use source here because mypaint contains the same image as target image..
-    QPainter::CompositionMode cm = QPainter::CompositionMode_Source;
+    QPainter::CompositionMode cm = composition;
     switch (currentTool()->type())
     {
     case ERASER:
@@ -904,6 +914,7 @@ void ScribbleArea::paintBitmapBuffer()
         QPixmap tilePixmap = item->pixmap();
         targetImage->paste(tilePixmap, item->pos(), cm);
     }
+
     layer->setModified(frameNumber, true);
     emit modification(frameNumber);
 }
@@ -1275,6 +1286,7 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 
     tile->setDirty(true);
     mBufferTiles.insert(QString::number(pos.x())+"_"+QString::number(pos.y()), tile);
+
 }
 
 /************************************************************************************/
@@ -1284,7 +1296,6 @@ void ScribbleArea::startStroke()
 {
 
     if (mFrameFirstLoad) {
-//        qDebug() << "frame first load";
         prepareForDrawing();
         mFrameFirstLoad = false;
     }
@@ -1339,15 +1350,19 @@ void ScribbleArea::refreshSurface()
 
 void ScribbleArea::endStroke()
 {
+    clearTilesBuffer();
+
+    mIsPainting = false;
+    mMyPaint->endStroke();
+    qDebug() << "end stroke";
+}
+
+void ScribbleArea::clearTilesBuffer()
+{
     // clear the temp tiles buffer
     if (!mBufferTiles.isEmpty()) {
         mBufferTiles.clear();
     }
-
-    qDebug() << mBufferTiles.count();
-    mIsPainting = false;
-    mMyPaint->endStroke();
-    qDebug() << "end stroke";
 }
 
 void ScribbleArea::flipSelection(bool flipVertical)

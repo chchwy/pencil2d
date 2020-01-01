@@ -85,7 +85,7 @@ public:
     void ignoreTransformedSelection();
     QRect getCameraRect();
 
-    void paint(QPainter& painter, const Object* object, int layerIndex, int frameIndex, QList<MPTile*> tilesToBeRendered, bool isPainting);
+    void paint(QPainter& painter, const Object* object, int layerIndex, int frameIndex, QList<MPTile*> tilesToBeRendered, bool isPainting, bool useCanvasBuffer);
     void paintFrameAtLayer(QPixmap &image, Object* object, int layer, int frame);
     void renderGrid(QPainter& painter);
 
@@ -136,6 +136,7 @@ private:
 
     bool bMultiLayerOnionSkin = false;
     bool mIsPainting = false;
+    bool mUseCanvasBuffer = false;
 
     // Handle selection transformation
     bool mRenderTransform = false;

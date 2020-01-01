@@ -187,7 +187,7 @@ public:
     void drawLine(QPointF P1, QPointF P2, QPen pen, QPainter::CompositionMode cm);
     void drawPath(QPainterPath path, QPen pen, QBrush brush, QPainter::CompositionMode cm);
 
-    void paintBitmapBuffer();
+    void paintBitmapBuffer(QPainter::CompositionMode composition = QPainter::CompositionMode_Source);
 //    void paintBitmapBufferRect(const QRect& rect);
     void paintCanvasCursor();
     void clearBitmapBuffer();
@@ -201,9 +201,13 @@ public:
 
     void updateCanvasCursor();
 
+    void clearTilesBuffer();
+
     /// Call this when starting to use a paint tool. Checks whether we are drawing
     /// on an empty frame, and if so, takes action according to use preference.
     void handleDrawingOnEmptyFrame();
+
+    void setIsPainting(bool isPainting) { mIsPainting = isPainting; }
 
     BitmapImage* mBufferImg = nullptr; // used to pre-draw vector modifications
 
@@ -211,6 +215,8 @@ public:
     QPixmap mTransCursImg;
 
     MPHandler* mMyPaint = nullptr;
+    MPHandler* mMyPaintBuffer = nullptr;
+    QHash<QString, MPTile*> mBufferTiles;
 private:
 
     /// Used to load frame into mypaint. Should only be true if the user  scrubbed prior this
@@ -306,7 +312,7 @@ private:
 
     // mypaint
 //    QHash<QString, MPTile*> mTiles;
-    QHash<QString, MPTile*> mBufferTiles;
+//    QHash<QString, MPTile*> mBufferTiles;
 
     bool isInPreviewMode = false;
     bool mNeedQuickUpdate = false;
@@ -315,6 +321,8 @@ private:
     int lastFrameTime;
     int currentFrameTime;
     double deltaTime = 0;
+
+    QRect debugBlitRect;
 };
 
 #endif

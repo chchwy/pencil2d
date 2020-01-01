@@ -77,7 +77,7 @@ void PolylineTool::setWidth(const qreal width)
 
 void PolylineTool::setFeather(const qreal feather)
 {
-    Q_UNUSED(feather);
+    Q_UNUSED(feather)
     properties.feather = -1;
 }
 
@@ -106,7 +106,9 @@ void PolylineTool::pointerPressEvent(PointerEvent* event)
 {
     Layer* layer = mEditor->layers()->currentLayer();
 
+    mScribbleArea->mMyPaint->clearSurface();
     mEditor->backup(typeName());
+
     if (event->button() == Qt::LeftButton)
     {
         if (layer->type() == Layer::BITMAP || layer->type() == Layer::VECTOR)
@@ -123,29 +125,34 @@ void PolylineTool::pointerPressEvent(PointerEvent* event)
             }
 
             if (!mPoints.isEmpty()) {
+
+                for(int i=0; i < mPoints.size(); i++) {
+                    drawStroke(mPoints[i]);
+                }
+
                 mPoints.takeAt(0);
             }
 
-//            qDebug() << "polyline points: " << mPoints.count();
             if (previousPoint.isNull()) {
                 mPoints << getCurrentPoint();
             } else {
                 mPoints << previousPoint;
             }
-//            drawStroke(mPoints.first());
-//            mScribbleArea->setAllDirty();
-
-//             paintBitmapStroke();
         }
     }
 
-    startStroke();
-    mScribbleArea->paintBitmapBuffer();
+    mScribbleArea->mMyPaint->startStroke();
+    mScribbleArea->setIsPainting(true);
+
+    mScribbleArea->paintBitmapBuffer(QPainter::CompositionMode_SourceOver);
+
+    mScribbleArea->clearTilesBuffer();
 }
 
 void PolylineTool::pointerMoveEvent(PointerEvent*)
 {
     Layer* layer = mEditor->layers()->currentLayer();
+
     if (layer->type() == Layer::BITMAP || layer->type() == Layer::VECTOR)
     {
         drawPolyline(mPoints, getCurrentPoint());
@@ -198,36 +205,16 @@ bool PolylineTool::keyPressEvent(QKeyEvent* event)
 
 void PolylineTool::drawPolyline(QList<QPointF> points, QPointF endPoint)
 {
-//    if (points.size() > 0)
-//    {
-//        QPen pen(mEditor->color()->frontColor(),
-//                 properties.width,
-//                 Qt::SolidLine,
-//                 Qt::RoundCap,
-//                 Qt::RoundJoin);
-//        Layer* layer = mEditor->layers()->currentLayer();
-
-//        // Bitmap by default
-//        QPainterPath tempPath;
-//        if (properties.bezier_state)
-//        {
-//            tempPath = BezierCurve(points).getSimplePath();
-//        }
-//        else
-//        {
-//            tempPath = BezierCurve(points).getStraightPath();
-//        }
-//        tempPath.lineTo(endPoint);
-
+    if (points.size() > 0)
+    {
         mScribbleArea->mMyPaint->clearSurface();
-        mScribbleArea->prepareForDrawing();
         mScribbleArea->mMyPaint->startStroke();
         for(int i=0; i<points.size(); i++) {
-                drawStroke(points[i]);
+            drawStroke(points[i]);
         }
         drawStroke(endPoint);
-        mScribbleArea->mMyPaint->endStroke();
         mScribbleArea->updateCurrentFrame();
+        mScribbleArea->mMyPaint->endStroke();
 
 
         // Vector otherwise
@@ -249,7 +236,7 @@ void PolylineTool::drawPolyline(QList<QPointF> points, QPointF endPoint)
 //        }
 
 //        mScribbleArea->drawPolyline(tempPath, pen, properties.useAA);
-//    }
+    }
 }
 
 
@@ -284,12 +271,11 @@ void PolylineTool::endPolyline(QList<QPointF> points)
     if (layer->type() == Layer::BITMAP)
     {
         drawPolyline(points, points.last());
-
-        mScribbleArea->paintBitmapBuffer();
+        mScribbleArea->paintBitmapBuffer(QPainter::CompositionMode_SourceOver);
     }
-    mScribbleArea->mBufferImg->clear();
     mScribbleArea->setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
 
     mScribbleArea->prepareForDrawing();
+    mScribbleArea->clearBitmapBuffer();
     mScribbleArea->endStroke();
 }

@@ -194,59 +194,7 @@ void EraserTool::drawStroke()
 
     Layer* layer = mEditor->layers()->currentLayer();
 
-    if (layer->type() == Layer::BITMAP)
-    {
-//        for (auto & i : p)
-//        {
-//            i = mEditor->view()->mapScreenToCanvas(i);
-//        }
-
-//        qreal opacity = 1.0;
-//        mCurrentWidth = properties.width;
-//        if (properties.pressure)
-//        {
-//            opacity = strokeManager()->getPressure();
-//            mCurrentWidth = (mCurrentWidth + (strokeManager()->getPressure() * mCurrentWidth)) * 0.5;
-//        }
-
-//        qreal brushWidth = mCurrentWidth;
-//        qreal brushStep = (0.5 * brushWidth) - ((properties.feather / 100.0) * brushWidth * 0.5);
-//        brushStep = qMax(1.0, brushStep);
-
-//        BlitRect rect;
-
-//        QPointF a = mLastBrushPoint;
-//        QPointF b = getCurrentPoint();
-
-//        qreal distance = 4 * QLineF(b, a).length();
-//        int steps = qRound(distance) / brushStep;
-
-//        for (int i = 0; i < steps; i++)
-//        {
-//            QPointF point = mLastBrushPoint + (i + 1) * (brushStep)* (b - mLastBrushPoint) / distance;
-//            rect.extend(point.toPoint());
-//            mScribbleArea->drawBrush(point,
-//                                     brushWidth,
-//                                     properties.feather,
-//                                     QColor(255, 255, 255, 255),
-//                                     opacity,
-//                                     properties.useFeather,
-//                                     properties.useAA);
-
-//            if (i == (steps - 1))
-//            {
-//                mLastBrushPoint = point;
-//            }
-//        }
-
-//        int rad = qRound(brushWidth) / 2 + 2;
-
-//        // continuously update buffer to update stroke behind grid.
-////        mScribbleArea->paintBitmapBufferRect(rect);
-
-//        mScribbleArea->refreshBitmap(rect, rad);
-    }
-    else if (layer->type() == Layer::VECTOR)
+    if (layer->type() == Layer::VECTOR)
     {
         mCurrentWidth = properties.width;
         if (properties.pressure)

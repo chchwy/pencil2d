@@ -151,7 +151,7 @@ void StrokeTool::drawStroke()
 
 void StrokeTool::paintBitmapStroke()
 {
-    mScribbleArea->paintBitmapBuffer();
+    mScribbleArea->paintBitmapBuffer(QPainter::CompositionMode_Source);
     mScribbleArea->setAllDirty();
     mScribbleArea->clearBitmapBuffer();
 }
