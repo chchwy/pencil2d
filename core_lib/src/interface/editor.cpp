@@ -1094,3 +1094,13 @@ void Editor::loadBrush(QString toolName, QString brushName, const QByteArray &co
     mPreferenceManager->set("LastBrushFor_"+toolName, brushName);
     mScribbleArea->loadMPBrush(content);
 }
+
+void Editor::setMPBrushSetting(BrushSettingType setting, float value)
+{
+    mScribbleArea->brushSettingChanged(setting, value);
+}
+
+float Editor::getMPBrushSetting(BrushSettingType settingType)
+{
+    return mScribbleArea->getBrushSetting(settingType);
+}

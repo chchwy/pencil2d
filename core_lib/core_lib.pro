@@ -86,6 +86,7 @@ HEADERS +=  \
     src/tool/smudgetool.h \
     src/tool/strokemanager.h \
     src/tool/stroketool.h \
+    src/util/brushsetting.h \
     src/util/blitrect.h \
     src/util/colordictionary.h \
     src/util/fileformat.h \

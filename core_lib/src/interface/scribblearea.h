@@ -44,6 +44,9 @@ GNU General Public License for more details.
 #include "strokemanager.h"
 #include "selectionpainter.h"
 
+#include "brushsetting.h"
+
+
 class Layer;
 class Editor;
 class BaseTool;
@@ -134,6 +137,8 @@ public:
 
     // mypaint
     void loadMPBrush(const QByteArray &content);
+    void brushSettingChanged(BrushSettingType settingType, float value);
+    float getBrushSetting(BrushSettingType settingType);
 
     void keyEvent(QKeyEvent* event);
     void keyEventForSelection(QKeyEvent* event);

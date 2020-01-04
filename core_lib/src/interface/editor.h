@@ -24,6 +24,8 @@ GNU General Public License for more details.
 #include "pencilerror.h"
 #include "basetool.h"
 
+#include "brushsetting.h"
+
 
 class QDragEnterEvent;
 class QDropEvent;
@@ -172,6 +174,8 @@ public: //slots
 
     // mypaint
     void loadBrush(QString toolName, QString brushName, const QByteArray &content);
+    void setMPBrushSetting(BrushSettingType setting, float value);
+    float getMPBrushSetting(BrushSettingType settingType);
 
 protected:
     // Need to move to somewhere...

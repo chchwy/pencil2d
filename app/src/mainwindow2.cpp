@@ -72,6 +72,7 @@ GNU General Public License for more details.
 
 // mypaint interface
 #include "mpbrushselector.h"
+#include "mpbrushconfigurator.h"
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -164,7 +165,9 @@ void MainWindow2::createDockWidgets()
     mToolBox = new ToolBoxWidget(this);
     mToolBox->setObjectName("ToolBox");
 
-    mBrushSelectorWidget = new MPBrushSelector(":brushes", NULL);
+    mBrushSelectorWidget = new MPBrushSelector(":brushes", nullptr);
+    mBrushConfiguratorWidget = new MPBrushConfigurator(this);
+    mBrushConfiguratorWidget->setCore(mEditor);
 
     /*
     mTimeline2 = new Timeline2;
@@ -180,7 +183,8 @@ void MainWindow2::createDockWidgets()
         << mDisplayOptionWidget
         << mToolOptions
         << mToolBox
-        << mBrushSelectorWidget;
+        << mBrushSelectorWidget
+        << mBrushConfiguratorWidget;
 
     mBrushSelectorWidget->show();
 

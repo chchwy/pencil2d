@@ -35,7 +35,10 @@ INCLUDEPATH += \
     ../core_lib/src/external
 
 HEADERS += \
+    brushsettingitem.h \
+    brushsettingwidget.h \
     src/mainwindow2.h \
+    src/mpbrushconfigurator.h \
     src/shortcutfilter.h \
     src/timeline2.h \
     src/actioncommands.h \
@@ -65,8 +68,11 @@ HEADERS += \
     src/mpbrushselector.h
 
 SOURCES += \
+    brushsettingitem.cpp \
+    brushsettingwidget.cpp \
     src/main.cpp \
     src/mainwindow2.cpp \
+    src/mpbrushconfigurator.cpp \
     src/shortcutfilter.cpp \
     src/timeline2.cpp \
     src/actioncommands.cpp \

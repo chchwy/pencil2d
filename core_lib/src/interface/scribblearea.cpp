@@ -1676,7 +1676,15 @@ void ScribbleArea::paletteColorChanged(QColor color)
     updateAllVectorLayersAtCurrentFrame();
 }
 
-//void ScribbleArea::brushSettingChanged(MyPaintBrushSetting setting)
+void ScribbleArea::brushSettingChanged(BrushSettingType settingType, float value)
+{
+    mMyPaint->setBrushValue(static_cast<MyPaintBrushSetting>(settingType), value);
+}
+
+float ScribbleArea::getBrushSetting(BrushSettingType settingType)
+{
+    return mMyPaint->getBrushValue(static_cast<MyPaintBrushSetting>(settingType));
+}
 //{
 //    mMyPaint->setB
 //}
