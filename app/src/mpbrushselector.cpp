@@ -13,9 +13,153 @@
 #include <QTabWidget>
 #include <QLayout>
 
-#include <QSettings>
+#include <QJsonParseError>
+#include <QJsonDocument>
 
+#include <QSettings>
 #include <QDebug>
+
+#include "brushsetting.h"
+
+static const QString BRUSH_CONTENT_EXT = ".myb";
+static const QString BRUSH_PREVIEW_EXT = "_prev.png";
+static const QString BRUSH_LIST = "brushes.conf";
+static const int ICON_SZ = 64;
+
+struct MPBrushParser {
+
+    /// Parses the mypaint brush config ".conf" format and returns a map of the brush groups
+    static QMap<QString, QStringList> parseConfig(QFile& file, QString brushConfigPath)
+    {
+        QString currentGroup;
+        QStringList brushesGroup;
+        QMap<QString, QStringList> brushes;
+        while (!file.atEnd())
+        {
+            QString line ( file.readLine().trimmed() );
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            if (line.startsWith("Group:"))
+            {
+                // first, we store the last brushesGroup (if any). Note that declaring 2 groups with the same name is wrong (only the last one will be visible)
+                if (!currentGroup.isEmpty() && !brushesGroup.isEmpty()) {
+                    brushes.insert(currentGroup, brushesGroup);
+                }
+
+                currentGroup = line.section(':',1).trimmed(); // Get the name after the first ':' separator
+                brushesGroup.clear();
+                continue;
+            }
+
+            if (QFileInfo(brushConfigPath + QDir::separator() + line + BRUSH_CONTENT_EXT).isReadable()) {
+                brushesGroup << line;
+            }
+
+            if (!currentGroup.isEmpty() && !brushesGroup.isEmpty()) brushes.insert(currentGroup, brushesGroup);
+        }
+        return brushes;
+    }
+
+//    static BrushSettingInfo getBrushSettingInfo()
+//    {
+
+//    }
+
+    static float getBaseValue(BrushSettingType brushSetting, QString brushFile)
+    {
+        qDebug() << "brush path" << brushFile;
+        QFile file(brushFile+BRUSH_CONTENT_EXT);
+        file.open(QIODevice::ReadOnly | QIODevice::Text);
+
+        QJsonParseError jsonError;
+        QJsonDocument flowerJson = QJsonDocument::fromJson(file.readAll(),&jsonError);
+        if (jsonError.error != QJsonParseError::NoError){
+        qDebug() << jsonError.errorString();
+        }
+
+//        qDebug() << flowerJson;
+        QMap<QString, QVariant> list = flowerJson.toVariant().toMap();
+//        qDebug() << list["settings"].toMap()[""];
+
+        QMap<QString, QVariant> brushSettingMap = list["settings"].toMap();
+        QMap<QString, QVariant> brushBaseValue = brushSettingMap[getName(brushSetting)].toMap();
+
+//        qDebug() << brushBaseValue;
+        qDebug() << brushBaseValue["base_value"].toFloat();
+//        if (getName(brushSetting))
+//        {
+
+//        }
+//        QMap<QString, QVariant> map = list.first().toMap();
+//        qDebug() << map["baseValue"].toString();
+//        return list["settings"].toFloat();
+        return 0;
+    }
+
+    static QString getName(BrushSettingType& type)
+    {
+        switch(type)
+        {
+        case BrushSettingType::BRUSH_SETTING_OPAQUE:                      return "opaque";
+        case BrushSettingType::BRUSH_SETTING_OPAQUE_MULTIPLY:             return "opaque_multiply";
+        case BrushSettingType::BRUSH_SETTING_OPAQUE_LINEARIZE:            return "opaque_linearize";
+        case BrushSettingType::BRUSH_SETTING_RADIUS_LOGARITHMIC:          return "radius_logarithmic";
+        case BrushSettingType::BRUSH_SETTING_HARDNESS:                    return "hardness";
+        case BrushSettingType::BRUSH_SETTING_ANTI_ALIASING:               return "anti_aliasing";
+        case BrushSettingType::BRUSH_SETTING_DABS_PER_BASIC_RADIUS:       return "dabs_per_basic_radius";
+        case BrushSettingType::BRUSH_SETTING_DABS_PER_ACTUAL_RADIUS:      return "dabs_per_actual_radius";
+        case BrushSettingType::BRUSH_SETTING_DABS_PER_SECOND:             return "dabs_per_second";
+        case BrushSettingType::BRUSH_SETTING_GRIDMAP_SCALE:               return "gridmap_scale";
+        case BrushSettingType::BRUSH_SETTING_GRIDMAP_SCALE_X:             return "gridmap_scale_x";
+        case BrushSettingType::BRUSH_SETTING_GRIDMAP_SCALE_Y:             return "gridmap_scale_y";
+        case BrushSettingType::BRUSH_SETTING_RADIUS_BY_RANDOM:            return "radius_by_random";
+        case BrushSettingType::BRUSH_SETTING_SPEED1_SLOWNESS:             return "speed1_slowness";
+        case BrushSettingType::BRUSH_SETTING_SPEED2_SLOWNESS:             return "speed2_slowness";
+        case BrushSettingType::BRUSH_SETTING_SPEED1_GAMMA:                return "speed1_gamma";
+        case BrushSettingType::BRUSH_SETTING_SPEED2_GAMMA:                return "speed2_gamma";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_BY_RANDOM:            return "offset_by_random";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_Y:                    return "offset_y";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_X:                    return "offset_x";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE:                return "offset_angle";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE_ASC:            return "offset_angle_asc";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE_2:              return "offset_angle_2";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE_2_ASC:          return "offset_angle_2_asc";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE_ADJ:            return "offset_angle_adj";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_MULTIPLIER:           return "offset_multiplier";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_BY_SPEED:             return "offset_by_speed";
+        case BrushSettingType::BRUSH_SETTING_OFFSET_BY_SPEED_SLOWNESS:    return "offset_by_speed_slowness";
+        case BrushSettingType::BRUSH_SETTING_SLOW_TRACKING:               return "slow_tracking";
+        case BrushSettingType::BRUSH_SETTING_SLOW_TRACKING_PER_DAB:       return "slow_tracking_per_dab";
+        case BrushSettingType::BRUSH_SETTING_TRACKING_NOISE:              return "tracking_noise";
+        case BrushSettingType::BRUSH_SETTING_COLOR_H:                     return "color_h";
+        case BrushSettingType::BRUSH_SETTING_COLOR_S:                     return "color_s";
+        case BrushSettingType::BRUSH_SETTING_COLOR_V:                     return "color_v";
+        case BrushSettingType::BRUSH_SETTING_RESTORE_COLOR:               return "restore_color";
+        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_H:              return "change_color_h";
+        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_L:              return "change_color_l";
+        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_HSL_S:          return "change_color_hsl_s";
+        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_V:              return "change_color_v";
+        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_HSV_S:          return "change_color_hsv_s";
+        case BrushSettingType::BRUSH_SETTING_SMUDGE:                      return "smudge";
+        case BrushSettingType::BRUSH_SETTING_SMUDGE_LENGTH:               return "smudge_length";
+        case BrushSettingType::BRUSH_SETTING_SMUDGE_RADIUS_LOG:           return "smudge_radius_log";
+        case BrushSettingType::BRUSH_SETTING_ERASER:                      return "eraser";
+        case BrushSettingType::BRUSH_SETTING_STROKE_THRESHOLD:            return "stroke_threshold";
+        case BrushSettingType::BRUSH_SETTING_STROKE_DURATION_LOGARITHMIC: return "stroke_duration_logarithmic";
+        case BrushSettingType::BRUSH_SETTING_STROKE_HOLDTIME:             return "stroke_holdtime";
+        case BrushSettingType::BRUSH_SETTING_CUSTOM_INPUT:                return "custom_input";
+        case BrushSettingType::BRUSH_SETTING_CUSTOM_INPUT_SLOWNESS:       return "custom_input_slowness";
+        case BrushSettingType::BRUSH_SETTING_ELLIPTICAL_DAB_RATIO:        return "elliptical_dab_ratio";
+        case BrushSettingType::BRUSH_SETTING_ELLIPTICAL_DAB_ANGLE:        return "elliptical_dab_angle";
+        case BrushSettingType::BRUSH_SETTING_DIRECTION_FILTER:            return "direction_filter";
+        case BrushSettingType::BRUSH_SETTING_LOCK_ALPHA:                  return "lock_alpha";
+        case BrushSettingType::BRUSH_SETTING_COLORIZE:                    return "colorize";
+        case BrushSettingType::BRUSH_SETTING_SNAP_TO_PIXEL:               return "snap_to_pixel";
+        case BrushSettingType::BRUSH_SETTING_PRESSURE_GAIN_LOG:           return "pressure_gain_log";
+        default: return "";
+        }
+    }
+};
+
 
 MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *parent)
     : BaseDockWidget(parent),
@@ -30,30 +174,21 @@ MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *parent)
 
     // First, we parse the "order.conf" file to fill m_brushLib
     QFile fileOrder(brushLibPath + QDir::separator() + BRUSH_LIST);
+
     if (fileOrder.open(QIODevice::ReadOnly))
     {
-        QString currentGroup;
-        QStringList brushesGroup;
-        while (!fileOrder.atEnd())
-        {
-            QString line ( fileOrder.readLine().trimmed() );
-            if (line.isEmpty() || line.startsWith("#")) continue;
-            if (line.startsWith("Group:"))
-            {
-                // first, we store the last brushesGroup (if any). Note that declaring 2 groups with the same name is wrong (only the last one will be visible)
-                if (!currentGroup.isEmpty() && !brushesGroup.isEmpty()) m_brushLib.insert(currentGroup, brushesGroup);
-
-                currentGroup = line.section(':',1).trimmed(); // Get the name after the first ':' separator
-                brushesGroup.clear();
-                continue;
-            }
-
-            if (QFileInfo(brushLibPath + QDir::separator() + line + BRUSH_CONTENT_EXT).isReadable()) brushesGroup << line;
-        }
-
-        if (!currentGroup.isEmpty() && !brushesGroup.isEmpty()) m_brushLib.insert(currentGroup, brushesGroup);
-
+        m_brushLib = MPBrushParser::parseConfig(fileOrder, brushLibPath);
         populateList();
+    }
+
+    for (QStringList brushList : m_brushLib) {
+
+        for (QString brush : brushList) {
+
+            for (BrushSettingType setting : allSettings) {
+                qDebug() << MPBrushParser::getBaseValue(setting, brushLibPath+QDir::separator()+brush);
+            }
+        }
     }
 }
 
@@ -125,7 +260,7 @@ void MPBrushSelector::itemClicked(QListWidgetItem *itemWidget)
         if (f.open( QIODevice::ReadOnly ))
         {
             QByteArray content = f.readAll();
-            content.append( (char)0 );
+            content.append( static_cast<char>(0) );
             emit brushSelected(toolName, brushName, content); // Read the whole file and broadcast is as a char* buffer
         }
     }
@@ -153,7 +288,6 @@ void MPBrushSelector::loadToolBrushes(QString toolName)
 
     const QStringList subList = m_brushLib.value(toolName);
 
-    // TODO: select last known brush type for the tab...
     if (!subList.isEmpty()) {
 
         QString lastUsed;

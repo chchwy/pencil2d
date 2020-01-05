@@ -140,6 +140,8 @@ public:
     void brushSettingChanged(BrushSettingType settingType, float value);
     float getBrushSetting(BrushSettingType settingType);
 
+    const BrushSettingInfo getBrushSettingInfo(BrushSettingType setting);
+
     void keyEvent(QKeyEvent* event);
     void keyEventForSelection(QKeyEvent* event);
 

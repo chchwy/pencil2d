@@ -64,6 +64,16 @@ enum class BrushSettingType {
         BRUSH_SETTINGS_COUNT
 };
 
+struct BrushSettingInfo {
+    QString cname;
+    QString name;
+    bool isConstant;
+    float min;
+    float defaultValue;
+    float max;
+    QString tooltip;
+};
+
 const QList<BrushSettingType> allSettings = { BrushSettingType::BRUSH_SETTING_OPAQUE,
                                               BrushSettingType::BRUSH_SETTING_OPAQUE_MULTIPLY,
                                               BrushSettingType::BRUSH_SETTING_OPAQUE_LINEARIZE,

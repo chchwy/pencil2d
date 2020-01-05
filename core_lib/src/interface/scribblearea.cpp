@@ -1685,8 +1685,27 @@ float ScribbleArea::getBrushSetting(BrushSettingType settingType)
 {
     return mMyPaint->getBrushValue(static_cast<MyPaintBrushSetting>(settingType));
 }
+
+const BrushSettingInfo ScribbleArea::getBrushSettingInfo(BrushSettingType setting)
+{
+    const MyPaintBrushSettingInfo* info = mMyPaint->getBrushSettingInfo(static_cast<MyPaintBrushSetting>(setting));
+
+    BrushSettingInfo brushInfo;
+
+    brushInfo.cname = info->cname;
+    brushInfo.name = info->name;
+    brushInfo.min = info->min;
+    brushInfo.max = info->max;
+    brushInfo.tooltip = info->tooltip;
+    brushInfo.defaultValue = info->def;
+    brushInfo.isConstant = info->constant;
+
+    return brushInfo;
+}
+
+//int ScribbleArea::getNumberBrushMappingPoints(BrushSettingType settingType)
 //{
-//    mMyPaint->setB
+//    return mMyPaint->getBrushNumberOfMappingPoints(settingType, MYPAINT_BRUSH_INPUT_PRESSURE);
 //}
 
 qreal ScribbleArea::calculateDeltaTime()

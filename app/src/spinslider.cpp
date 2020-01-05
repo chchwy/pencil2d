@@ -91,6 +91,12 @@ void SpinSlider::setLabel(QString newText)
     mLabel->setText(newText);
 }
 
+void SpinSlider::setRange(qreal min, qreal max)
+{
+    mMin = min;
+    mMax = max;
+}
+
 void SpinSlider::setValue(qreal v)
 {
     int value2 = 0;

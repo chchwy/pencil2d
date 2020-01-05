@@ -10,6 +10,7 @@
 
 class QVBoxLayout;
 class QSpacerItem;
+class BrushSettingWidget;
 
 class MPBrushConfigurator : public BaseDockWidget
 {
@@ -22,6 +23,8 @@ public:
     void initUI() override;
     void updateUI() override;
 
+    void updateConfig(QString toolName, QString brushName, const QByteArray& content);
+
 private:
 
     void updateSettingsView(QTreeWidgetItem* item);
@@ -31,29 +34,29 @@ private:
     void addBrushSettingsSpacer();
     void removeBrushSettingSpacers();
 
-    void showBasicBrushSettings();
-    void showAdvancedBrushSettings();
+    void prepareBasicBrushSettings();
+    void prepareAdvancedBrushSettings();
 
-    void showOpacitySettings();
-    void showDabSettings();
-    void showRandomSettings();
-    void showSpeedSettings();
-    void showOffsetSettings();
-    void showTrackingSettings();
-    void showColorSettings();
-    void showSmudgeSettings();
-    void showEraserSetting();
-    void showStrokeSettings();
-    void showCustomInputSettings();
-    void showEllipticalDabSettings();
-    void showOtherSettings();
+    void prepareOpacitySettings();
+    void prepareDabSettings();
+    void prepareRandomSettings();
+    void prepareSpeedSettings();
+    void prepareOffsetSettings();
+    void prepareTrackingSettings();
+    void prepareColorSettings();
+    void prepareSmudgeSettings();
+    void prepareEraserSetting();
+    void prepareStrokeSettings();
+    void prepareCustomInputSettings();
+    void prepareEllipticalDabSettings();
+    void prepareOtherSettings();
 
     BrushSettingItem* addTreeRoot(BrushSettingItem::Category category, QTreeWidget* treeWidget, const QString name, QString description);
     BrushSettingItem* addTreeChild(BrushSettingItem::Category category, QTreeWidgetItem* parent, const QString name, QString description);
 
-    QWidget* addBrushSetting(const QString name, BrushSettingType setting);
+//    QWidget* addBrushSetting(const QString name, BrushSettingType setting);
     void brushCategorySelected(QTreeWidgetItem* item, int);
-    void brushCategorySelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+    void brushCategorySelectionChanged(const QItemSelection &selected, const QItemSelection &);
 
     QVBoxLayout* vBoxLayout = nullptr;
     QWidget* mBrushSettingsWidget = nullptr;
@@ -61,14 +64,8 @@ private:
 
     Editor* mEditor = nullptr;
 
+    QList<BrushSettingWidget*> mBrushWidgets;
+
 };
-
-//class SpinBoxWSlider : public QWidget
-//{
-//public:
-//    SpinBoxWSlider(QWidget* parent = nullptr);
-
-
-//};
 
 #endif // MPBRUSHCONFIGURATOR_H

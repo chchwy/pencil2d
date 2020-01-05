@@ -1388,6 +1388,7 @@ void MainWindow2::makeConnections(Editor* editor, MPBrushSelector* brushSelector
     ToolManager* toolManager = editor->tools();
     connect(toolManager, &ToolManager::toolChanged, brushSelector, &MPBrushSelector::typeChanged);
     connect(brushSelector, &MPBrushSelector::brushSelected, editor, &Editor::loadBrush);
+    connect(brushSelector, &MPBrushSelector::brushSelected, mBrushConfiguratorWidget, &MPBrushConfigurator::updateConfig);
 }
 
 void MainWindow2::bindActionWithSetting(QAction* action, SETTING setting)

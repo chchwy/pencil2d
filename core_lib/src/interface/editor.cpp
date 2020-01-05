@@ -1104,3 +1104,8 @@ float Editor::getMPBrushSetting(BrushSettingType settingType)
 {
     return mScribbleArea->getBrushSetting(settingType);
 }
+
+const BrushSettingInfo Editor::getBrushSettingInfo(BrushSettingType settingType)
+{
+    return mScribbleArea->getBrushSettingInfo(settingType);
+}

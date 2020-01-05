@@ -58,11 +58,6 @@ private:
 
   QTabWidget* mTabWidget;
 
-  const QString BRUSH_CONTENT_EXT = ".myb";
-  const QString BRUSH_PREVIEW_EXT = "_prev.png";
-  const QString BRUSH_LIST = "brushes.conf";
-  const int ICON_SZ =64;
-
 };
 
 

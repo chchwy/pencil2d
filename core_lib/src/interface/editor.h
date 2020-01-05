@@ -176,6 +176,7 @@ public: //slots
     void loadBrush(QString toolName, QString brushName, const QByteArray &content);
     void setMPBrushSetting(BrushSettingType setting, float value);
     float getMPBrushSetting(BrushSettingType settingType);
+    const BrushSettingInfo getBrushSettingInfo(BrushSettingType settingType);
 
 protected:
     // Need to move to somewhere...
