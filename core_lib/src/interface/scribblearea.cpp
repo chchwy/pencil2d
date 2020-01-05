@@ -1308,7 +1308,7 @@ void ScribbleArea::startStroke()
 
 void ScribbleArea::setBrushWidth(float width)
 {
-    mMyPaint->setBrushWidth(width);
+//    mMyPaint->setBrushWidth(width);
 }
 
 void ScribbleArea::strokeTo(QPointF point, float pressure, float xtilt, float ytilt)
