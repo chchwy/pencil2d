@@ -116,4 +116,21 @@ void MPBrush::setValue(MyPaintBrushSetting setting, float value)
     mypaint_brush_set_base_value(brush, setting, value);
 }
 
+int MPBrush::getNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input)
+{
+    return mypaint_brush_get_mapping_n(brush, setting, input);
+}
+
+void MPBrush::setNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value)
+{
+    mypaint_brush_set_mapping_n(brush, setting, input, value);
+}
+
+const MyPaintBrushSettingInfo* MPBrush::getBrushSettingInfo(MyPaintBrushSetting info)
+{
+    return mypaint_brush_setting_info(info);
+}
+
+
+
 

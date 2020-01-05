@@ -53,6 +53,11 @@ public:
     float getValue(MyPaintBrushSetting setting);
     void setValue(MyPaintBrushSetting setting, float value);
 
+    int getNumberOfMappingPoints(MyPaintBrushSetting id, MyPaintBrushInput input);
+    void setNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value);
+
+    const MyPaintBrushSettingInfo* getBrushSettingInfo(MyPaintBrushSetting info);
+
 private:
     QColor m_color;
 };

@@ -71,6 +71,11 @@ public:
     void setBrushValue(MyPaintBrushSetting setting, float value);
     void setBrushWidth(float width);
 
+    int getBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input);
+    void setBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value);
+
+    const MyPaintBrushSettingInfo* getBrushSettingInfo(MyPaintBrushSetting setting);
+
     void refreshSurface();
     void saveSurface(const QString path);
 

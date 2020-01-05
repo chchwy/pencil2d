@@ -223,3 +223,18 @@ void MPHandler::setBrushValue(MyPaintBrushSetting setting, float value)
 {
     this->m_brush->setValue(setting, value);
 }
+
+int  MPHandler::getBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input)
+{
+    return this->m_brush->getNumberOfMappingPoints(setting, input);
+}
+
+void  MPHandler::setBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value)
+{
+    this->m_brush->setNumberOfMappingPoints(setting, input, value);
+}
+
+const MyPaintBrushSettingInfo* MPHandler::getBrushSettingInfo(MyPaintBrushSetting setting)
+{
+    return this->m_brush->getBrushSettingInfo(setting);
+}
