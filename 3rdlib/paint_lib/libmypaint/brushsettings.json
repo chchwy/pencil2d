@@ -147,7 +147,7 @@
             "default": 1.0,
             "displayed_name": "Opacity",
             "internal_name": "opaque",
-            "maximum": 2.0,
+            "maximum": 1.0,
             "minimum": 0.0,
             "tooltip": "0 means brush is transparent, 1 fully visible\n(also known as alpha or opacity)"
         },
@@ -156,7 +156,7 @@
             "default": 0.0,
             "displayed_name": "Opacity multiply",
             "internal_name": "opaque_multiply",
-            "maximum": 2.0,
+            "maximum": 1.0,
             "minimum": 0.0,
             "tooltip": "This gets multiplied with opaque. You should only change the pressure input of this setting. Use 'opaque' instead to make opacity depend on speed.\nThis setting is responsible to stop painting when there is zero pressure. This is just a convention, the behaviour is identical to 'opaque'."
         },
@@ -165,7 +165,7 @@
             "default": 0.9,
             "displayed_name": "Opacity linearize",
             "internal_name": "opaque_linearize",
-            "maximum": 2.0,
+            "maximum": 1.0,
             "minimum": 0.0,
             "tooltip": "Correct the nonlinearity introduced by blending multiple dabs on top of each other. This correction should get you a linear (\"natural\") pressure response when pressure is mapped to opaque_multiply, as it is usually done. 0.9 is good for standard strokes, set it smaller if your brush scatters a lot, or higher if you use dabs_per_second.\n0.0 the opaque value above is for the individual dabs\n1.0 the opaque value above is for the final brush stroke, assuming each pixel gets (dabs_per_radius*2) brushdabs on average during a stroke"
         },

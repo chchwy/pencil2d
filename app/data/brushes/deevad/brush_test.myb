@@ -1,0 +1,10 @@
+{
+    "comment": "MyPaint brush file", 
+    "group": "", 
+    "parent_brush_name": "", 
+    "settings": {
+        "hardness": {
+            "base_value": 0.8
+        }
+    "version": 3
+}
