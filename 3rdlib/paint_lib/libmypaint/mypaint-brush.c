@@ -864,6 +864,7 @@ smallest_angular_difference(float angleA, float angleB)
     }
 
     float hardness = CLAMP(self->settings_value[MYPAINT_BRUSH_SETTING_HARDNESS], 0.0, 1.0);
+    float softness = CLAMP(self->settings_value[MYPAINT_BRUSH_SETTING_SOFTNESS], 0.0f, 1.0f);
 
     // anti-aliasing attempt (works surprisingly well for ink brushes)
     float current_fadeout_in_pixels = radius * (1.0 - hardness);
@@ -912,7 +913,7 @@ smallest_angular_difference(float angleA, float angleB)
 
     // the functions below will CLAMP most inputs
     hsv_to_rgb_float (&color_h, &color_s, &color_v);
-    return mypaint_surface_draw_dab (surface, x, y, radius, color_h, color_s, color_v, opaque, hardness, eraser_target_alpha,
+    return mypaint_surface_draw_dab (surface, x, y, radius, color_h, color_s, color_v, opaque, hardness, softness, eraser_target_alpha,
                               self->states[MYPAINT_BRUSH_STATE_ACTUAL_ELLIPTICAL_DAB_RATIO], self->states[MYPAINT_BRUSH_STATE_ACTUAL_ELLIPTICAL_DAB_ANGLE],
                               self->settings_value[MYPAINT_BRUSH_SETTING_LOCK_ALPHA],
                               self->settings_value[MYPAINT_BRUSH_SETTING_COLORIZE]);

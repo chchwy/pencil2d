@@ -297,11 +297,6 @@ calculate_opa(float rr, float hardness,
     float fac = rr <= hardness ? segment1_slope : segment2_slope;
     float opa = rr <= hardness ? segment1_offset : segment2_offset;
 
-    // maintains softness when hardness gets closer to zero
-    if (hardness <= 0.5f) {
-        fac = segment2_slope;
-        opa = segment2_offset;
-    }
     opa += rr*fac;
 
     if (rr > 1.0f) {
@@ -319,6 +314,7 @@ void render_dab_mask (uint16_t * mask,
                         float x, float y,
                         float radius,
                         float hardness,
+                        float softness,
                         float aspect_ratio, float angle
                         )
 {
@@ -333,7 +329,7 @@ void render_dab_mask (uint16_t * mask,
     // The hardness calculation is explained below:
     //
     // Dab opacity gradually fades out from the center (rr=0) to
-    // fringe (rr=1) of the dab. How exactly depends on the hardness.
+    // fringe (rr=1) of the dab. How exactly depends on the hardness and softness.
     // We use two linear segments, for which we pre-calculate slope
     // and offset here.
     //
@@ -345,10 +341,13 @@ void render_dab_mask (uint16_t * mask,
     // +-----------*> rr = (distance_from_center/radius)^2
     // 0           1
     //
-    float segment1_offset = 1.0f;
-    float segment1_slope  = -(1.0f/hardness - 1.0f);
-    float segment2_offset = hardness/(1.0f-hardness);
-    float segment2_slope  = -hardness/(1.0f-hardness);
+
+//    float softness = 0.5f;
+
+    float segment1_offset = (1.f)*(1.f-softness);
+    float segment1_slope  = -(1.0f/hardness - 1.0f)*(1.f-softness);
+    float segment2_offset = hardness/(1.0f-hardness)*(1.f-softness);
+    float segment2_slope  = -hardness/(1.0f-hardness)*(1.f-softness);
     // for hardness == 1.0, segment2 will never be used
 
     float angle_rad=angle/360*2*M_PI;
@@ -444,6 +443,7 @@ process_op(uint16_t *rgba_p, uint16_t *mask,
                     op->y - ty*MYPAINT_TILE_SIZE,
                     op->radius,
                     op->hardness,
+                    op->softness,
                     op->aspect_ratio, op->angle
                     );
 
@@ -523,7 +523,7 @@ update_dirty_bbox(MyPaintTiledSurface *self, OperationDataDrawDab *op)
 gboolean draw_dab_internal (MyPaintTiledSurface *self, float x, float y,
                float radius,
                float color_r, float color_g, float color_b,
-               float opaque, float hardness,
+               float opaque, float hardness, float softness,
                float color_a,
                float aspect_ratio, float angle,
                float lock_alpha,
@@ -541,10 +541,12 @@ gboolean draw_dab_internal (MyPaintTiledSurface *self, float x, float y,
     op->angle = angle;
     op->opaque = CLAMP(opaque, 0.0f, 1.0f);
     op->hardness = CLAMP(hardness, 0.0f, 1.0f);
+    op->softness = CLAMP(softness, 0.0f, 1.0f);
     op->lock_alpha = CLAMP(lock_alpha, 0.0f, 1.0f);
     op->colorize = CLAMP(colorize, 0.0f, 1.0f);
     if (op->radius < 0.1f) return FALSE; // don't bother with dabs smaller than 0.1 pixel
     if (op->hardness == 0.0f) return FALSE; // infintly small center point, fully transparent outside
+    if (op->softness == 1.0f) return FALSE; // infintly small center point, fully transparent outside
     if (op->opaque == 0.0f) return FALSE;
 
     color_r = CLAMP(color_r, 0.0f, 1.0f);
@@ -591,7 +593,7 @@ gboolean draw_dab_internal (MyPaintTiledSurface *self, float x, float y,
 int draw_dab (MyPaintSurface *surface, float x, float y,
                float radius,
                float color_r, float color_g, float color_b,
-               float opaque, float hardness,
+               float opaque, float hardness, float softness,
                float color_a,
                float aspect_ratio, float angle,
                float lock_alpha,
@@ -603,7 +605,7 @@ int draw_dab (MyPaintSurface *surface, float x, float y,
 
   // Normal pass
   if (draw_dab_internal(self, x, y, radius, color_r, color_g, color_b,
-                        opaque, hardness, color_a, aspect_ratio, angle,
+                        opaque, hardness, softness, color_a, aspect_ratio, angle,
                         lock_alpha, colorize)) {
       surface_modified = TRUE;
   }
@@ -613,7 +615,7 @@ int draw_dab (MyPaintSurface *surface, float x, float y,
     const float symm_x = self->surface_center_x + (self->surface_center_x - x);
 
     if (draw_dab_internal(self, symm_x, y, radius, color_r, color_g, color_b,
-                           opaque, hardness, color_a, aspect_ratio, -angle,
+                           opaque, hardness, softness, color_a, aspect_ratio, -angle,
                            lock_alpha, colorize)) {
         surface_modified = TRUE;
     }
@@ -633,6 +635,7 @@ void get_color (MyPaintSurface *surface, float x, float y,
 
     if (radius < 1.0f) radius = 1.0f;
     const float hardness = 0.5f;
+    const float softness = 0.5f;
     const float aspect_ratio = 1.0f;
     const float angle = 0.0f;
 
@@ -682,6 +685,7 @@ void get_color (MyPaintSurface *surface, float x, float y,
                         y - ty*MYPAINT_TILE_SIZE,
                         radius,
                         hardness,
+                        softness,
                         aspect_ratio, angle
                         );
 
