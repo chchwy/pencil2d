@@ -294,8 +294,14 @@ calculate_opa(float rr, float hardness,
               float segment1_offset, float segment1_slope,
               float segment2_offset, float segment2_slope) {
 
-    const float fac = rr <= hardness ? segment1_slope : segment2_slope;
+    float fac = rr <= hardness ? segment1_slope : segment2_slope;
     float opa = rr <= hardness ? segment1_offset : segment2_offset;
+
+    // maintains softness when hardness gets closer to zero
+    if (hardness <= 0.5f) {
+        fac = segment2_slope;
+        opa = segment2_offset;
+    }
     opa += rr*fac;
 
     if (rr > 1.0f) {
