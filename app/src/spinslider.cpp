@@ -46,8 +46,8 @@ void SpinSlider::init(QString text, GROWTH_TYPE type, VALUE_TYPE dataType, qreal
     mLabel = new QLabel(text + ": ");
 
     mSlider = new QSlider(Qt::Horizontal, this);
-    mSlider->setMinimum(0);
-    mSlider->setMaximum(100);
+    mSlider->setMinimum(static_cast<int>(min));
+    mSlider->setMaximum(static_cast<int>(max));
     mSlider->setMaximumWidth(500);
 
     QGridLayout* layout = new QGridLayout();
@@ -74,7 +74,7 @@ void SpinSlider::onSliderValueChanged(int v)
     qreal value2 = 0.0;
     if (mGrowthType == LINEAR)
     {
-        value2 = mMin + v * (mMax - mMin) / mSlider->maximum();
+        value2 = static_cast<qreal>(v);
     }
     else if (mGrowthType == LOG)
     {
@@ -83,6 +83,7 @@ void SpinSlider::onSliderValueChanged(int v)
     else if (mGrowthType == EXPONENT) {
         value2 = mMin + std::pow(v, mExp) * (mMax - mMin) / std::pow(mSlider->maximum(), mExp);
     }
+
     changeValue(value2);
 }
 
@@ -102,7 +103,7 @@ void SpinSlider::setValue(qreal v)
     int value2 = 0;
     if (mGrowthType == LINEAR)
     {
-        value2 =qRound((mSlider->maximum() * (v - mMin) / (mMax - mMin)));
+        value2 = static_cast<int>(v);
     }
     else if (mGrowthType == LOG)
     {
