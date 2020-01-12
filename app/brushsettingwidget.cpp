@@ -4,6 +4,7 @@
 #include <QSignalBlocker>
 #include <QDebug>
 #include <QtMath>
+#include <QDoubleSpinBox>
 
 #include "mathutils.h"
 
@@ -18,7 +19,7 @@ BrushSettingWidget::BrushSettingWidget(const QString name, BrushSettingType sett
     mValueBox = new QDoubleSpinBox();
 
     mValueBox->setRange(min, max);
-    mValueBox->setStepType(QSpinBox::StepType::AdaptiveDecimalStepType);
+    mValueBox->setStepType(QDoubleSpinBox::StepType::AdaptiveDecimalStepType);
     mValueBox->setDecimals(2);
 
     mVisualBox = new QDoubleSpinBox(this);
