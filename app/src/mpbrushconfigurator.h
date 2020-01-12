@@ -28,6 +28,7 @@ public:
 
 private:
 
+    void updateMapValuesButton();
     void updateSettingsView(QTreeWidgetItem* item);
 
     void updateBrushSetting(qreal value, BrushSettingType settingType);
@@ -62,6 +63,9 @@ private:
     QVBoxLayout* vBoxLayout = nullptr;
     QWidget* mBrushSettingsWidget = nullptr;
     QTreeWidget* mNavigatorWidget = nullptr;
+
+    QPushButton* mMapValuesButton = nullptr;
+    bool mMapValuesButtonPressed = false;
 
     Editor* mEditor = nullptr;
 

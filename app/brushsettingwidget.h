@@ -17,6 +17,8 @@ public:
     void setRange(qreal min, qreal max);
     void setToolTip(QString toolTip);
 
+    void changeText();
+
     BrushSettingType setting() { return mSettingType; }
 
 Q_SIGNALS:
@@ -29,6 +31,7 @@ private:
     void updateSetting(qreal value);
 
     QDoubleSpinBox* mValueBox = nullptr;
+    QDoubleSpinBox* mVisualBox = nullptr;
     SpinSlider* mValueSlider = nullptr;
     BrushSettingType mSettingType;
 

@@ -165,11 +165,12 @@ void MainWindow2::createDockWidgets()
     mToolBox = new ToolBoxWidget(this);
     mToolBox->setObjectName("ToolBox");
 
-    mBrushSelectorWidget = new MPBrushSelector(":brushes", nullptr);
+    mBrushSelectorWidget = new MPBrushSelector(":brushes", this);
     mBrushConfiguratorWidget = new MPBrushConfigurator(this);
     mBrushConfiguratorWidget->setCore(mEditor);
-    mBrushConfiguratorWidget->show();
     mBrushConfiguratorWidget->initUI();
+    mBrushConfiguratorWidget->show();
+    mBrushConfiguratorWidget->raise();
 
     /*
     mTimeline2 = new Timeline2;

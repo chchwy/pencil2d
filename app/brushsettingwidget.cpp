@@ -10,16 +10,18 @@
 BrushSettingWidget::BrushSettingWidget(const QString name, BrushSettingType settingType, qreal min, qreal max, QWidget* parent) : QWidget(parent),
     mSettingType(settingType)
 {
-    QGridLayout* gridLayout = new QGridLayout();
+    QGridLayout* gridLayout = new QGridLayout(this);
     setLayout(gridLayout);
 
-    mValueSlider = new SpinSlider();
+    mValueSlider = new SpinSlider(this);
     mValueSlider->init(name, SpinSlider::GROWTH_TYPE::LINEAR, SpinSlider::VALUE_TYPE::FLOAT, min, max);
     mValueBox = new QDoubleSpinBox();
 
     mValueBox->setRange(min, max);
     mValueBox->setStepType(QSpinBox::StepType::AdaptiveDecimalStepType);
     mValueBox->setDecimals(2);
+
+    mVisualBox = new QDoubleSpinBox(this);
 
     mMappedMin = min;
     mMappedMax = max;
@@ -28,6 +30,11 @@ BrushSettingWidget::BrushSettingWidget(const QString name, BrushSettingType sett
     gridLayout->setMargin(0);
     gridLayout->addWidget(mValueSlider,0,0);
     gridLayout->addWidget(mValueBox,0,1);
+
+    gridLayout->addWidget(mVisualBox, 0, 1);
+
+    mVisualBox->setGeometry(mValueBox->geometry());
+    mVisualBox->setHidden(true);
 
     mValueSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
@@ -45,7 +52,16 @@ void BrushSettingWidget::setValue(qreal value)
     QSignalBlocker b2(mValueBox);
     mValueBox->setValue(mappedValue);
 
+    mVisualBox->setValue(value);
+
     mCurrentValue = value;
+}
+
+void BrushSettingWidget::changeText()
+{
+    bool shouldHide = !mVisualBox->isHidden();
+    mVisualBox->setHidden(shouldHide);
+    mValueBox->setHidden(!shouldHide);
 }
 
 void BrushSettingWidget::setValueInternal(qreal value)
@@ -54,6 +70,10 @@ void BrushSettingWidget::setValueInternal(qreal value)
     mValueSlider->setValue(value);
     QSignalBlocker b2(mValueBox);
     mValueBox->setValue(value);
+
+    qreal normalize = MathUtils::normalize(value, mMappedMin, mMappedMax);
+    qreal mappedToOrig = MathUtils::mapFromNormalized(normalize, mMin, mMax);
+    mVisualBox->setValue(mappedToOrig);
 
     mCurrentValue = value;
 }

@@ -7,6 +7,8 @@
 #include <QDebug>
 #include <QtMath>
 #include <QSplitter>
+#include <QPushButton>
+#include <QToolBar>
 
 #include "spinslider.h"
 #include "brushsettingitem.h"
@@ -18,7 +20,6 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
 {
     resize(QSize(400,400));
     setWindowTitle(tr("Brush Configurator", "Window title of mypaint brush configurator"));
-    setWindowFlag(Qt::WindowStaysOnTopHint);
 
     mNavigatorWidget = new QTreeWidget(parent);
     mNavigatorWidget->setRootIsDecorated(false);
@@ -26,13 +27,37 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
 
     QSplitter* viewSplitter = new QSplitter;
     QHBoxLayout* hLayout = new QHBoxLayout(parent);
+    QVBoxLayout* vLayout = new QVBoxLayout(parent);
     QScrollArea* scrollArea = new QScrollArea(nullptr);
+
+    QToolBar* toolbar = new QToolBar(this);
+    QPushButton* saveAndOverwriteBrush = new QPushButton(this);
+
+    saveAndOverwriteBrush->setText("Save");
+    QPushButton* createNewBrush = new QPushButton(this);
+
+    createNewBrush->setText("Save as new");
+    mMapValuesButton = new QPushButton(this);
+    mMapValuesButton->setText("MyPaint values");
+
+    setLayout(vLayout);
+
+    QWidget* settingsContainer = new QWidget(this);
+
+    settingsContainer->setLayout(hLayout);
+
+    toolbar->addWidget(createNewBrush);
+    toolbar->addWidget(saveAndOverwriteBrush);
+
+    toolbar->addWidget(mMapValuesButton);
+
+    vLayout->addWidget(toolbar);
+    vLayout->addWidget(settingsContainer);
 
     viewSplitter->addWidget(mNavigatorWidget);
     viewSplitter->addWidget(scrollArea);
     hLayout->addWidget(viewSplitter);
     hLayout->setMargin(0);
-    setLayout(hLayout);
 
     viewSplitter->setSizes({150, 500});
     viewSplitter->setStretchFactor(1,4);
@@ -48,6 +73,7 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
 
     connect(mNavigatorWidget, &QTreeWidget::itemPressed, this, &MPBrushConfigurator::brushCategorySelected);
     connect(mNavigatorWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, &MPBrushConfigurator::brushCategorySelectionChanged);
+    connect(mMapValuesButton, &QPushButton::pressed, this, &MPBrushConfigurator::updateMapValuesButton);
 }
 
 void MPBrushConfigurator::initUI()
@@ -273,6 +299,7 @@ void MPBrushConfigurator::updateSettingsView(QTreeWidgetItem* item)
         vBoxLayout->addWidget(item);
 
         connect(item, &BrushSettingWidget::brushSettingChanged, this, &MPBrushConfigurator::updateBrushSetting);
+        connect(mMapValuesButton, &QPushButton::pressed, item, &BrushSettingWidget::changeText);
     }
 
     addBrushSettingsSpacer();
@@ -307,5 +334,15 @@ void MPBrushConfigurator::addBrushSettingsSpacer()
 void MPBrushConfigurator::updateBrushSetting(qreal value, BrushSettingType settingType)
 {
     mEditor->setMPBrushSetting(settingType, static_cast<float>(value));
+}
+
+void MPBrushConfigurator::updateMapValuesButton()
+{
+    mMapValuesButtonPressed = !mMapValuesButtonPressed;
+    if (mMapValuesButtonPressed) {
+        mMapValuesButton->setText(tr("Pencil2D values"));
+    } else {
+        mMapValuesButton->setText(tr("MyPaint values"));
+    }
 }
 
