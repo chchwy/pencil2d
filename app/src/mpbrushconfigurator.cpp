@@ -9,6 +9,7 @@
 #include <QSplitter>
 #include <QPushButton>
 #include <QToolBar>
+#include <QMessageBox>
 
 #include "spinslider.h"
 #include "brushsettingitem.h"
@@ -34,9 +35,9 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     QPushButton* saveAndOverwriteBrush = new QPushButton(this);
 
     saveAndOverwriteBrush->setText("Save");
-    QPushButton* createNewBrush = new QPushButton(this);
+    QPushButton* saveAsNewBrush = new QPushButton(this);
 
-    createNewBrush->setText("Save as new");
+    saveAsNewBrush->setText("Save as new");
     mMapValuesButton = new QPushButton(this);
     mMapValuesButton->setText("MyPaint values");
 
@@ -46,7 +47,7 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
 
     settingsContainer->setLayout(hLayout);
 
-    toolbar->addWidget(createNewBrush);
+    toolbar->addWidget(saveAsNewBrush);
     toolbar->addWidget(saveAndOverwriteBrush);
 
     toolbar->addWidget(mMapValuesButton);
@@ -74,6 +75,9 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     connect(mNavigatorWidget, &QTreeWidget::itemPressed, this, &MPBrushConfigurator::brushCategorySelected);
     connect(mNavigatorWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, &MPBrushConfigurator::brushCategorySelectionChanged);
     connect(mMapValuesButton, &QPushButton::pressed, this, &MPBrushConfigurator::updateMapValuesButton);
+
+    connect(saveAndOverwriteBrush, &QPushButton::pressed, this, &MPBrushConfigurator::showNowImplementedPopup);
+    connect(saveAsNewBrush, &QPushButton::pressed, this, &MPBrushConfigurator::showNowImplementedPopup);
 }
 
 void MPBrushConfigurator::initUI()
@@ -344,5 +348,12 @@ void MPBrushConfigurator::updateMapValuesButton()
     } else {
         mMapValuesButton->setText(tr("MyPaint values"));
     }
+}
+
+void MPBrushConfigurator::showNowImplementedPopup()
+{
+    QMessageBox::information(this, tr("Not implemented"),
+                                  tr("This feature is coming soon"));
+
 }
 

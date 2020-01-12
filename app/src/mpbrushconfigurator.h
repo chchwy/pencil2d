@@ -53,6 +53,8 @@ private:
     void prepareEllipticalDabSettings();
     void prepareOtherSettings();
 
+    void showNowImplementedPopup();
+
     BrushSettingItem* addTreeRoot(BrushSettingItem::Category category, QTreeWidget* treeWidget, const QString name);
     BrushSettingItem* addTreeChild(BrushSettingItem::Category category, QTreeWidgetItem* parent, const QString name);
 
