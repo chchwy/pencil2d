@@ -11,7 +11,7 @@ class BrushSettingWidget : public QWidget
 {
     Q_OBJECT
 public:
-    BrushSettingWidget(const QString name, BrushSettingType settingType, QWidget* parent = nullptr);
+    BrushSettingWidget(const QString name, BrushSettingType settingType, qreal min, qreal max, QWidget* parent = nullptr);
 
     void setValue(qreal value);
     void setRange(qreal min, qreal max);
@@ -24,11 +24,21 @@ Q_SIGNALS:
 
 private:
 
+    void setValueInternal(qreal value);
+
     void updateSetting(qreal value);
 
     QDoubleSpinBox* mValueBox = nullptr;
     SpinSlider* mValueSlider = nullptr;
     BrushSettingType mSettingType;
+
+    qreal mMin = 0.0;
+    qreal mMax = 0.0;
+
+    qreal mMappedMin = 0.0;
+    qreal mMappedMax = 0.0;
+
+    qreal mMappedValue = 0.0;
 
     qreal mCurrentValue;
 };

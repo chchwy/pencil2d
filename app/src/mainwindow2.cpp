@@ -168,6 +168,8 @@ void MainWindow2::createDockWidgets()
     mBrushSelectorWidget = new MPBrushSelector(":brushes", nullptr);
     mBrushConfiguratorWidget = new MPBrushConfigurator(this);
     mBrushConfiguratorWidget->setCore(mEditor);
+    mBrushConfiguratorWidget->show();
+    mBrushConfiguratorWidget->initUI();
 
     /*
     mTimeline2 = new Timeline2;
@@ -183,8 +185,8 @@ void MainWindow2::createDockWidgets()
         << mDisplayOptionWidget
         << mToolOptions
         << mToolBox
-        << mBrushSelectorWidget
-        << mBrushConfiguratorWidget;
+        << mBrushSelectorWidget;
+//        << mBrushConfiguratorWidget;
 
     mBrushSelectorWidget->show();
 

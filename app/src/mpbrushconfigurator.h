@@ -3,6 +3,7 @@
 
 #include "basedockwidget.h"
 
+#include <QDialog>
 #include <QTreeWidgetItem>
 
 #include "brushsetting.h"
@@ -12,7 +13,7 @@ class QVBoxLayout;
 class QSpacerItem;
 class BrushSettingWidget;
 
-class MPBrushConfigurator : public BaseDockWidget
+class MPBrushConfigurator : public QDialog
 {
     Q_OBJECT
 public:
@@ -20,8 +21,8 @@ public:
     MPBrushConfigurator(QWidget* parent = nullptr);
     void setCore(Editor* editor) { mEditor = editor; }
 
-    void initUI() override;
-    void updateUI() override;
+    void initUI();
+    void updateUI();
 
     void updateConfig(QString toolName, QString brushName, const QByteArray& content);
 
@@ -51,8 +52,8 @@ private:
     void prepareEllipticalDabSettings();
     void prepareOtherSettings();
 
-    BrushSettingItem* addTreeRoot(BrushSettingItem::Category category, QTreeWidget* treeWidget, const QString name, QString description);
-    BrushSettingItem* addTreeChild(BrushSettingItem::Category category, QTreeWidgetItem* parent, const QString name, QString description);
+    BrushSettingItem* addTreeRoot(BrushSettingItem::Category category, QTreeWidget* treeWidget, const QString name);
+    BrushSettingItem* addTreeChild(BrushSettingItem::Category category, QTreeWidgetItem* parent, const QString name);
 
 //    QWidget* addBrushSetting(const QString name, BrushSettingType setting);
     void brushCategorySelected(QTreeWidgetItem* item, int);

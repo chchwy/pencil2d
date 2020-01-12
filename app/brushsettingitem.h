@@ -12,6 +12,7 @@ public:
         Advanced,
         Opacity,
         Dab,
+        Speed,
         Random,
         Offset,
         Tracking,
