@@ -19,7 +19,11 @@ BrushSettingWidget::BrushSettingWidget(const QString name, BrushSettingType sett
     mValueBox = new QDoubleSpinBox();
 
     mValueBox->setRange(min, max);
-    mValueBox->setStepType(QDoubleSpinBox::StepType::AdaptiveDecimalStepType);
+
+    #if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
+        mValueBox->setStepType(QDoubleSpinBox::StepType::AdaptiveDecimalStepType);
+    #endif
+
     mValueBox->setDecimals(2);
 
     mVisualBox = new QDoubleSpinBox(this);
