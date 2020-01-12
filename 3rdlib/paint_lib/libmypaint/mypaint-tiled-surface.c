@@ -342,8 +342,6 @@ void render_dab_mask (uint16_t * mask,
     // 0           1
     //
 
-//    float softness = 0.5f;
-
     float segment1_offset = (1.f)*(1.f-softness);
     float segment1_slope  = -(1.0f/hardness - 1.0f)*(1.f-softness);
     float segment2_offset = hardness/(1.0f-hardness)*(1.f-softness);
