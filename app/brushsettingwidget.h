@@ -2,10 +2,13 @@
 #define BRUSHSETTINGWIDGET_H
 
 #include <QWidget>
-#include <QDoubleSpinBox>
-#include "spinslider.h"
 
 #include "brushsetting.h"
+
+class QToolButton;
+class SpinSlider;
+class QDoubleSpinBox;
+class Editor;
 
 class BrushSettingWidget : public QWidget
 {
@@ -16,6 +19,7 @@ public:
     void setValue(qreal value);
     void setRange(qreal min, qreal max);
     void setToolTip(QString toolTip);
+    void setCore(Editor* editor) { mEditor = editor; }
 
     void changeText();
 
@@ -23,17 +27,24 @@ public:
 
 Q_SIGNALS:
     void brushSettingChanged(qreal value, BrushSettingType setting);
+    void brushMappingForInputChanged(QVector<QPointF> points, BrushSettingType setting, BrushInputType inputType);
 
 private:
+
+    void openMappingWindow();
 
     void setValueInternal(qreal value);
 
     void updateSetting(qreal value);
+    void updateBrushMapping(QVector<QPointF> newPoints, BrushInputType inputType);
 
     QDoubleSpinBox* mValueBox = nullptr;
     QDoubleSpinBox* mVisualBox = nullptr;
     SpinSlider* mValueSlider = nullptr;
+    QToolButton* mMappingButton = nullptr;
     BrushSettingType mSettingType;
+
+    Editor* mEditor = nullptr;
 
     qreal mMin = 0.0;
     qreal mMax = 0.0;
@@ -44,6 +55,8 @@ private:
     qreal mMappedValue = 0.0;
 
     qreal mCurrentValue;
+
+    QWidget* mParent = nullptr;
 };
 
 #endif // BRUSHSETTINGWIDGET_H

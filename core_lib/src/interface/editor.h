@@ -177,6 +177,10 @@ public: //slots
     void setMPBrushSetting(BrushSettingType setting, float value);
     float getMPBrushSetting(BrushSettingType settingType);
     const BrushSettingInfo getBrushSettingInfo(BrushSettingType settingType);
+    const BrushInputInfo getBrushInputInfo(BrushInputType input);
+
+    void setBrushInputMapping(QVector<QPointF> points, BrushSettingType settingType, BrushInputType inputType);
+    const BrushInputMapping getBrushInputMapping(BrushSettingType settingType, BrushInputType inputType);
 
 protected:
     // Need to move to somewhere...

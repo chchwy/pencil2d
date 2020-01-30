@@ -23,6 +23,7 @@ RESOURCES += \
 
 INCLUDEPATH += \
     src \
+    src/mapping \
     ../core_lib/src/graphics \
     ../core_lib/src/graphics/bitmap \
     ../core_lib/src/graphics/vector \
@@ -38,6 +39,10 @@ HEADERS += \
     brushsettingitem.h \
     brushsettingwidget.h \
     src/mainwindow2.h \
+    src/mapping/mappingconfiguratorwidget.h \
+    src/mapping/mappingdistributionwidget.h \
+    src/mapping/mpmappingoptionswidget.h \
+    src/mapping/mpmappingwidget.h \
     src/mpbrushconfigurator.h \
     src/shortcutfilter.h \
     src/timeline2.h \
@@ -72,6 +77,10 @@ SOURCES += \
     brushsettingwidget.cpp \
     src/main.cpp \
     src/mainwindow2.cpp \
+    src/mapping/mappingconfiguratorwidget.cpp \
+    src/mapping/mappingdistributionwidget.cpp \
+    src/mapping/mpmappingoptionswidget.cpp \
+    src/mapping/mpmappingwidget.cpp \
     src/mpbrushconfigurator.cpp \
     src/shortcutfilter.cpp \
     src/timeline2.cpp \

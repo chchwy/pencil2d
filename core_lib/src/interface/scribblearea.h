@@ -141,6 +141,10 @@ public:
     float getBrushSetting(BrushSettingType settingType);
 
     const BrushSettingInfo getBrushSettingInfo(BrushSettingType setting);
+    const BrushInputInfo getBrushInputInfo(BrushInputType input);
+
+    void setBrushInputMapping(QVector<QPointF> points, BrushSettingType settingType, BrushInputType inputType);
+    const BrushInputMapping getBrushInputMapping(BrushSettingType settingType, BrushInputType inputType);
 
     void keyEvent(QKeyEvent* event);
     void keyEventForSelection(QKeyEvent* event);

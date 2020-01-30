@@ -1109,3 +1109,18 @@ const BrushSettingInfo Editor::getBrushSettingInfo(BrushSettingType settingType)
 {
     return mScribbleArea->getBrushSettingInfo(settingType);
 }
+
+const BrushInputInfo Editor::getBrushInputInfo(BrushInputType input)
+{
+    return mScribbleArea->getBrushInputInfo(input);
+}
+
+void Editor::setBrushInputMapping(QVector<QPointF> points, BrushSettingType settingType, BrushInputType inputType)
+{
+    return mScribbleArea->setBrushInputMapping(points, settingType, inputType);
+}
+
+const BrushInputMapping Editor::getBrushInputMapping(BrushSettingType settingType, BrushInputType inputType)
+{
+    return mScribbleArea->getBrushInputMapping(settingType, inputType);
+}

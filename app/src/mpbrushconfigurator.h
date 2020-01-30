@@ -32,6 +32,7 @@ private:
     void updateSettingsView(QTreeWidgetItem* item);
 
     void updateBrushSetting(qreal value, BrushSettingType settingType);
+    void updateBrushMapping(QVector<QPointF> points, BrushSettingType settingType, BrushInputType input);
 
     void addBrushSettingsSpacer();
     void removeBrushSettingSpacers();

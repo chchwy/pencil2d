@@ -1,7 +1,8 @@
 #ifndef BRUSHSETTING_H
 #define BRUSHSETTING_H
 
-#include <QList>
+#include <QVector>
+#include <QPointF>
 
 /// This enum should be interchangeable with MyPaintBrushSetting
 enum class BrushSettingType {
@@ -65,6 +66,36 @@ enum class BrushSettingType {
         BRUSH_SETTINGS_COUNT
 };
 
+enum class BrushInputType {
+        BRUSH_INPUT_PRESSURE,
+        BRUSH_INPUT_SPEED1,
+        BRUSH_INPUT_SPEED2,
+        BRUSH_INPUT_RANDOM,
+        BRUSH_INPUT_STROKE,
+        BRUSH_INPUT_DIRECTION,
+        BRUSH_INPUT_DIRECTION_ANGLE,
+        BRUSH_INPUT_ATTACK_ANGLE,
+        BRUSH_INPUT_TILT_DECLINATION,
+        BRUSH_INPUT_TILT_ASCENSION,
+        BRUSH_INPUT_GRIDMAP_X,
+        BRUSH_INPUT_GRIDMAP_Y,
+        BRUSH_INPUT_BRUSH_RADIUS,
+        BRUSH_INPUT_CUSTOM,
+        BRUSH_INPUTS_COUNT
+};
+
+struct MappingControlPoints {
+  // a set of control points (stepwise linear)
+  QVector<QPointF> points;
+  int numberOfPoints;
+};
+
+struct BrushInputMapping {
+    int inputsUsed;
+    MappingControlPoints controlPoints;
+    float baseValue;
+};
+
 struct BrushSettingInfo {
     QString cname;
     QString name;
@@ -75,7 +106,40 @@ struct BrushSettingInfo {
     QString tooltip;
 };
 
-const QList<BrushSettingType> allSettings = { BrushSettingType::BRUSH_SETTING_OPAQUE,
+struct BrushInputInfo {
+    QString cname;
+    qreal hard_min;
+    qreal soft_min;
+    qreal normal;
+    qreal soft_max; // Recommended max
+    qreal hard_max; // Recommended min
+    QString name;
+    QString tooltip;
+};
+
+QString inline getBrushInputName(const BrushInputType& type)
+{
+    switch(type)
+    {
+    case BrushInputType::BRUSH_INPUT_PRESSURE: return "Pressure";
+    case BrushInputType::BRUSH_INPUT_SPEED1: return "Fine speed";
+    case BrushInputType::BRUSH_INPUT_SPEED2: return "Gross speed";
+    case BrushInputType::BRUSH_INPUT_RANDOM: return "Noise";
+    case BrushInputType::BRUSH_INPUT_STROKE: return "Stroke";
+    case BrushInputType::BRUSH_INPUT_DIRECTION: return "Direction";
+    case BrushInputType::BRUSH_INPUT_DIRECTION_ANGLE: return "Direction 360";
+    case BrushInputType::BRUSH_INPUT_ATTACK_ANGLE: return "Attack Angle";
+    case BrushInputType::BRUSH_INPUT_TILT_DECLINATION: return "Declination";
+    case BrushInputType::BRUSH_INPUT_TILT_ASCENSION: return "Ascension";
+    case BrushInputType::BRUSH_INPUT_GRIDMAP_X: return "GridMap X";
+    case BrushInputType::BRUSH_INPUT_GRIDMAP_Y: return "GridMap Y";
+    case BrushInputType::BRUSH_INPUT_BRUSH_RADIUS: return "Base Brush Radius";
+    case BrushInputType::BRUSH_INPUT_CUSTOM: return "Custom";
+    default: return "";
+    }
+}
+
+const QVector<BrushSettingType> allSettings = { BrushSettingType::BRUSH_SETTING_OPAQUE,
                                               BrushSettingType::BRUSH_SETTING_OPAQUE_MULTIPLY,
                                               BrushSettingType::BRUSH_SETTING_OPAQUE_LINEARIZE,
                                               BrushSettingType::BRUSH_SETTING_RADIUS_LOGARITHMIC,

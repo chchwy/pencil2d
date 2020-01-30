@@ -1678,12 +1678,45 @@ void ScribbleArea::paletteColorChanged(QColor color)
 
 void ScribbleArea::brushSettingChanged(BrushSettingType settingType, float value)
 {
+    qDebug() << "value before mypaint: " << value;
     mMyPaint->setBrushValue(static_cast<MyPaintBrushSetting>(settingType), value);
 }
 
 float ScribbleArea::getBrushSetting(BrushSettingType settingType)
 {
     return mMyPaint->getBrushValue(static_cast<MyPaintBrushSetting>(settingType));
+}
+
+void ScribbleArea::setBrushInputMapping(QVector<QPointF> points, BrushSettingType settingType, BrushInputType inputType)
+{
+    // FIXME: changing brush doesn't affect the brush config window
+    // so changing to another brush still affects the old brush
+
+    // TODO: figure out why mapping crashes if you set mapping points of a new input
+    // is it because the brush doesn't have that info yet?
+    mMyPaint->setBrushInputMappingPoints(points,
+                                         static_cast<MyPaintBrushSetting>(settingType),
+                                         static_cast<MyPaintBrushInput>(inputType));
+}
+
+const BrushInputMapping ScribbleArea::getBrushInputMapping(BrushSettingType settingType, BrushInputType inputType)
+{
+    BrushInputMapping inputMapping;
+    auto mappingPoints = mMyPaint->getBrushInputMappingPoints(static_cast<MyPaintBrushSetting>(settingType),
+                                                              static_cast<MyPaintBrushInput>(inputType));
+    MappingControlPoints controlPoints;
+    QVector<QPointF> points;
+
+    for (int i = 0; i < mappingPoints->n; i++) {
+        const auto point = QPointF(static_cast<qreal>(mappingPoints->xvalues[i]),static_cast<qreal>(mappingPoints->yvalues[i]));
+        controlPoints.points << point;
+    }
+    controlPoints.numberOfPoints = mappingPoints->n;
+    inputMapping.controlPoints = controlPoints;
+    inputMapping.inputsUsed = mMyPaint->getBrushInputsUsed(static_cast<MyPaintBrushSetting>(settingType));
+    inputMapping.baseValue = mMyPaint->getBrushValue(static_cast<MyPaintBrushSetting>(settingType));
+
+    return inputMapping;
 }
 
 const BrushSettingInfo ScribbleArea::getBrushSettingInfo(BrushSettingType setting)
@@ -1699,6 +1732,28 @@ const BrushSettingInfo ScribbleArea::getBrushSettingInfo(BrushSettingType settin
     brushInfo.tooltip = info->tooltip;
     brushInfo.defaultValue = info->def;
     brushInfo.isConstant = info->constant;
+
+    return brushInfo;
+}
+
+const BrushInputInfo ScribbleArea::getBrushInputInfo(BrushInputType input)
+{
+    const MyPaintBrushInputInfo* info = mMyPaint->getBrushInputInfo(static_cast<MyPaintBrushInput>(input));
+
+    BrushInputInfo brushInfo;
+
+    brushInfo.cname = info->cname;
+    brushInfo.name = info->name;
+    brushInfo.soft_min = info->soft_min;
+    brushInfo.soft_max = info->soft_max;
+//    brushInfo.hard_min = info->hard_min;
+//    brushInfo.hard_max = info->hard_max;
+    brushInfo.tooltip = info->tooltip;
+    brushInfo.normal = info->normal;
+    brushInfo.name = info->name;
+
+//    qDebug() << "hardMin: " << brushInfo.hard_min << " hardmax: " << brushInfo.hard_max ;
+//    brushInfo.isConstant = info->constant;
 
     return brushInfo;
 }

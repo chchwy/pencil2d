@@ -70,5 +70,7 @@
         <file>pencil2d_quick_guide.pdf</file>
         <file>icons/new/svg/color-dialog.svg</file>
         <file>icons/new/svg/more_options.svg</file>
+        <file>icons/new/mapping-icon.png</file>
+        <file>icons/new/trash-changes.png</file>
     </qresource>
 </RCC>

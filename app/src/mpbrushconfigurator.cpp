@@ -19,7 +19,7 @@
 MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
   : QDialog(parent)
 {
-    resize(QSize(400,400));
+    setBaseSize(QSize(450,400));
     setWindowTitle(tr("Brush Configurator", "Window title of mypaint brush configurator"));
 
     mNavigatorWidget = new QTreeWidget(parent);
@@ -60,7 +60,7 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     hLayout->addWidget(viewSplitter);
     hLayout->setMargin(0);
 
-    viewSplitter->setSizes({150, 500});
+    viewSplitter->setSizes({150, 600});
     viewSplitter->setStretchFactor(1,4);
     viewSplitter->setStretchFactor(0,0);
 
@@ -107,6 +107,10 @@ void MPBrushConfigurator::updateUI()
     for (BrushSettingType type : allSettings) {
         for (BrushSettingWidget* widget : mBrushWidgets) {
             if (widget->setting() == type) {
+                widget->setCore(mEditor);
+
+                // TODO: remove below, we have editor in BrushSettingWidget now...
+                // no need to pass via get/set
                 BrushSettingInfo info = mEditor->getBrushSettingInfo(type);
                 widget->setValue(static_cast<qreal>(mEditor->getMPBrushSetting(type)));
                 widget->setRange(static_cast<qreal>(info.min), static_cast<qreal>(info.max));
@@ -303,6 +307,7 @@ void MPBrushConfigurator::updateSettingsView(QTreeWidgetItem* item)
         vBoxLayout->addWidget(item);
 
         connect(item, &BrushSettingWidget::brushSettingChanged, this, &MPBrushConfigurator::updateBrushSetting);
+        connect(item, &BrushSettingWidget::brushMappingForInputChanged, this, &MPBrushConfigurator::updateBrushMapping);
         connect(mMapValuesButton, &QPushButton::pressed, item, &BrushSettingWidget::changeText);
     }
 
@@ -338,6 +343,11 @@ void MPBrushConfigurator::addBrushSettingsSpacer()
 void MPBrushConfigurator::updateBrushSetting(qreal value, BrushSettingType settingType)
 {
     mEditor->setMPBrushSetting(settingType, static_cast<float>(value));
+}
+
+void MPBrushConfigurator::updateBrushMapping(QVector<QPointF> points, BrushSettingType setting, BrushInputType input)
+{
+    mEditor->setBrushInputMapping(points, setting, input);
 }
 
 void MPBrushConfigurator::updateMapValuesButton()
