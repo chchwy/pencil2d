@@ -31,22 +31,6 @@
 // user-defined mappings
 // (the curves you can edit in the brush settings)
 
-typedef struct {
-  // a set of control points (stepwise linear)
-  float xvalues[8];
-  float yvalues[8];
-  int n;
-} ControlPoints;
-
-struct MyPaintMapping {
-    float base_value; // FIXME: accessed directly from mypaint-brush.c
-
-    int inputs;
-    ControlPoints * pointsList; // one for each input
-    int inputs_used; // optimization
-
-};
-
 
 MyPaintMapping *
 mypaint_mapping_new(int inputs_)
@@ -102,6 +86,11 @@ int mypaint_mapping_get_n (MyPaintMapping * self, int input)
     assert (input >= 0 && input < self->inputs);
     ControlPoints * p = self->pointsList + input;
     return p->n;
+}
+
+ControlPoints* mypaint_mapping_get_control_points (MyPaintMapping *self, int input)
+{
+    return self->pointsList + input;
 }
 
 void mypaint_mapping_set_point (MyPaintMapping * self, int input, int index, float x, float y)

@@ -21,6 +21,7 @@
 #include <mypaint-config.h>
 #include <mypaint-surface.h>
 #include <mypaint-brush-settings.h>
+#include <mypaint-mapping.h>
 
 G_BEGIN_DECLS
 
@@ -49,6 +50,9 @@ mypaint_brush_set_base_value(MyPaintBrush *self, MyPaintBrushSetting id, float v
 
 float
 mypaint_brush_get_base_value(MyPaintBrush *self, MyPaintBrushSetting id);
+
+ControlPoints*
+mypaint_brush_get_mapping_control_points(MyPaintBrush *self, MyPaintBrushSetting id, MyPaintBrushInput input);
 
 gboolean
 mypaint_brush_is_constant(MyPaintBrush *self, MyPaintBrushSetting id);

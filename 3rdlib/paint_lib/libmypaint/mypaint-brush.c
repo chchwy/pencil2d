@@ -278,7 +278,7 @@ void
 mypaint_brush_set_mapping_n(MyPaintBrush *self, MyPaintBrushSetting id, MyPaintBrushInput input, int n)
 {
     assert (id >= 0 && id < MYPAINT_BRUSH_SETTINGS_COUNT);
-    mypaint_mapping_set_n(self->settings[id], input, n);
+    mypaint_mapping_set_n(self->settings[id], (int)input, n);
 }
 
 /**
@@ -289,7 +289,13 @@ mypaint_brush_set_mapping_n(MyPaintBrush *self, MyPaintBrushSetting id, MyPaintB
 int
 mypaint_brush_get_mapping_n(MyPaintBrush *self, MyPaintBrushSetting id, MyPaintBrushInput input)
 {
-    return mypaint_mapping_get_n(self->settings[id], input);
+    return mypaint_mapping_get_n(self->settings[id], (int)input);
+}
+
+ControlPoints*
+mypaint_brush_get_mapping_control_points(MyPaintBrush *self, MyPaintBrushSetting id, MyPaintBrushInput input)
+{
+    return mypaint_mapping_get_control_points(self->settings[id], (int)input);
 }
 
 /**

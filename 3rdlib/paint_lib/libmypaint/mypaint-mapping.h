@@ -6,7 +6,24 @@
 
 G_BEGIN_DECLS
 
-typedef struct MyPaintMapping MyPaintMapping;
+typedef struct ControlPoints {
+  // a set of control points (stepwise linear)
+  float xvalues[8];
+  float yvalues[8];
+  int n;
+} ControlPoints;
+
+
+typedef struct MyPaintMapping {
+    float base_value; // FIXME: accessed directly from mypaint-brush.c
+
+    int inputs;
+    ControlPoints * pointsList; // one for each input
+    int inputs_used; // optimization
+
+} MyPaintMapping;
+
+
 
 MyPaintMapping * mypaint_mapping_new(int inputs_);
 void mypaint_mapping_free(MyPaintMapping *self);
@@ -14,6 +31,7 @@ float mypaint_mapping_get_base_value(MyPaintMapping *self);
 void mypaint_mapping_set_base_value(MyPaintMapping *self, float value);
 void mypaint_mapping_set_n (MyPaintMapping * self, int input, int n);
 int mypaint_mapping_get_n (MyPaintMapping * self, int input);
+ControlPoints* mypaint_mapping_get_control_points (MyPaintMapping *self, int input);
 void mypaint_mapping_set_point (MyPaintMapping * self, int input, int index, float x, float y);
 void mypaint_mapping_get_point (MyPaintMapping * self, int input, int index, float *x, float *y);
 gboolean mypaint_mapping_is_constant(MyPaintMapping * self);
