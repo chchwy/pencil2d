@@ -28,9 +28,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MPBRUSH_H
 
 #include <QColor>
+#include <QPointF>
 
 extern "C" {
 #include "mypaint-brush.h"
+#include "mypaint-mapping.h"
 }
 
 
@@ -56,6 +58,11 @@ public:
     int getNumberOfMappingPoints(MyPaintBrushSetting id, MyPaintBrushInput input);
     void setNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value);
 
+    int getNumberOfInputsUsed(MyPaintBrushSetting setting) const;
+    void setMappingPoints(QVector<QPointF> points, MyPaintBrushSetting setting, MyPaintBrushInput input);
+    const ControlPoints* getMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input);
+
+    const MyPaintBrushInputInfo* getBrushInputInfo(MyPaintBrushInput input);
     const MyPaintBrushSettingInfo* getBrushSettingInfo(MyPaintBrushSetting info);
 
 private:

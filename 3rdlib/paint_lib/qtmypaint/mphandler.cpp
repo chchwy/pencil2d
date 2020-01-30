@@ -229,12 +229,32 @@ int  MPHandler::getBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPai
     return this->m_brush->getNumberOfMappingPoints(setting, input);
 }
 
-void  MPHandler::setBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value)
+void MPHandler::setBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value)
 {
     this->m_brush->setNumberOfMappingPoints(setting, input, value);
+}
+
+int MPHandler::getBrushInputsUsed(MyPaintBrushSetting setting)
+{
+    return this->m_brush->getNumberOfInputsUsed(setting);
+}
+
+const ControlPoints* MPHandler::getBrushInputMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input)
+{
+    return this->m_brush->getMappingPoints(setting, input);
+}
+
+void MPHandler::setBrushInputMappingPoints(QVector<QPointF> points, MyPaintBrushSetting settingType, MyPaintBrushInput inputType)
+{
+    m_brush->setMappingPoints(points, settingType, inputType);
 }
 
 const MyPaintBrushSettingInfo* MPHandler::getBrushSettingInfo(MyPaintBrushSetting setting)
 {
     return this->m_brush->getBrushSettingInfo(setting);
+}
+
+const MyPaintBrushInputInfo* MPHandler::getBrushInputInfo(MyPaintBrushInput input)
+{
+    return this->m_brush->getBrushInputInfo(input);
 }

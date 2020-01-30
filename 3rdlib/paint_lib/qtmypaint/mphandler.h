@@ -74,7 +74,13 @@ public:
     int getBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input);
     void setBrushNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value);
 
+    int getBrushInputsUsed(MyPaintBrushSetting setting);
+
     const MyPaintBrushSettingInfo* getBrushSettingInfo(MyPaintBrushSetting setting);
+    const MyPaintBrushInputInfo* getBrushInputInfo(MyPaintBrushInput input);
+
+    void setBrushInputMappingPoints(QVector<QPointF> points, MyPaintBrushSetting settingType, MyPaintBrushInput inputType);
+    const ControlPoints* getBrushInputMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input);
 
     void refreshSurface();
     void saveSurface(const QString path);

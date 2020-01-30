@@ -116,6 +116,21 @@ void MPBrush::setValue(MyPaintBrushSetting setting, float value)
     mypaint_brush_set_base_value(brush, setting, value);
 }
 
+void MPBrush::setMappingPoints(QVector<QPointF> points, MyPaintBrushSetting setting, MyPaintBrushInput input)
+{
+    for (int i = 0; i < points.size(); i++) {
+        QPointF point = points[i];
+        float x = static_cast<float>(point.x());
+        float y = static_cast<float>(point.y());
+        mypaint_brush_set_mapping_point(brush, setting, input, i, x,y);
+    }
+}
+
+const ControlPoints* MPBrush::getMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input)
+{
+    return mypaint_brush_get_mapping_control_points(brush, setting, input);
+}
+
 int MPBrush::getNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input)
 {
     return mypaint_brush_get_mapping_n(brush, setting, input);
@@ -126,9 +141,19 @@ void MPBrush::setNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrush
     mypaint_brush_set_mapping_n(brush, setting, input, value);
 }
 
+int MPBrush::getNumberOfInputsUsed(MyPaintBrushSetting setting) const
+{
+    return mypaint_brush_get_inputs_used_n(brush, setting);
+}
+
 const MyPaintBrushSettingInfo* MPBrush::getBrushSettingInfo(MyPaintBrushSetting info)
 {
     return mypaint_brush_setting_info(info);
+}
+
+const MyPaintBrushInputInfo* MPBrush::getBrushInputInfo(MyPaintBrushInput input)
+{
+    return mypaint_brush_input_info(input);
 }
 
 
