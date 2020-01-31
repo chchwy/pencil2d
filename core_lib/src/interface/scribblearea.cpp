@@ -1692,8 +1692,6 @@ void ScribbleArea::setBrushInputMapping(QVector<QPointF> points, BrushSettingTyp
     // FIXME: changing brush doesn't affect the brush config window
     // so changing to another brush still affects the old brush
 
-    // TODO: figure out why mapping crashes if you set mapping points of a new input
-    // is it because the brush doesn't have that info yet?
     mMyPaint->setBrushInputMappingPoints(points,
                                          static_cast<MyPaintBrushSetting>(settingType),
                                          static_cast<MyPaintBrushInput>(inputType));

@@ -118,6 +118,7 @@ void MPBrush::setValue(MyPaintBrushSetting setting, float value)
 
 void MPBrush::setMappingPoints(QVector<QPointF> points, MyPaintBrushSetting setting, MyPaintBrushInput input)
 {
+    mypaint_brush_set_mapping_n(brush, setting,input,points.size());
     for (int i = 0; i < points.size(); i++) {
         QPointF point = points[i];
         float x = static_cast<float>(point.x());
