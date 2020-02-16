@@ -41,14 +41,8 @@ void GridPainter::paint(QPainter& painter, int gridSpacingHorizontal, int gridSp
 
     int count = 0;
 
-    qDebug() << gridSizeW;
-    qDebug() << gridSizeH;
-
     int numberOfLinesX = static_cast<int>(floor(right/gridSizeW));
     int numberOfLinesY = static_cast<int>(floor(bottom/gridSizeH));
-
-    qDebug() << numberOfLinesX;
-    qDebug() << numberOfLinesY;
 
     // draw vertical gridlines
     for (int x = left; x < right; x += gridSizeW) {
@@ -231,14 +225,17 @@ void MappingDistributionWidget::initializePoints()
 {
     mPoints.clear();
     QPointF center(adjustedRect.width() / 2, adjustedRect.height() / 2);
-    QVector<QPointF> initPoints = { QPointF(0,adjustedRect.height()),
+    QVector<QPointF> initPoints = { QPointF(adjustedRect.top(),adjustedRect.height()),
                                    center,
-                                    QPointF(adjustedRect.width(),0)
+                                    QPointF(adjustedRect.width(),adjustedRect.left())
                                   };
 
     for (QPointF point : initPoints) {
         mMappedPoints << point;
     }
+
+    mPoints = mapPointsFromWidget();
+    emit mappingUpdated(mPoints);
 }
 
 void MappingDistributionWidget::mousePressEvent(QMouseEvent *e)

@@ -17,7 +17,9 @@
 
 class QListWidgetItem;
 class QTabWidget;
-
+class QListWidget;
+class MPBrushConfigurator;
+class QComboBox;
 
 // MPBrushSelector is a TabWidget showing the various brushes (display the small screenshots)
 // it allows the user to select it and emit a signal.
@@ -29,7 +31,7 @@ class MPBrushSelector : public BaseDockWidget
 
   Q_OBJECT
 public:
-  MPBrushSelector( const QString& brushLibPath, QWidget* parent = 0 );
+  MPBrushSelector(QWidget* parent = 0 );
 
   bool isValid() { return !m_brushLib.isEmpty(); }
   void loadToolBrushes(QString toolName);
@@ -37,27 +39,47 @@ public:
   void initUI() override;
   void updateUI() override;
 
+  void setCore(Editor* editor) { mEditor = editor; }
+
 public slots:
   void selectBrush(QString brushName = QString()); // Give the brush name (no extension) i.e. : "classic/blend+paint"
   void typeChanged(ToolType);
+  void brushListChanged();
 
 signals:
-  void brushSelected (QString toolName, QString brushName, const QByteArray& content);
+  void brushSelected (const QString& toolName, const QString& brushGroup, const QString& brushName, const QByteArray& content);
 
 protected:
   QMap<QString, QStringList> m_brushLib;
-  const QString              m_brushesPath;
+  QString              m_brushesPath;
 
 protected slots:
   void itemClicked ( QListWidgetItem *);
 
 private:
 
+  Editor* mEditor = nullptr;
+  bool mTabsLoaded = false;
+
   void populateList();
   bool anyBrushSelected();
+  void loadBrushes();
+  void addToolTabs();
+
+  void openConfigurator();
+  void showNotImplementedPopup();
+  void updateSelectedBrushForTool(QString toolName);
 
   QTabWidget* mTabWidget;
+  QMap<QString, QListWidget*> mToolListWidgets;
+  QComboBox* mPresetComboBox;
 
+  MPBrushConfigurator* mBrushConfiguratorWidget = nullptr;
+
+  QString currentBrushGroup;
+  QString currentBrushName;
+  QString currentToolName;
+  QByteArray currentBrushData;
 };
 
 

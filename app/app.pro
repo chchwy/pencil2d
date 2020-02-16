@@ -38,6 +38,7 @@ INCLUDEPATH += \
 HEADERS += \
     brushsettingitem.h \
     brushsettingwidget.h \
+    mpbrushutils.h \
     src/mainwindow2.h \
     src/mapping/mappingconfiguratorwidget.h \
     src/mapping/mappingdistributionwidget.h \

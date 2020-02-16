@@ -9,22 +9,118 @@
 #include "brushsetting.h"
 #include "brushsettingitem.h"
 
+#include <QJsonObject>
+#include <QJsonArray>
+
 class QVBoxLayout;
 class QSpacerItem;
 class BrushSettingWidget;
+class QLabel;
+
+struct InputChanges {
+    QVector<QPointF> mappedPoints;
+    BrushInputType inputType;
+    bool enabled;
+
+    InputChanges(QVector<QPointF> newMappedPoints, BrushInputType newInputType, bool newEnabled)
+    {
+        mappedPoints = newMappedPoints;
+        inputType = newInputType;
+        enabled = newEnabled;
+    }
+
+    InputChanges(QVector<QPointF> newMappedPoints, BrushInputType newInputType)
+    {
+        mappedPoints = newMappedPoints;
+        inputType = newInputType;
+        enabled = true;
+    }
+
+    void write(QJsonArray& object) const
+    {
+        for (int i = 0; i < mappedPoints.count(); i++) {
+            const auto mappedPoint = mappedPoints[i];
+            QJsonArray pointArray = { mappedPoint.x(), mappedPoint.y() };
+            object.removeAt(i);
+            object.insert(i, pointArray);
+        }
+    }
+};
+
+struct BrushChanges {
+    QHash<int, InputChanges> listOfinputChanges;
+    qreal baseValue;
+    BrushSettingType settingsType;
+//    QString comment;
+//    int version;
+
+    void write(QJsonObject& object) const
+    {
+        QJsonObject::iterator baseValueObjIt = object.find("base_value");
+
+        if (baseValueObjIt->isUndefined()) {
+            object.insert("base_value", baseValue);
+        } else {
+            object.remove("base_value");
+            object.insert("base_value", baseValue);
+        }
+
+        QJsonObject::iterator inputsObjIt = object.find("inputs");
+        if (inputsObjIt->isUndefined()) {
+            object.insert("inputs", QJsonArray());
+        }
+
+        QJsonValueRef inputsContainerRef = object.find("inputs").value();
+        QJsonObject inputsContainerObj = inputsContainerRef.toObject();
+        QHashIterator<int, InputChanges> inputIt(listOfinputChanges);
+        while (inputIt.hasNext()) {
+            inputIt.next();
+
+            InputChanges inputChanges = inputIt.value();
+
+            QString inputId = getBrushInputIdentifier(inputChanges.inputType);
+            QJsonObject::iterator inputContainerObjIt = inputsContainerObj.find(inputId);
+
+            if (inputContainerObjIt->isUndefined()) {
+                if (inputChanges.enabled) {
+                    QJsonArray inputArray;
+                    inputChanges.write(inputArray);
+                    inputsContainerObj.insert(inputId, inputArray);
+                }
+            } else {
+
+                if (inputChanges.enabled) {
+                    QJsonValueRef inputArrRef = inputContainerObjIt.value();
+                    QJsonArray inputArray = inputArrRef.toArray();
+                    inputChanges.write(inputArray);
+
+                    inputsContainerObj.remove(inputId);
+                    inputsContainerObj.insert(inputId, inputArray);
+                } else {
+                    QString inputKey = inputContainerObjIt.key();
+                    inputsContainerObj.remove(inputKey);
+                }
+            }
+            inputsContainerRef = inputsContainerObj;
+        }
+    }
+};
 
 class MPBrushConfigurator : public QDialog
 {
     Q_OBJECT
 public:
-
     MPBrushConfigurator(QWidget* parent = nullptr);
-    void setCore(Editor* editor) { mEditor = editor; }
 
     void initUI();
     void updateUI();
 
-    void updateConfig(QString toolName, QString brushName, const QByteArray& content);
+    void setCore(Editor* editor) { mEditor = editor; }
+
+    void updateConfig(const QString& toolName, const QString& brushGroup, const QString& brushName, const QByteArray& content);
+
+signals:
+    void updateBrushList();
 
 private:
 
@@ -33,6 +129,7 @@ private:
 
     void updateBrushSetting(qreal value, BrushSettingType settingType);
     void updateBrushMapping(QVector<QPointF> points, BrushSettingType settingType, BrushInputType input);
+    void removeBrushMappingForInput(BrushSettingType setting, BrushInputType input);
 
     void addBrushSettingsSpacer();
     void removeBrushSettingSpacers();
@@ -54,7 +151,10 @@ private:
     void prepareEllipticalDabSettings();
     void prepareOtherSettings();
 
-    void showNowImplementedPopup();
+    void showNotImplementedPopup();
+
+    void pressedSaveBrush();
+    void pressedRemoveBrush();
 
     BrushSettingItem* addTreeRoot(BrushSettingItem::Category category, QTreeWidget* treeWidget, const QString name);
     BrushSettingItem* addTreeChild(BrushSettingItem::Category category, QTreeWidgetItem* parent, const QString name);
@@ -66,13 +166,21 @@ private:
     QVBoxLayout* vBoxLayout = nullptr;
     QWidget* mBrushSettingsWidget = nullptr;
     QTreeWidget* mNavigatorWidget = nullptr;
+    QLabel* mBrushImageWidget = nullptr;
+    QLabel* mBrushNameWidget = nullptr;
 
     QPushButton* mMapValuesButton = nullptr;
+    QPushButton* mSaveBrushButton = nullptr;
     bool mMapValuesButtonPressed = false;
 
     Editor* mEditor = nullptr;
 
     QList<BrushSettingWidget*> mBrushWidgets;
+    QHash<int, BrushChanges> mBrushChanges;
+    QString mBrushName;
+    QString mBrushGroup;
+
+    QSize mImageSize = QSize(32,32);
 
 };
 

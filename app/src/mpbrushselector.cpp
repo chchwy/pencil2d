@@ -12,6 +12,9 @@
 #include <QListWidget>
 #include <QTabWidget>
 #include <QLayout>
+#include <QToolButton>
+#include <QComboBox>
+#include <QMessageBox>
 
 #include <QJsonParseError>
 #include <QJsonDocument>
@@ -20,176 +23,58 @@
 #include <QDebug>
 
 #include "brushsetting.h"
+#include "pencilerror.h"
 
-static const QString BRUSH_CONTENT_EXT = ".myb";
-static const QString BRUSH_PREVIEW_EXT = "_prev.png";
-static const QString BRUSH_LIST = "brushes.conf";
-static const int ICON_SZ = 64;
-
-struct MPBrushParser {
-
-    /// Parses the mypaint brush config ".conf" format and returns a map of the brush groups
-    static QMap<QString, QStringList> parseConfig(QFile& file, QString brushConfigPath)
-    {
-        QString currentGroup;
-        QStringList brushesGroup;
-        QMap<QString, QStringList> brushes;
-        while (!file.atEnd())
-        {
-            QString line ( file.readLine().trimmed() );
-            if (line.isEmpty() || line.startsWith("#")) continue;
-            if (line.startsWith("Group:"))
-            {
-                // first, we store the last brushesGroup (if any). Note that declaring 2 groups with the same name is wrong (only the last one will be visible)
-                if (!currentGroup.isEmpty() && !brushesGroup.isEmpty()) {
-                    brushes.insert(currentGroup, brushesGroup);
-                }
-
-                currentGroup = line.section(':',1).trimmed(); // Get the name after the first ':' separator
-                brushesGroup.clear();
-                continue;
-            }
-
-            if (QFileInfo(brushConfigPath + QDir::separator() + line + BRUSH_CONTENT_EXT).isReadable()) {
-                brushesGroup << line;
-            }
-
-            if (!currentGroup.isEmpty() && !brushesGroup.isEmpty()) brushes.insert(currentGroup, brushesGroup);
-        }
-        return brushes;
-    }
-
-//    static BrushSettingInfo getBrushSettingInfo()
-//    {
-
-//    }
-
-    static float getBaseValue(BrushSettingType brushSetting, QString brushFile)
-    {
-        qDebug() << "brush path" << brushFile;
-        QFile file(brushFile+BRUSH_CONTENT_EXT);
-        file.open(QIODevice::ReadOnly | QIODevice::Text);
-
-        QJsonParseError jsonError;
-        QJsonDocument flowerJson = QJsonDocument::fromJson(file.readAll(),&jsonError);
-        if (jsonError.error != QJsonParseError::NoError){
-        qDebug() << jsonError.errorString();
-        }
-
-//        qDebug() << flowerJson;
-        QMap<QString, QVariant> list = flowerJson.toVariant().toMap();
-//        qDebug() << list["settings"].toMap()[""];
-
-        QMap<QString, QVariant> brushSettingMap = list["settings"].toMap();
-        QMap<QString, QVariant> brushBaseValue = brushSettingMap[getName(brushSetting)].toMap();
-
-//        qDebug() << brushBaseValue;
-        qDebug() << brushBaseValue["base_value"].toFloat();
-//        if (getName(brushSetting))
-//        {
-
-//        }
-//        QMap<QString, QVariant> map = list.first().toMap();
-//        qDebug() << map["baseValue"].toString();
-//        return list["settings"].toFloat();
-        return 0;
-    }
-
-    static QString getName(BrushSettingType& type)
-    {
-        switch(type)
-        {
-        case BrushSettingType::BRUSH_SETTING_OPAQUE:                      return "opaque";
-        case BrushSettingType::BRUSH_SETTING_OPAQUE_MULTIPLY:             return "opaque_multiply";
-        case BrushSettingType::BRUSH_SETTING_OPAQUE_LINEARIZE:            return "opaque_linearize";
-        case BrushSettingType::BRUSH_SETTING_RADIUS_LOGARITHMIC:          return "radius_logarithmic";
-        case BrushSettingType::BRUSH_SETTING_HARDNESS:                    return "hardness";
-        case BrushSettingType::BRUSH_SETTING_ANTI_ALIASING:               return "anti_aliasing";
-        case BrushSettingType::BRUSH_SETTING_DABS_PER_BASIC_RADIUS:       return "dabs_per_basic_radius";
-        case BrushSettingType::BRUSH_SETTING_DABS_PER_ACTUAL_RADIUS:      return "dabs_per_actual_radius";
-        case BrushSettingType::BRUSH_SETTING_DABS_PER_SECOND:             return "dabs_per_second";
-        case BrushSettingType::BRUSH_SETTING_GRIDMAP_SCALE:               return "gridmap_scale";
-        case BrushSettingType::BRUSH_SETTING_GRIDMAP_SCALE_X:             return "gridmap_scale_x";
-        case BrushSettingType::BRUSH_SETTING_GRIDMAP_SCALE_Y:             return "gridmap_scale_y";
-        case BrushSettingType::BRUSH_SETTING_RADIUS_BY_RANDOM:            return "radius_by_random";
-        case BrushSettingType::BRUSH_SETTING_SPEED1_SLOWNESS:             return "speed1_slowness";
-        case BrushSettingType::BRUSH_SETTING_SPEED2_SLOWNESS:             return "speed2_slowness";
-        case BrushSettingType::BRUSH_SETTING_SPEED1_GAMMA:                return "speed1_gamma";
-        case BrushSettingType::BRUSH_SETTING_SPEED2_GAMMA:                return "speed2_gamma";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_BY_RANDOM:            return "offset_by_random";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_Y:                    return "offset_y";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_X:                    return "offset_x";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE:                return "offset_angle";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE_ASC:            return "offset_angle_asc";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE_2:              return "offset_angle_2";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE_2_ASC:          return "offset_angle_2_asc";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_ANGLE_ADJ:            return "offset_angle_adj";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_MULTIPLIER:           return "offset_multiplier";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_BY_SPEED:             return "offset_by_speed";
-        case BrushSettingType::BRUSH_SETTING_OFFSET_BY_SPEED_SLOWNESS:    return "offset_by_speed_slowness";
-        case BrushSettingType::BRUSH_SETTING_SLOW_TRACKING:               return "slow_tracking";
-        case BrushSettingType::BRUSH_SETTING_SLOW_TRACKING_PER_DAB:       return "slow_tracking_per_dab";
-        case BrushSettingType::BRUSH_SETTING_TRACKING_NOISE:              return "tracking_noise";
-        case BrushSettingType::BRUSH_SETTING_COLOR_H:                     return "color_h";
-        case BrushSettingType::BRUSH_SETTING_COLOR_S:                     return "color_s";
-        case BrushSettingType::BRUSH_SETTING_COLOR_V:                     return "color_v";
-        case BrushSettingType::BRUSH_SETTING_RESTORE_COLOR:               return "restore_color";
-        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_H:              return "change_color_h";
-        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_L:              return "change_color_l";
-        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_HSL_S:          return "change_color_hsl_s";
-        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_V:              return "change_color_v";
-        case BrushSettingType::BRUSH_SETTING_CHANGE_COLOR_HSV_S:          return "change_color_hsv_s";
-        case BrushSettingType::BRUSH_SETTING_SMUDGE:                      return "smudge";
-        case BrushSettingType::BRUSH_SETTING_SMUDGE_LENGTH:               return "smudge_length";
-        case BrushSettingType::BRUSH_SETTING_SMUDGE_RADIUS_LOG:           return "smudge_radius_log";
-        case BrushSettingType::BRUSH_SETTING_ERASER:                      return "eraser";
-        case BrushSettingType::BRUSH_SETTING_STROKE_THRESHOLD:            return "stroke_threshold";
-        case BrushSettingType::BRUSH_SETTING_STROKE_DURATION_LOGARITHMIC: return "stroke_duration_logarithmic";
-        case BrushSettingType::BRUSH_SETTING_STROKE_HOLDTIME:             return "stroke_holdtime";
-        case BrushSettingType::BRUSH_SETTING_CUSTOM_INPUT:                return "custom_input";
-        case BrushSettingType::BRUSH_SETTING_CUSTOM_INPUT_SLOWNESS:       return "custom_input_slowness";
-        case BrushSettingType::BRUSH_SETTING_ELLIPTICAL_DAB_RATIO:        return "elliptical_dab_ratio";
-        case BrushSettingType::BRUSH_SETTING_ELLIPTICAL_DAB_ANGLE:        return "elliptical_dab_angle";
-        case BrushSettingType::BRUSH_SETTING_DIRECTION_FILTER:            return "direction_filter";
-        case BrushSettingType::BRUSH_SETTING_LOCK_ALPHA:                  return "lock_alpha";
-        case BrushSettingType::BRUSH_SETTING_COLORIZE:                    return "colorize";
-        case BrushSettingType::BRUSH_SETTING_SNAP_TO_PIXEL:               return "snap_to_pixel";
-        case BrushSettingType::BRUSH_SETTING_PRESSURE_GAIN_LOG:           return "pressure_gain_log";
-        default: return "";
-        }
-    }
-};
+#include "mpbrushutils.h"
+#include "mpbrushconfigurator.h"
 
 
-MPBrushSelector::MPBrushSelector(const QString &brushLibPath, QWidget *parent)
-    : BaseDockWidget(parent),
-      m_brushesPath(brushLibPath)
+MPBrushSelector::MPBrushSelector(QWidget *parent)
+    : BaseDockWidget(parent)
 {
     setWindowTitle(tr("Brush Selector", "Window title of mypaint brush selector"));
 
-    mTabWidget = new QTabWidget(parent);
+    QWidget* containerWidget = new QWidget(this);
+    QVBoxLayout* vLayout = new QVBoxLayout(nullptr);
+    QHBoxLayout* hLayout = new QHBoxLayout(this);
 
-    setWidget(mTabWidget);
+    mPresetComboBox = new QComboBox(this);
+
+
+    // TODO: show presets based on brush folders...
+    mPresetComboBox->addItem("Deevad");
+
+    QToolButton* configuratorButton = new QToolButton(this);
+    QToolButton* addPresetButton = new QToolButton(this);
+
+    mTabWidget = new QTabWidget(this);
+
+    configuratorButton->setText(tr("config"));
+    configuratorButton->setToolTip(tr("Open brush configurator window"));
+
+    hLayout->addWidget(configuratorButton);
+    hLayout->addWidget(mPresetComboBox);
+    hLayout->addWidget(addPresetButton);
+
+    vLayout->addLayout(hLayout);
+    vLayout->addWidget(mTabWidget);
+
+    vLayout->setMargin(8);
+
+    containerWidget->setLayout(vLayout);
+    setWidget(containerWidget);
     mTabWidget->tabBar()->hide();
 
-    // First, we parse the "order.conf" file to fill m_brushLib
-    QFile fileOrder(brushLibPath + QDir::separator() + BRUSH_LIST);
+    MPBrushParser::copyResourcesToAppData();
 
-    if (fileOrder.open(QIODevice::ReadOnly))
-    {
-        m_brushLib = MPBrushParser::parseConfig(fileOrder, brushLibPath);
-        populateList();
-    }
+    m_brushesPath = MPBrushParser::getBrushesPath();
+    // end of copy process
 
-    for (QStringList brushList : m_brushLib) {
+    // First, we parse the "brushes.conf" file to fill m_brushLib
+    loadBrushes();
 
-        for (QString brush : brushList) {
-
-            for (BrushSettingType setting : allSettings) {
-                qDebug() << MPBrushParser::getBaseValue(setting, brushLibPath+QDir::separator()+brush);
-            }
-        }
-    }
+    connect(configuratorButton, &QToolButton::pressed, this, &MPBrushSelector::openConfigurator);
+    connect(addPresetButton, &QToolButton::pressed, this, &MPBrushSelector::showNotImplementedPopup);
 }
 
 void MPBrushSelector::initUI()
@@ -202,13 +87,35 @@ void MPBrushSelector::updateUI()
 
 }
 
-void MPBrushSelector::populateList()
+void MPBrushSelector::loadBrushes()
 {
-    foreach (const QString &caption, m_brushLib.keys())
+    // TODO: removing brushes is almost there
+    // we just need to change brush path from using the internal to an external
+    // when should this happen though? and should we save it in settings?
+    QFile fileOrder(MPBrushParser::getBrushConfigPath(BRUSH_CONFIG));
+
+    if (fileOrder.open(QIODevice::ReadOnly))
     {
-        const QStringList subList = m_brushLib.value(caption);
-        if (subList.isEmpty()) continue; // this should not happen...
-        QListWidget* listWidget = new QListWidget();
+        // TODO: will probably have to create a brush importer, group has to match brush type
+        // otherwise there could be undefined behaviour...
+        m_brushLib = MPBrushParser::parseConfig(fileOrder, m_brushesPath);
+
+        if (!mTabsLoaded) {
+
+            // add tabs corresponding to the drawing tools pencil use
+            // FIXME: this is a HACK but I'm too lazy to change it.
+            addToolTabs();
+            mTabsLoaded = true;
+        }
+        populateList();
+    }
+}
+
+void MPBrushSelector::addToolTabs()
+{
+    for (const QString &brushGroup : m_brushLib.keys())
+    {
+        QListWidget* listWidget = new QListWidget(mTabWidget);
         listWidget->setUniformItemSizes(true);
         listWidget->setViewMode        (QListView::IconMode);
         listWidget->setResizeMode      (QListView::Adjust);
@@ -218,18 +125,46 @@ void MPBrushSelector::populateList()
         listWidget->setIconSize        (QSize(ICON_SZ,ICON_SZ));
         connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(itemClicked(QListWidgetItem*)));
 
-        mTabWidget->addTab(listWidget, caption);
-        for (int n = 0 ; n < subList.count() ; n++)
-        {
-            QString name (subList.at(n));
-            QIcon preview(m_brushesPath + QDir::separator() + name + BRUSH_PREVIEW_EXT);
-            QListWidgetItem* p_item = new QListWidgetItem(preview, QString(), listWidget, n); // no need to show the name as it is already visible in preview
-            p_item->setToolTip(QString("%1 in \"%2\".").arg(name).arg(caption));
-        }
+        mTabWidget->addTab(listWidget, brushGroup);
+        mToolListWidgets.insert(brushGroup, listWidget);
     }
     QListWidget* emptyWidget = new QListWidget();
 
     mTabWidget->addTab(emptyWidget, "");
+}
+
+void MPBrushSelector::brushListChanged()
+{
+    loadBrushes();
+    updateSelectedBrushForTool(currentToolName);
+}
+
+void MPBrushSelector::populateList()
+{
+    QMapIterator<QString, QListWidget*> toolListIt(mToolListWidgets);
+//    toolListIt.hasNext();
+    while(toolListIt.hasNext()) {
+        toolListIt.next();
+        QListWidget* widget = toolListIt.value();
+
+        // clear existing widgets before re-adding
+        widget->clear();
+
+        Q_ASSERT(mToolListWidgets.count() == m_brushLib.keys().count());
+
+        // Has to be a tool, can't be any arbitrary name
+        QString brushGroup = m_brushLib.find(toolListIt.key()).key();
+
+        const QStringList subList = m_brushLib.value(brushGroup);
+        if (subList.isEmpty()) continue; // this should not happen...
+
+        for (int n = 0 ; n < subList.count() ; n++) {
+            QString brushGroupAndName (subList.at(n));
+            QIcon preview(m_brushesPath + QDir::separator() + brushGroupAndName + BRUSH_PREVIEW_EXT);
+            QListWidgetItem* p_item = new QListWidgetItem(preview, QString(), widget, n);
+            p_item->setToolTip(QString("%1 in '%2'.").arg(brushGroupAndName).arg(brushGroup));
+        }
+    }
 }
 
 void MPBrushSelector::itemClicked(QListWidgetItem *itemWidget)
@@ -237,7 +172,7 @@ void MPBrushSelector::itemClicked(QListWidgetItem *itemWidget)
     QListWidget* listWidget = itemWidget->listWidget();
     if (listWidget)
     {
-        QString toolName;
+        QString toolName = "";
         // first of all, we will deselect all other items in other panels :
         for (int p = 0 ; p < mTabWidget->count() ; p++)
         {
@@ -254,14 +189,27 @@ void MPBrushSelector::itemClicked(QListWidgetItem *itemWidget)
         }
         // fine, let's read this one and emit the content to any receiver:
         const QStringList subList = m_brushLib.value(toolName);
-        QString brushName (subList.at(itemWidget->type()));
+        QString brushGroupAndName (subList.at(itemWidget->type()));
 
-        QFile f( m_brushesPath + QDir::separator() + subList.at(itemWidget->type()) + BRUSH_CONTENT_EXT );
-        if (f.open( QIODevice::ReadOnly ))
+        QRegularExpression re("(\\w+?[\\/])(\\w+)");
+        QRegularExpressionMatch match = re.match(brushGroupAndName);
+        QString brushGroup = "";
+        QString brushName = "";
+        if (match.hasMatch()) {
+            brushGroup = match.captured(1);
+            brushName = match.captured(2);
+//            qDebug() << brushGroup;
+//            qDebug() << brushName;
+        }
+
+        auto status = MPBrushParser::readBrushFromFile(brushGroup, brushName);
+        if (status.errorcode == Status::OK)
         {
-            QByteArray content = f.readAll();
-            content.append( static_cast<char>(0) );
-            emit brushSelected(toolName, brushName, content); // Read the whole file and broadcast is as a char* buffer
+            currentBrushName = brushName;
+            currentBrushGroup = brushGroup;
+            currentToolName = toolName;
+            currentBrushData = status.data;
+            emit brushSelected(toolName, brushGroup, brushName, status.data); // Read the whole file and broadcast is as a char* buffer
         }
     }
 }
@@ -278,6 +226,7 @@ void MPBrushSelector::loadToolBrushes(QString toolName)
         if (caption == toolName) {
             mTabWidget->setCurrentIndex(i);
             foundSelection = true;
+            break;
         }
     }
     // If there is no tab matching the current tool,
@@ -292,16 +241,37 @@ void MPBrushSelector::loadToolBrushes(QString toolName)
 
         QString lastUsed;
         if (toolName != "empty") {
-            QSettings settings(PENCIL2D, PENCIL2D);
-            lastUsed = settings.value("LastBrushFor_"+toolName).toString();
-            selectBrush(lastUsed);
+            updateSelectedBrushForTool(toolName);
+        } else {
+            if (!anyBrushSelected() && lastUsed.isEmpty()) {
+                QString brushName (subList.at(0));
+                selectBrush(brushName);
+            }
         }
-
-        if (!anyBrushSelected() && lastUsed.isEmpty()) {
-            QString brushName (subList.at(0));
-            selectBrush(brushName);
-        } else {}
     }
+}
+
+void MPBrushSelector::updateSelectedBrushForTool(QString toolName)
+{
+    QSettings settings(PENCIL2D, PENCIL2D);
+
+    if (toolName.isEmpty()) {
+        toolName = currentToolName;
+    }
+
+    QString lastUsed = settings.value("LastBrushFor_"+toolName).toString();
+    QMapIterator<QString, QStringList> brushLibIt(m_brushLib);
+    while (brushLibIt.hasNext()) {
+        brushLibIt.next();
+
+        if (brushLibIt.key() == toolName) {
+            if (!brushLibIt.value().contains(lastUsed)) {
+                lastUsed = brushLibIt.value().first();
+                settings.setValue("LastBrushFor_"+toolName, lastUsed);
+            }
+        }
+    }
+    selectBrush(lastUsed);
 }
 
 void MPBrushSelector::typeChanged(ToolType eToolMode)
@@ -333,7 +303,7 @@ void MPBrushSelector::typeChanged(ToolType eToolMode)
     loadToolBrushes(toolName);
 }
 
-void MPBrushSelector::selectBrush (QString brushName)
+void MPBrushSelector::selectBrush(QString brushName)
 {
     if (!isValid()) return;
     QListWidget* listWidget = nullptr;
@@ -388,4 +358,30 @@ bool MPBrushSelector::anyBrushSelected()
     }
 
     return false;
+}
+
+void MPBrushSelector::openConfigurator()
+{
+    if (mBrushConfiguratorWidget == nullptr) {
+        mBrushConfiguratorWidget = new MPBrushConfigurator(this);
+        mBrushConfiguratorWidget->setCore(mEditor);
+        mBrushConfiguratorWidget->initUI();
+        mBrushConfiguratorWidget->show();
+        mBrushConfiguratorWidget->raise();
+
+        connect(this, &MPBrushSelector::brushSelected, mBrushConfiguratorWidget, &MPBrushConfigurator::updateConfig);
+        connect(mBrushConfiguratorWidget, &MPBrushConfigurator::updateBrushList, this, &MPBrushSelector::brushListChanged);
+    } else {
+        if (!mBrushConfiguratorWidget->isVisible()) {
+            mBrushConfiguratorWidget->show();
+            mBrushConfiguratorWidget->raise();
+        }
+    }
+    emit brushSelected(currentToolName, currentBrushGroup, currentBrushName, currentBrushData);
+}
+
+void MPBrushSelector::showNotImplementedPopup()
+{
+    QMessageBox::information(this, tr("Not implemented"),
+                                  tr("This feature is coming soon"));
 }

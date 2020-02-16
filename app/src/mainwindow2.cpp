@@ -72,7 +72,6 @@ GNU General Public License for more details.
 
 // mypaint interface
 #include "mpbrushselector.h"
-#include "mpbrushconfigurator.h"
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -165,12 +164,8 @@ void MainWindow2::createDockWidgets()
     mToolBox = new ToolBoxWidget(this);
     mToolBox->setObjectName("ToolBox");
 
-    mBrushSelectorWidget = new MPBrushSelector(":brushes", this);
-    mBrushConfiguratorWidget = new MPBrushConfigurator(this);
-    mBrushConfiguratorWidget->setCore(mEditor);
-    mBrushConfiguratorWidget->initUI();
-    mBrushConfiguratorWidget->show();
-    mBrushConfiguratorWidget->raise();
+    mBrushSelectorWidget = new MPBrushSelector(this);
+    mBrushSelectorWidget->setCore(mEditor);
 
     /*
     mTimeline2 = new Timeline2;
@@ -187,7 +182,6 @@ void MainWindow2::createDockWidgets()
         << mToolOptions
         << mToolBox
         << mBrushSelectorWidget;
-//        << mBrushConfiguratorWidget;
 
     mBrushSelectorWidget->show();
 
@@ -1391,7 +1385,6 @@ void MainWindow2::makeConnections(Editor* editor, MPBrushSelector* brushSelector
     ToolManager* toolManager = editor->tools();
     connect(toolManager, &ToolManager::toolChanged, brushSelector, &MPBrushSelector::typeChanged);
     connect(brushSelector, &MPBrushSelector::brushSelected, editor, &Editor::loadBrush);
-    connect(brushSelector, &MPBrushSelector::brushSelected, mBrushConfiguratorWidget, &MPBrushConfigurator::updateConfig);
 }
 
 void MainWindow2::bindActionWithSetting(QAction* action, SETTING setting)

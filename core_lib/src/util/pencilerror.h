@@ -73,6 +73,11 @@ public:
         ERROR_NEED_AT_LEAST_ONE_CAMERA_LAYER
     };
 
+    struct StatusData{
+        QByteArray data;
+        ErrorCode errorcode = Status::OK;
+    };
+
     Status(ErrorCode code);
     Status(ErrorCode code, const DebugDetails& detailsList, QString title = "", QString description = "");
 

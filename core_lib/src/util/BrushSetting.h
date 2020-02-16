@@ -117,6 +117,29 @@ struct BrushInputInfo {
     QString tooltip;
 };
 
+QString inline getBrushInputIdentifier(const BrushInputType& type)
+{
+    switch(type)
+    {
+    case BrushInputType::BRUSH_INPUT_PRESSURE: return "pressure";
+    case BrushInputType::BRUSH_INPUT_SPEED1: return "speed1";
+    case BrushInputType::BRUSH_INPUT_SPEED2: return "speed2";
+    case BrushInputType::BRUSH_INPUT_RANDOM: return "random";
+    case BrushInputType::BRUSH_INPUT_STROKE: return "stroke";
+    case BrushInputType::BRUSH_INPUT_DIRECTION: return "direction";
+    case BrushInputType::BRUSH_INPUT_DIRECTION_ANGLE: return "direction_angle";
+    case BrushInputType::BRUSH_INPUT_ATTACK_ANGLE: return "attack_angle";
+    case BrushInputType::BRUSH_INPUT_TILT_DECLINATION: return "tilt_declination";
+    case BrushInputType::BRUSH_INPUT_TILT_ASCENSION: return "tilt_ascension";
+    case BrushInputType::BRUSH_INPUT_GRIDMAP_X: return "gridmap_x";
+    case BrushInputType::BRUSH_INPUT_GRIDMAP_Y: return "gridmap_y";
+    case BrushInputType::BRUSH_INPUT_BRUSH_RADIUS: return "brush_radius";
+    case BrushInputType::BRUSH_INPUT_CUSTOM: return "custom";
+    default: return "";
+    }
+}
+
+
 QString inline getBrushInputName(const BrushInputType& type)
 {
     switch(type)

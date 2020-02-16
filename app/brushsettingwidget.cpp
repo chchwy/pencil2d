@@ -12,11 +12,12 @@
 #include "mpmappingwidget.h"
 #include "mappingdistributionwidget.h"
 #include "mpmappingoptionswidget.h"
+#include "editor.h"
 
 #include "mathutils.h"
 
 BrushSettingWidget::BrushSettingWidget(const QString name, BrushSettingType settingType, qreal min, qreal max, QWidget* parent) : QWidget(parent),
-    mSettingType(settingType), mParent(parent)
+    mSettingType(settingType), mParent(parent), mSettingName(name)
 {
     QGridLayout* gridLayout = new QGridLayout(this);
     setLayout(gridLayout);
@@ -56,6 +57,15 @@ BrushSettingWidget::BrushSettingWidget(const QString name, BrushSettingType sett
     connect(mValueSlider, &SpinSlider::valueChanged, this, &BrushSettingWidget::updateSetting);
     connect(mValueBox, static_cast<void(QDoubleSpinBox::*)(qreal)>(&QDoubleSpinBox::valueChanged), this, &BrushSettingWidget::updateSetting);
     connect(mMappingButton, &QToolButton::pressed, this, &BrushSettingWidget::openMappingWindow);
+}
+
+void BrushSettingWidget::updateUI()
+{
+    BrushSettingInfo info = mEditor->getBrushSettingInfo(mSettingType);
+    setValue(static_cast<qreal>(mEditor->getMPBrushSetting(mSettingType)));
+    setRange(static_cast<qreal>(info.min), static_cast<qreal>(info.max));
+    setToolTip(info.tooltip);
+    closeMappingWindow();
 }
 
 void BrushSettingWidget::setValue(qreal value)
@@ -127,16 +137,29 @@ void BrushSettingWidget::updateBrushMapping(QVector<QPointF> newPoints, BrushInp
     emit brushMappingForInputChanged(newPoints, this->mSettingType, inputType);
 }
 
+void BrushSettingWidget::notifyInputMappingRemoved(BrushInputType input)
+{
+    emit brushMappingRemoved(mSettingType, input);
+}
+
 void BrushSettingWidget::openMappingWindow()
 {
     QVector<QPointF> tempPoints = { QPointF(0.0,0.0), QPointF(0.5,0.5), QPointF(1.0,1.0) };
-    MPMappingOptionsWidget* widget = new MPMappingOptionsWidget(this->mSettingType);
-    widget->setCore(mEditor);
-    widget->initUI();
+    mMappingWidget = new MPMappingOptionsWidget(mSettingName, this->mSettingType);
+    mMappingWidget->setCore(mEditor);
+    mMappingWidget->initUI();
 
-    widget->show();
+    mMappingWidget->show();
 
-    connect(widget, &MPMappingOptionsWidget::mappingForInputUpdated, this, &BrushSettingWidget::updateBrushMapping);
+    connect(mMappingWidget, &MPMappingOptionsWidget::mappingForInputUpdated, this, &BrushSettingWidget::updateBrushMapping);
+    connect(mMappingWidget, &MPMappingOptionsWidget::removedInputOption, this, &BrushSettingWidget::notifyInputMappingRemoved);
+}
+
+void BrushSettingWidget::closeMappingWindow()
+{
+    if (mMappingWidget) {
+        mMappingWidget->close();
+    }
 }
 
 

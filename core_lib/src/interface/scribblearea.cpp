@@ -1738,28 +1738,17 @@ const BrushInputInfo ScribbleArea::getBrushInputInfo(BrushInputType input)
 {
     const MyPaintBrushInputInfo* info = mMyPaint->getBrushInputInfo(static_cast<MyPaintBrushInput>(input));
 
-    BrushInputInfo brushInfo;
-
-    brushInfo.cname = info->cname;
-    brushInfo.name = info->name;
-    brushInfo.soft_min = info->soft_min;
-    brushInfo.soft_max = info->soft_max;
-//    brushInfo.hard_min = info->hard_min;
-//    brushInfo.hard_max = info->hard_max;
-    brushInfo.tooltip = info->tooltip;
-    brushInfo.normal = info->normal;
-    brushInfo.name = info->name;
-
-//    qDebug() << "hardMin: " << brushInfo.hard_min << " hardmax: " << brushInfo.hard_max ;
-//    brushInfo.isConstant = info->constant;
+    BrushInputInfo brushInfo { info->cname,
+                static_cast<qreal>(info->hard_min),
+                static_cast<qreal>(info->soft_min),
+                static_cast<qreal>(info->normal),
+                static_cast<qreal>(info->soft_max),
+                static_cast<qreal>(info->hard_max),
+                info->name,
+                info->tooltip };
 
     return brushInfo;
 }
-
-//int ScribbleArea::getNumberBrushMappingPoints(BrushSettingType settingType)
-//{
-//    return mMyPaint->getBrushNumberOfMappingPoints(settingType, MYPAINT_BRUSH_INPUT_PRESSURE);
-//}
 
 qreal ScribbleArea::calculateDeltaTime()
 {

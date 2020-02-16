@@ -44,9 +44,6 @@ class ImportImageSeqDialog;
 class BackupElement;
 
 class MPBrushSelector;
-class MPBrushConfigurator;
-
-
 
 namespace Ui
 {
@@ -149,7 +146,6 @@ private:
     TimeLine*             mTimeLine = nullptr; // be public temporary
     ColorInspector*       mColorInspector = nullptr;
     MPBrushSelector* mBrushSelectorWidget = nullptr;
-    MPBrushConfigurator* mBrushConfiguratorWidget = nullptr;
 
     // backup
     BackupElement* mBackupAtSave = nullptr;

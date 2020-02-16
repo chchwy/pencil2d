@@ -5,6 +5,7 @@
 #include <QToolButton>
 #include <QComboBox>
 #include <QLabel>
+#include <QDialog>
 
 #include "brushsetting.h"
 
@@ -54,7 +55,7 @@ private:
 };
 
 
-class MPMappingOptionsWidget : public QWidget
+class MPMappingOptionsWidget : public QDialog
 {
     Q_OBJECT
 public:
@@ -79,7 +80,7 @@ public:
         }
     };
 
-    MPMappingOptionsWidget(BrushSettingType settingType, QWidget* parent = nullptr);
+    MPMappingOptionsWidget(QString optionName, BrushSettingType settingType, QWidget* parent = nullptr);
 
     void setCore(Editor* editor) { mEditor = editor; }
     void showInputMapper(BrushInputType inputType);
@@ -87,6 +88,7 @@ public:
 
 signals:
     void mappingForInputUpdated(QVector<QPointF> points, BrushInputType inputType);
+    void removedInputOption(BrushInputType inputType);
 
 private:
     MPMappingOption createMappingOption(BrushInputType input);
@@ -106,6 +108,8 @@ private:
     QWidget* mParent = nullptr;
 
     QList<MPMappingOption> mOptions;
+
+    QList<bool> mRemovedInputs;
 };
 
 #endif // MPMAPPINGSETTINGSWIDGET_H

@@ -9,6 +9,7 @@ class QToolButton;
 class SpinSlider;
 class QDoubleSpinBox;
 class Editor;
+class MPMappingOptionsWidget;
 
 class BrushSettingWidget : public QWidget
 {
@@ -20,14 +21,21 @@ public:
     void setRange(qreal min, qreal max);
     void setToolTip(QString toolTip);
     void setCore(Editor* editor) { mEditor = editor; }
+    void updateUI();
+
+    void closeMappingWindow();
 
     void changeText();
 
     BrushSettingType setting() { return mSettingType; }
 
+public slots:
+    void notifyInputMappingRemoved(BrushInputType input);
+
 Q_SIGNALS:
     void brushSettingChanged(qreal value, BrushSettingType setting);
     void brushMappingForInputChanged(QVector<QPointF> points, BrushSettingType setting, BrushInputType inputType);
+    void brushMappingRemoved(BrushSettingType setting, BrushInputType);
 
 private:
 
@@ -57,6 +65,9 @@ private:
     qreal mCurrentValue;
 
     QWidget* mParent = nullptr;
+    MPMappingOptionsWidget* mMappingWidget = nullptr;
+
+    const QString mSettingName;
 };
 
 #endif // BRUSHSETTINGWIDGET_H

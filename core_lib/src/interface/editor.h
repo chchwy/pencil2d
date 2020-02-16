@@ -173,7 +173,7 @@ public: //slots
     void resetAutoSaveCounter();
 
     // mypaint
-    void loadBrush(QString toolName, QString brushName, const QByteArray &content);
+    void loadBrush(const QString& toolName, const QString brushGroup, const QString& brushName, const QByteArray &content);
     void setMPBrushSetting(BrushSettingType setting, float value);
     float getMPBrushSetting(BrushSettingType settingType);
     const BrushSettingInfo getBrushSettingInfo(BrushSettingType settingType);
