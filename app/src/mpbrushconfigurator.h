@@ -11,11 +11,18 @@
 
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QJsonParseError>
+
+#include <QPointer>
+
+#include "pencildef.h"
+#include "mpbrushinfodialog.h"
 
 class QVBoxLayout;
 class QSpacerItem;
 class BrushSettingWidget;
 class QLabel;
+class MPBrushInfoDialog;
 
 struct InputChanges {
     QVector<QPointF> mappedPoints;
@@ -51,8 +58,6 @@ struct BrushChanges {
     QHash<int, InputChanges> listOfinputChanges;
     qreal baseValue;
     BrushSettingType settingsType;
-//    QString comment;
-//    int version;
 
     void write(QJsonObject& object) const
     {
@@ -67,7 +72,7 @@ struct BrushChanges {
 
         QJsonObject::iterator inputsObjIt = object.find("inputs");
         if (inputsObjIt->isUndefined()) {
-            object.insert("inputs", QJsonArray());
+            object.insert("inputs", QJsonObject());
         }
 
         QJsonValueRef inputsContainerRef = object.find("inputs").value();
@@ -117,10 +122,12 @@ public:
 
     void setCore(Editor* editor) { mEditor = editor; }
 
-    void updateConfig(const QString& toolName, const QString& brushGroup, const QString& brushName, const QByteArray& content);
+    void updateConfig(ToolType toolName, const QString& brushGroup, const QString& brushName, const QByteArray& content);
 
 signals:
-    void updateBrushList();
+    void updateBrushList(QString brushName, QString brushPreset);
+    void refreshBrushList();
+    void reloadBrushSettings();
 
 private:
 
@@ -155,6 +162,13 @@ private:
 
     void pressedSaveBrush();
     void pressedRemoveBrush();
+    void pressedEditBrush();
+    void pressedCloneBrush();
+    void pressedDiscardBrush();
+
+    void writeBrushChanges(QJsonDocument& document, QJsonParseError& error);
+
+    void openBrushInfoWidget(DialogContext dialogContext);
 
     BrushSettingItem* addTreeRoot(BrushSettingItem::Category category, QTreeWidget* treeWidget, const QString name);
     BrushSettingItem* addTreeChild(BrushSettingItem::Category category, QTreeWidgetItem* parent, const QString name);
@@ -169,6 +183,9 @@ private:
     QLabel* mBrushImageWidget = nullptr;
     QLabel* mBrushNameWidget = nullptr;
 
+    QPointer<MPBrushInfoDialog> mBrushInfoWidget = nullptr;
+
+    QPushButton* mDiscardChangesButton = nullptr;
     QPushButton* mMapValuesButton = nullptr;
     QPushButton* mSaveBrushButton = nullptr;
     bool mMapValuesButtonPressed = false;
@@ -179,6 +196,7 @@ private:
     QHash<int, BrushChanges> mBrushChanges;
     QString mBrushName;
     QString mBrushGroup;
+    ToolType mToolType;
 
     QSize mImageSize = QSize(32,32);
 

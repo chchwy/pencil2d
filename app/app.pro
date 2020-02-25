@@ -39,12 +39,14 @@ HEADERS += \
     brushsettingitem.h \
     brushsettingwidget.h \
     mpbrushutils.h \
+    src/combobox.h \
     src/mainwindow2.h \
     src/mapping/mappingconfiguratorwidget.h \
     src/mapping/mappingdistributionwidget.h \
     src/mapping/mpmappingoptionswidget.h \
     src/mapping/mpmappingwidget.h \
     src/mpbrushconfigurator.h \
+    src/mpbrushinfodialog.h \
     src/shortcutfilter.h \
     src/timeline2.h \
     src/actioncommands.h \
@@ -76,6 +78,7 @@ HEADERS += \
 SOURCES += \
     brushsettingitem.cpp \
     brushsettingwidget.cpp \
+    src/combobox.cpp \
     src/main.cpp \
     src/mainwindow2.cpp \
     src/mapping/mappingconfiguratorwidget.cpp \
@@ -83,6 +86,7 @@ SOURCES += \
     src/mapping/mpmappingoptionswidget.cpp \
     src/mapping/mpmappingwidget.cpp \
     src/mpbrushconfigurator.cpp \
+    src/mpbrushinfodialog.cpp \
     src/shortcutfilter.cpp \
     src/timeline2.cpp \
     src/actioncommands.cpp \

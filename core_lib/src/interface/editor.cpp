@@ -1089,8 +1089,9 @@ void Editor::clearCurrentFrame()
     mScribbleArea->clearCanvas();
 }
 
-void Editor::loadBrush(const QString& toolName, const QString brushGroup, const QString& brushName, const QByteArray &content)
+void Editor::loadBrush(ToolType toolType, const QString brushGroup, const QString& brushName, const QByteArray &content)
 {
+    QString toolName = BaseTool::TypeName(toolType);
     mPreferenceManager->set("LastBrushFor_"+toolName, brushGroup+brushName);
     mScribbleArea->loadMPBrush(content);
 }
@@ -1123,4 +1124,9 @@ void Editor::setBrushInputMapping(QVector<QPointF> points, BrushSettingType sett
 const BrushInputMapping Editor::getBrushInputMapping(BrushSettingType settingType, BrushInputType inputType)
 {
     return mScribbleArea->getBrushInputMapping(settingType, inputType);
+}
+
+BaseTool* Editor::getTool(ToolType toolType) const
+{
+    return mToolManager->getTool(toolType);
 }

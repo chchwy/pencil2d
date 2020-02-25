@@ -102,6 +102,8 @@ public:
     bool exportSeqCLI(QString filePath, LayerCamera* cameraLayer, QString format = "PNG", int width = -1, int height = -1, int startFrame = 1, int endFrame = -1, bool transparency = false, bool antialias = true);
     bool exportMovieCLI(QString filePath, LayerCamera* cameraLayer, int width = -1, int height = -1, int startFrame = 1, int endFrame = -1);
 
+    BaseTool* getTool(ToolType toolType) const;
+
     qreal viewScaleInversed();
     void deselectAll();
     void selectAll();
@@ -173,7 +175,7 @@ public: //slots
     void resetAutoSaveCounter();
 
     // mypaint
-    void loadBrush(const QString& toolName, const QString brushGroup, const QString& brushName, const QByteArray &content);
+    void loadBrush(ToolType toolType, const QString brushGroup, const QString& brushName, const QByteArray &content);
     void setMPBrushSetting(BrushSettingType setting, float value);
     float getMPBrushSetting(BrushSettingType settingType);
     const BrushSettingInfo getBrushSettingInfo(BrushSettingType settingType);

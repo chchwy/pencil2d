@@ -22,6 +22,7 @@
 #include "brushsettingwidget.h"
 #include "editor.h"
 #include "mpbrushutils.h"
+#include "mpbrushinfodialog.h"
 
 MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
   : QDialog(parent, Qt::Tool)
@@ -51,17 +52,18 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
 
     mSaveBrushButton->setEnabled(false);
 
-    QPushButton* cloneBrush = new QPushButton(parent);
-    cloneBrush->setDefault(false);
-    cloneBrush->setText("Clone");
+    QPushButton* cloneBrushButton = new QPushButton(parent);
+    cloneBrushButton->setDefault(false);
+    cloneBrushButton->setText("Clone");
 
     QPushButton* editBrushButton = new QPushButton(parent);
     editBrushButton->setText(tr("Edit Brush"));
     editBrushButton->setToolTip(tr("Here you can rename, change icon, change description and notes of the current brush"));
 
-    QPushButton* discardBrushButton = new QPushButton(parent);
-    discardBrushButton->setText(tr("Discard changes"));
-    discardBrushButton->setToolTip(tr("Discard current changes"));
+    mDiscardChangesButton = new QPushButton(parent);
+    mDiscardChangesButton->setText(tr("Discard changes"));
+    mDiscardChangesButton->setToolTip(tr("Discard current changes"));
+    mDiscardChangesButton->setEnabled(false);
 
     QPushButton* deleteBrushButton = new QPushButton(parent);
     deleteBrushButton->setText(tr("Delete"));
@@ -78,7 +80,7 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     settingsContainer->setLayout(hLayout);
 
     toolbar->addWidget(mSaveBrushButton);
-    toolbar->addWidget(cloneBrush);
+    toolbar->addWidget(cloneBrushButton);
     toolbar->addSeparator();
     toolbar->addWidget(editBrushButton);
 //    toolbar->addWidget(mMapValuesButton);
@@ -87,7 +89,7 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     QWidget* resetSpacer = new QWidget(parent);
     resetSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     toolbar->addWidget(resetSpacer);
-    toolbar->addWidget(discardBrushButton);
+    toolbar->addWidget(mDiscardChangesButton);
     toolbar->addWidget(deleteBrushButton);
 
     QHBoxLayout* topLayout = new QHBoxLayout(this);
@@ -126,11 +128,12 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     connect(mMapValuesButton, &QPushButton::pressed, this, &MPBrushConfigurator::updateMapValuesButton);
 
     connect(mSaveBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedSaveBrush);
-    connect(cloneBrush, &QPushButton::pressed, this, &MPBrushConfigurator::showNotImplementedPopup);
+    connect(cloneBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedCloneBrush);
     connect(deleteBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedRemoveBrush);
 
-    connect(discardBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::showNotImplementedPopup);
-    connect(editBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::showNotImplementedPopup);
+    connect(mDiscardChangesButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedDiscardBrush);
+    connect(editBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedEditBrush);
+    connect(cloneBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedEditBrush);
 }
 
 void MPBrushConfigurator::initUI()
@@ -171,9 +174,9 @@ void MPBrushConfigurator::updateUI()
     mBrushNameWidget->setText(mBrushName);
 }
 
-void MPBrushConfigurator::updateConfig(const QString& toolName, const QString& brushGroup, const QString& brushName, const QByteArray& content)
+void MPBrushConfigurator::updateConfig(ToolType toolType, const QString& brushGroup, const QString& brushName, const QByteArray& content)
 {
-    Q_UNUSED(toolName)
+    mToolType = toolType;
     mBrushName = brushName;
     mBrushGroup = brushGroup;
     Q_UNUSED(content)
@@ -420,6 +423,7 @@ void MPBrushConfigurator::updateBrushSetting(qreal value, BrushSettingType setti
 
     if (!mBrushChanges.isEmpty()) {
         mSaveBrushButton->setEnabled(true);
+        mDiscardChangesButton->setEnabled(true);
     }
 
     qDebug() << "number of changes: " << mBrushChanges.count();
@@ -471,6 +475,7 @@ void MPBrushConfigurator::updateBrushMapping(QVector<QPointF> points, BrushSetti
 
     if (!mBrushChanges.isEmpty()) {
         mSaveBrushButton->setEnabled(true);
+        mDiscardChangesButton->setEnabled(true);
     }
 
     mEditor->setBrushInputMapping(points, setting, input);
@@ -528,18 +533,28 @@ void MPBrushConfigurator::updateMapValuesButton()
 }
 
 void MPBrushConfigurator::pressedSaveBrush()
-{
+{   
     auto status = MPBrushParser::readBrushFromFile(mBrushGroup, mBrushName);
-
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(status.data, &error);
 
-    QJsonObject rootObject = doc.object();
+    writeBrushChanges(doc, error);
+
+    Status statusWrite = MPBrushParser::writeBrushToFile(mBrushGroup, mBrushName, doc.toJson());
+
+    if (statusWrite == Status::OK) {
+        mSaveBrushButton->setEnabled(false);
+        mBrushChanges.clear();
+    } else {
+        QMessageBox::warning(this, statusWrite.title(), statusWrite.description());
+    }
+}
+
+void MPBrushConfigurator::writeBrushChanges(QJsonDocument& document, QJsonParseError& error)
+{
+    QJsonObject rootObject = document.object();
 
     if (error.error != QJsonParseError::NoError) {
-
-        // TODO: handle json parsing error, should probably show a popup
-        // with the files not being parsed correctly and show the error.
         QMessageBox::information(this, tr("Parse error!"), tr("Could not save brush file\n the following error was given: ") + error.errorString());
         return;
     }
@@ -547,7 +562,6 @@ void MPBrushConfigurator::pressedSaveBrush()
     QJsonObject::iterator settingsContainerObjIt = rootObject.find("settings");
 
     if (settingsContainerObjIt->isUndefined()) {
-        // This should not happen
         QMessageBox::information(this, tr("Parse error!"), tr("Looks like you are missign a 'settings' field in your brush file, this shouldn't happen...") + error.errorString());
         return;
     }
@@ -577,12 +591,8 @@ void MPBrushConfigurator::pressedSaveBrush()
         }
     }
     settingsContainerRef = settingsContainerObj;
-    doc.setObject(rootObject);
+    document.setObject(rootObject);
 
-    MPBrushParser::writeBrushToFile(mBrushGroup, mBrushName, doc.toJson());
-
-    mSaveBrushButton->setEnabled(false);
-    mBrushChanges.clear();
 }
 
 void MPBrushConfigurator::pressedRemoveBrush()
@@ -592,12 +602,49 @@ void MPBrushConfigurator::pressedRemoveBrush()
                                    QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
     if (ret == QMessageBox::Yes) {
         MPBrushParser::blackListBrushFile(mBrushGroup, mBrushName);
-        // the brush has been deleted,
-        // so we should close the window to avoid changing parameters.
 
-        emit updateBrushList();
+        emit refreshBrushList();
         close();
     }
+}
+
+void MPBrushConfigurator::openBrushInfoWidget(DialogContext dialogContext)
+{
+    if (mBrushInfoWidget == nullptr) {
+        mBrushInfoWidget = new MPBrushInfoDialog(dialogContext, this);
+        mBrushInfoWidget->setAttribute(Qt::WA_DeleteOnClose);
+
+        connect(mBrushInfoWidget, &MPBrushInfoDialog::updatedBrushInfo, this, &MPBrushConfigurator::updateBrushList);
+    }
+    mBrushInfoWidget->setCore(mEditor);
+    mBrushInfoWidget->initUI();
+
+    auto status = MPBrushParser::readBrushFromFile(mBrushGroup, mBrushName);
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(status.data, &error);
+
+    writeBrushChanges(doc, error);
+
+    mBrushInfoWidget->setBrushInfo(mBrushName, mBrushGroup, mToolType, doc);
+    mBrushInfoWidget->show();
+}
+
+void MPBrushConfigurator::pressedEditBrush()
+{
+    openBrushInfoWidget(DialogContext::Edit);
+}
+
+void MPBrushConfigurator::pressedCloneBrush()
+{
+    openBrushInfoWidget(DialogContext::Clone);
+}
+
+void MPBrushConfigurator::pressedDiscardBrush()
+{
+    mBrushChanges.clear();
+    mSaveBrushButton->setEnabled(false);
+    mDiscardChangesButton->setEnabled(false);
+    emit reloadBrushSettings();
 }
 
 void MPBrushConfigurator::showNotImplementedPopup()

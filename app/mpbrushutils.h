@@ -8,6 +8,9 @@
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QDirIterator>
+#include <QJsonObject>
+
+#include <QPixmap>
 
 #include <QDebug>
 
@@ -19,6 +22,51 @@ static const QString BRUSH_PREVIEW_EXT = "_prev.png";
 static const QString BRUSH_CONFIG = "brushes.conf";
 static const QString BRUSH_QRC = ":brushes";
 static const int ICON_SZ = 64;
+
+struct MPBrushInfo {
+    QString comment = "";
+    qreal version = 0.0;
+
+    void write(QJsonObject& object) const
+    {
+        QJsonObject::iterator commentObjIt = object.find("comment");
+
+        QString commentId = "comment";
+        if (commentObjIt->isUndefined()) {
+            object.insert(commentId, comment);
+        } else {
+            object.remove(commentId);
+            object.insert(commentId, comment);
+        }
+
+        QString brushVersionKey = "brush-version";
+        QJsonObject::iterator versionObjIt = object.find("brush-version");
+        if (versionObjIt->isUndefined()) {
+            object.insert(brushVersionKey, version);
+        } else {
+            object.remove(brushVersionKey);
+            object.insert(brushVersionKey, version);
+        }
+    }
+
+    MPBrushInfo read(QJsonObject& object) {
+        QJsonObject::iterator commentObjIt = object.find("comment");
+
+        MPBrushInfo info;
+        QString commentId = "comment";
+        if (!commentObjIt->isUndefined()) {
+            info.comment = object.value(commentId).toString();
+        }
+
+        QString brushVersionKey = "brush-version";
+        QJsonObject::iterator versionObjIt = object.find(brushVersionKey);
+        if (!versionObjIt->isUndefined()) {
+            info.version = object.value(brushVersionKey).toDouble();
+        }
+
+        return info;
+    }
+};
 
 struct MPBrushParser {
 
@@ -56,44 +104,6 @@ struct MPBrushParser {
         }
         return brushes;
     }
-
-//    static float getBaseValue(BrushSettingType brushSetting, QString brushFile)
-//    {
-//        qDebug() << "brush path" << brushFile;
-//        QFile file(brushFile+BRUSH_CONTENT_EXT);
-//        file.open(QIODevice::ReadOnly | QIODevice::Text);
-
-//        QJsonParseError jsonError;
-//        QJsonDocument flowerJson = QJsonDocument::fromJson(file.readAll(),&jsonError);
-//        if (jsonError.error != QJsonParseError::NoError){
-//        qDebug() << jsonError.errorString();
-//        }
-
-////        qDebug() << flowerJson;
-//        QMap<QString, QVariant> list = flowerJson.toVariant().toMap();
-////        qDebug() << list["settings"].toMap()[""];
-
-//        QMap<QString, QVariant> brushSettingMap = list["settings"].toMap();
-//        QMap<QString, QVariant> brushBaseValue = brushSettingMap[getName(brushSetting)].toMap();
-
-////        qDebug() << brushBaseValue;
-//        qDebug() << brushBaseValue["base_value"].toFloat();
-////        if (getName(brushSetting))
-////        {
-
-////        }
-////        QMap<QString, QVariant> map = list.first().toMap();
-////        qDebug() << map["baseValue"].toString();
-////        return list["settings"].toFloat();
-//        return 0;
-//    }
-
-    /// Will return a string matching the names of a .myb setting
-    /// eg.
-    /// "change_color_h": {
-    ///  ...
-    /// }
-    ///
 
     /// Copy internal brush resources to app data folder
     /// This is where brushes will be loaded from in the future.
@@ -214,16 +224,28 @@ struct MPBrushParser {
         }
     }
 
-    static Status::StatusData readBrushFromFile(const QString& brushGroup, const QString& brushName)
+    static QString getBrushPreviewImagePath(const QString& brushPreset, const QString brushName)
     {
-        const QString& brushPath = getBrushesPath() + QDir::separator() + brushGroup+brushName;
+        const QString& brushPath = getBrushesPath() + QDir::separator() + brushPreset + QDir::separator() + brushName;
+        QFile file(brushPath+BRUSH_PREVIEW_EXT);
+
+        if (file.exists()) {
+            return file.fileName();
+        }
+        return "";
+    }
+
+    static Status::StatusData readBrushFromFile(const QString& brushPreset, const QString& brushName)
+    {
+        const QString& brushPath = getBrushesPath() + QDir::separator() + brushPreset + QDir::separator() + brushName;
 
         QFile file(brushPath + BRUSH_CONTENT_EXT);
 
+        // satefy measure:
         // if no local brush file exists, look at internal resources
         // local brush files will overwrite the existence of the internal one
         if (!file.exists()) {
-            file.setFileName(BRUSH_QRC + QDir::separator() + brushGroup + brushName + BRUSH_CONTENT_EXT);
+            file.setFileName(BRUSH_QRC + QDir::separator() + brushPreset + QDir::separator() + brushName + BRUSH_CONTENT_EXT);
         }
 
         auto status = Status::StatusData();
@@ -244,20 +266,20 @@ struct MPBrushParser {
         return pathList.first() + "/" + "brushes";
     }
 
-    static QString getBrushPath(const QString& brushGroup, const QString& brushName, const QString& extension)
+    static QString getBrushPath(const QString& brushPreset, const QString& brushName, const QString& extension)
     {
-        QString brushPath = getBrushesPath() + QDir::separator() + brushGroup+brushName;
+        QString brushPath = getBrushesPath() + QDir::separator() + brushPreset + QDir::separator() + brushName;
 
         QFile file(brushPath+extension);
         if (!file.exists()) {
-            brushPath = QString(BRUSH_QRC) + QDir::separator() + brushGroup+brushName;
+            brushPath = QString(BRUSH_QRC) + QDir::separator() + brushPreset + QDir::separator() + brushName;
         }
         return brushPath + extension;
     }
 
-    static QString getBrushImagePath(const QString& brushGroup, const QString& brushName)
+    static QString getBrushImagePath(const QString& brushPreset, const QString& brushName)
     {
-        return getBrushPath(brushGroup, brushName, BRUSH_PREVIEW_EXT);
+        return getBrushPath(brushPreset, brushName, BRUSH_PREVIEW_EXT);
     }
 
     static QString getBrushConfigPath(const QString extension = "")
@@ -271,24 +293,197 @@ struct MPBrushParser {
         return brushPath;
     }
 
-    static void writeBrushToFile(const QString& brushGroup, const QString& brushName, const QByteArray& data)
+    static Status writeBrushToFile(const QString& brushPreset, const QString& brushName, const QByteArray& data)
     {
-        const QString& groupPath = getBrushesPath() + QDir::separator() + brushGroup;
-        const QString& brushPath = getBrushesPath() + QDir::separator() + brushGroup+brushName;
+        Status status = Status::OK;
+        const QString& groupPath = getBrushesPath() + QDir::separator() + brushPreset + QDir::separator();
+        const QString& brushPath = getBrushesPath() + QDir::separator() + brushPreset + QDir::separator() + brushName;
 
         QFile file(brushPath + BRUSH_CONTENT_EXT);
 
-        if (!file.exists()) {
-            QDir dir;
+        QDir dir(groupPath);
+        if (!dir.exists()) {
             dir.mkpath(groupPath);
         }
 
         file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate);
-        file.write(data);
-        file.close();
+
+        if (file.error() == QFile::NoError) {
+            file.write(data);
+            file.close();
+
+            status = Status::OK;
+        } else {
+            status.setTitle(QObject::tr("Write error:"));
+            status.setDescription(file.errorString());
+            status = Status::FAIL;
+
+        }
+        return status;
     }
 
-    static void blackListBrushFile(const QString& brushGroup, const QString& brushName)
+    static void renameMoveBrushFileIfNeeded(QString originalPreset, QString originalName, QString newPreset, QString newName)
+    {
+        const QString groupPath = getBrushesPath() + QDir::separator() + newPreset;
+        const QString brushPath = getBrushesPath() + QDir::separator() + newPreset + QDir::separator() + newName;
+
+        const QString oldGroupPath = getBrushesPath() + QDir::separator() + originalPreset;
+        const QString oldBrushPath = getBrushesPath() + QDir::separator() + originalPreset + QDir::separator() + originalName;
+
+        QDir presetDir(groupPath);
+
+        QString absoluteOldBrushPath = oldBrushPath + BRUSH_CONTENT_EXT;
+        QString absoluteOldBrushPreviewPath = oldBrushPath + BRUSH_PREVIEW_EXT;
+
+        QString absoluteBrushPath = brushPath + BRUSH_CONTENT_EXT;
+        QString absoluteBrushPreviewPath = brushPath+ BRUSH_PREVIEW_EXT;
+        if (!presetDir.exists()) {
+            presetDir.mkpath(groupPath);
+        }
+
+        QFile brushFile(brushPath);
+        if (!brushFile.exists()) {
+
+            QFile moveFile(oldBrushPath);
+            qDebug() << "didMove: " << moveFile.rename(absoluteOldBrushPath, absoluteBrushPath);
+        }
+
+        QFile brushImageFile(absoluteBrushPreviewPath);
+        if (!brushImageFile.exists()) {
+            QFile moveImage(absoluteOldBrushPreviewPath);
+            qDebug() << "didMove: " << moveImage.rename(absoluteOldBrushPreviewPath, absoluteBrushPreviewPath);
+
+        }
+
+    }
+
+    static Status writeBrushIcon(const QPixmap& iconPix, const QString brushPreset, const QString brushName) {
+        Status status = Status::OK;
+
+        const QString brushPath = getBrushesPath() + QDir::separator() + brushPreset + QDir::separator() + brushName;
+
+        if (iconPix.save(brushPath+BRUSH_PREVIEW_EXT) == false) {
+            status = Status::FAIL;
+        }
+        return status;
+    }
+
+    static Status copyRenameBrushFileIfNeeded(const QString& originalPreset, const QString& originalName, const QString& newPreset, QString& newName)
+    {
+        QString groupPath = getBrushesPath() + QDir::separator() + newPreset;
+        QString brushPath = getBrushesPath() + QDir::separator() + newPreset + QDir::separator() + newName;
+
+        QString oldGroupPath = getBrushesPath() + QDir::separator() + originalPreset;
+        QString oldBrushPath = getBrushesPath() + QDir::separator() + originalPreset + QDir::separator() + originalName;
+
+        Status status = Status::OK;
+        QFile file(brushPath + BRUSH_CONTENT_EXT);
+        QFile fileImage(brushPath + BRUSH_PREVIEW_EXT);
+
+        QDir dir(groupPath);
+        if (!dir.exists()) {
+            dir.mkpath(groupPath);
+        }
+
+        if (file.error() || fileImage.error()) {
+            status = Status::FAIL;
+            status.setTitle(QObject::tr("File error"));
+            status.setDescription(QObject::tr("Failed to read files: ") + file.errorString() + " " + fileImage.errorString());
+        } else {
+            if (!file.exists() && !fileImage.exists()) {
+                QFile fileToCopy(oldBrushPath+BRUSH_CONTENT_EXT);
+                qDebug() << "copy myb file" << fileToCopy.copy(oldBrushPath+BRUSH_CONTENT_EXT, brushPath+BRUSH_CONTENT_EXT);
+
+                fileToCopy.setFileName(oldBrushPath+BRUSH_PREVIEW_EXT);
+                qDebug() << "copy image: " << fileToCopy.copy(oldBrushPath+BRUSH_PREVIEW_EXT, brushPath+BRUSH_PREVIEW_EXT);
+            } else {
+
+                // TODO: handle copy failure
+                QString clonePostFix = "_clone";
+
+                int countClones = 0;
+                for (int i = 0; i < dir.entryList().count(); i++) {
+                    QString x = dir.entryList()[i];
+
+                    if (x == newName+BRUSH_CONTENT_EXT) {
+                        countClones++;
+                    }
+                }
+
+                QString clonedName = newName;
+                clonedName = clonedName.append(clonePostFix+QString::number(countClones));
+
+                QString clonedPath = oldGroupPath + QDir::separator() + clonedName;
+                QString newFileName = clonedPath+BRUSH_CONTENT_EXT;
+                QString newImageName = clonedPath+BRUSH_PREVIEW_EXT;
+                file.copy(newFileName);
+                fileImage.copy(newImageName);
+
+                newName = clonedName;
+            }
+        }
+
+        return status;
+    }
+
+    static void addBrushFileToList(const QString toolName, const QString& brushPreset, const QString& brushName)
+    {
+        QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
+
+        QFile file(brushConfigPath);
+        file.open(QIODevice::ReadOnly | QIODevice::Text);
+
+        QTextStream stream(&file);
+
+        QStringList newFilesList;
+
+        bool brushGroupFound = false;
+
+        QStringList cleanupFilesList;
+        while (!stream.atEnd()) {
+            QString line = stream.readLine();
+
+            if (line == QString(brushPreset+QDir::separator()+brushName)) {
+                continue;
+            }
+            cleanupFilesList << line;
+        }
+
+        QString groupKey = "Group:" + toolName;
+        for (QString line : cleanupFilesList) {
+
+            // Assume we have found the beginning of a group/preset
+            if (line.contains(groupKey, Qt::CaseSensitivity::CaseInsensitive) && !toolName.isEmpty())
+            {
+                brushGroupFound = true;
+                newFilesList << line;
+                continue;
+            }
+
+            if (brushGroupFound) {
+                newFilesList << brushPreset + QDir::separator() + brushName;
+                brushGroupFound = false;
+            }
+            newFilesList << line;
+        }
+        file.close();
+
+        QFile editConfig(brushConfigPath);
+
+        // TODO: better error handling
+        qDebug() << "open: " << editConfig.open(QFile::ReadWrite);
+
+        qDebug() << editConfig.error();
+        QTextStream editStream(&editConfig);
+
+        for (QString line : newFilesList) {
+            editStream << line + "\n";
+        }
+
+        editConfig.close();
+    }
+
+    static void blackListBrushFile(const QString& brushPreset, const QString& brushName)
     {
         QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
 
@@ -301,9 +496,9 @@ struct MPBrushParser {
         while(!stream.atEnd()) {
             QString line = stream.readLine();
 
-            if (line.contains(brushGroup+brushName))
+            if (line.contains(brushPreset+ QDir::separator() + brushName))
             {
-                blacklistedFiles << "#" + brushGroup+brushName;
+                blacklistedFiles << "#" + brushPreset + QDir::separator() + brushName;
                 continue;
             }
             blacklistedFiles << line;

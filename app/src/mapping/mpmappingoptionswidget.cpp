@@ -15,44 +15,8 @@
 #include "brushsetting.h"
 #include "editor.h"
 
+#include "combobox.h"
 #include "mpmappingwidget.h"
-
-MPComboBox::MPComboBox(QWidget* parent)
-    : QComboBox(parent)
-{
-
-    connect(this, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this, &MPComboBox::triggerActivatedVariant);
-}
-
-void MPComboBox::addItem(const QString& text)
-{
-    QComboBox::addItem(text);
-}
-
-void MPComboBox::addItem(const QString& text, BrushInputType input)
-{
-    QComboBox::addItem(text, QVariant(static_cast<int>(input)));
-}
-
-void MPComboBox::insertItem(const QString& text, int index, BrushInputType input)
-{
-    QComboBox::insertItem(index, text, QVariant(static_cast<int>(input)));
-}
-
-void MPComboBox::triggerActivatedVariant(int index)
-{
-    int data = itemData(index).toInt();
-    BrushInputType input = static_cast<BrushInputType>(data);
-    activated(index, input);
-}
-
-void MPComboBox::setItemEnabled(int index, bool enabled)
-{
-    auto model = this->model();
-    auto itemModel = static_cast<QStandardItemModel*>(model);
-    auto item = itemModel->item(index, 0);
-    item->setEnabled( enabled );
-}
 
 MPInputButton::MPInputButton(BrushInputType inputType, QWidget* parent)
     : QToolButton(parent), mInputType(inputType)
@@ -101,13 +65,13 @@ void MPMappingOptionsWidget::setupUI()
     container->setLayout(mGridLayout);
     mGridLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
 
-    mMappingOptionsCombBox = new MPComboBox(mParent);
+    mMappingOptionsComboBox = new ComboBox(mParent);
     QLabel* descriptionLabel = new QLabel("Select an input from the dropdown\nto add a new input to map");
     descriptionLabel->setMaximumSize(descriptionLabel->minimumSizeHint());
     descriptionLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 
     mGridLayout->addWidget(descriptionLabel, 0, 0, 1, 0);
-    mGridLayout->addWidget(mMappingOptionsCombBox, 1, 0, 1, 3);
+    mGridLayout->addWidget(mMappingOptionsComboBox, 1, 0, 1, 3);
 
     scrollArea->setWidget(container);
     mHBoxLayout->addWidget(scrollArea);
@@ -118,7 +82,7 @@ void MPMappingOptionsWidget::setupUI()
 
         auto inputMapping = mEditor->getBrushInputMapping(mSettingType, input);
 
-        mMappingOptionsCombBox->addItem(getBrushInputName(input), input);
+        mMappingOptionsComboBox->addItem(getBrushInputName(input), i);
         if (inputMapping.controlPoints.numberOfPoints > 0) {
 
             if (mMappingWidget == nullptr) {
@@ -127,7 +91,7 @@ void MPMappingOptionsWidget::setupUI()
             }
 
             MPMappingOption option = createMappingOption(input);
-            mMappingOptionsCombBox->setItemEnabled(i, false);
+            mMappingOptionsComboBox->setItemEnabled(i, false);
 
             mOptions << option;
         }
@@ -139,7 +103,7 @@ void MPMappingOptionsWidget::setupUI()
         mHBoxLayout->addWidget(mMappingWidget);
     }
 
-    connect(mMappingOptionsCombBox, static_cast<void (MPComboBox::*)(int,const BrushInputType&)>(&MPComboBox::activated), this, &MPMappingOptionsWidget::addOptionField);
+    connect(mMappingOptionsComboBox, &ComboBox::activated, this, &MPMappingOptionsWidget::addOptionField);
 
     setLayout(mHBoxLayout);
 }
@@ -185,12 +149,14 @@ void MPMappingOptionsWidget::showInputMapper(BrushInputType inputType)
     connect(mMappingWidget, &MPMappingWidget::mappingForInputUpdated, this, &MPMappingOptionsWidget::mappingForInputUpdated);
 }
 
-void MPMappingOptionsWidget::addOptionField(int index, BrushInputType input)
+void MPMappingOptionsWidget::addOptionField(int index, QString name, int value)
 {
-    MPMappingOption option = createMappingOption(input);
+    Q_UNUSED(name)
+    BrushInputType inputType = static_cast<BrushInputType>(value);
+    MPMappingOption option = createMappingOption(inputType);
 
-    mMappingOptionsCombBox->setItemEnabled(index, false);
-    showInputMapper(input);
+    mMappingOptionsComboBox->setItemEnabled(index, false);
+    showInputMapper(inputType);
 
     mOptions << option;
 }
@@ -223,7 +189,7 @@ void MPMappingOptionsWidget::removeAction(BrushInputType input)
     mHBoxLayout->addWidget(mMappingWidget);
 
     int index = static_cast<int>(input);
-    mMappingOptionsCombBox->setItemEnabled(index, true);
+    mMappingOptionsComboBox->setItemEnabled(index, true);
 
     emit removedInputOption(input);
 }

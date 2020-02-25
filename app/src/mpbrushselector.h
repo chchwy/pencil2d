@@ -42,12 +42,14 @@ public:
   void setCore(Editor* editor) { mEditor = editor; }
 
 public slots:
-  void selectBrush(QString brushName = QString()); // Give the brush name (no extension) i.e. : "classic/blend+paint"
+  void reloadCurrentBrush();
+  void selectBrush(QString brushPreset, QString brushName);
   void typeChanged(ToolType);
-  void brushListChanged();
+  void reloadBrushList();
+  void updateBrushList(QString brushName, QString brushPreset);
 
 signals:
-  void brushSelected (const QString& toolName, const QString& brushGroup, const QString& brushName, const QByteArray& content);
+  void brushSelected (ToolType toolType, const QString& brushGroup, const QString& brushName, const QByteArray& content);
 
 protected:
   QMap<QString, QStringList> m_brushLib;
@@ -68,7 +70,6 @@ private:
 
   void openConfigurator();
   void showNotImplementedPopup();
-  void updateSelectedBrushForTool(QString toolName);
 
   QTabWidget* mTabWidget;
   QMap<QString, QListWidget*> mToolListWidgets;
@@ -76,9 +77,10 @@ private:
 
   MPBrushConfigurator* mBrushConfiguratorWidget = nullptr;
 
-  QString currentBrushGroup;
+  QString currentBrushPreset;
   QString currentBrushName;
   QString currentToolName;
+  ToolType currentToolType;
   QByteArray currentBrushData;
 };
 
