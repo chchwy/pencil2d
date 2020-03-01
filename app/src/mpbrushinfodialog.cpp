@@ -262,24 +262,35 @@ void MPBrushInfoDialog::didPressSave()
 
             if (mIconModified && status.ok()) {
                 status = MPBrushParser::writeBrushIcon(*mImageLabel->pixmap(), noSpacePreset, noSpaceName);
-            }
-
-            if (status.code() != Status::OK) {
+            } else {
                 QMessageBox::warning(this, status.title(),
                                                    status.description());
                 return;
             }
         } else { // Edit
-            MPBrushParser::renameMoveBrushFileIfNeeded(mOriginalPreset, mOriginalName, noSpacePreset, noSpaceName);
+            status = MPBrushParser::renameMoveBrushFileIfNeeded(mOriginalPreset, mOriginalName, noSpacePreset, noSpaceName);
+
+            if (status.fail()) {
+                QMessageBox::warning(this, status.title(), status.description());
+                return;
+            }
         }
         status = MPBrushParser::writeBrushToFile(noSpacePreset, noSpaceName, doc.toJson());
 
-        if (status.ok()) {
-            MPBrushParser::addBrushFileToList(mToolName, noSpacePreset, noSpaceName);
+        if (status.fail()) {
+            QMessageBox::warning(this, status.title(), status.description());
+            return;
+        } else {
+            status = MPBrushParser::addBrushFileToList(mToolName, noSpacePreset, noSpaceName);
         }
 
-        emit updatedBrushInfo(noSpaceName, noSpacePreset);
-        close();
+        if (status.fail()) {
+            QMessageBox::warning(this, status.title(), status.description());
+            return;
+        } else {
+            emit updatedBrushInfo(noSpaceName, noSpacePreset);
+            close();
+        }
     }
 }
 

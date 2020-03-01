@@ -83,6 +83,7 @@ public:
 
     ErrorCode   code() { return mCode; }
     bool        ok() const { return (mCode == OK) || (mCode == SAFE); }
+    bool        fail() const { return (mCode != OK || mCode != SAFE); }
     QString     msg();
     QString     title() { return !mTitle.isEmpty() ? mTitle : msg(); }
     QString     description() const { return mDescription; }

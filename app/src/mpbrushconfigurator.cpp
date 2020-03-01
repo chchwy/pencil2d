@@ -601,10 +601,15 @@ void MPBrushConfigurator::pressedRemoveBrush()
                                    tr("Are you sure you want to delete this brush?"),
                                    QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
     if (ret == QMessageBox::Yes) {
-        MPBrushParser::blackListBrushFile(mBrushGroup, mBrushName);
+        auto st = MPBrushParser::blackListBrushFile(mBrushGroup, mBrushName);
 
-        emit refreshBrushList();
-        close();
+        if (st.ok()) {
+            emit refreshBrushList();
+            close();
+        } else {
+            QMessageBox::warning(this, st.title(),
+                                       st.description());
+        }
     }
 }
 

@@ -22,6 +22,7 @@ static const QString BRUSH_PREVIEW_EXT = "_prev.png";
 static const QString BRUSH_CONFIG = "brushes.conf";
 static const QString BRUSH_QRC = ":brushes";
 static const int ICON_SZ = 64;
+static const QString BRUSH_COPY_POSTFIX = "_clone";
 
 struct MPBrushInfo {
     QString comment = "";
@@ -108,9 +109,9 @@ struct MPBrushParser {
     {
         QString appDataBrushesPath = getBrushesPath();
         QDir dir(appDataBrushesPath);
-        if (dir.exists()) {
 
-            // Brush folder exist, no need to copy resources again
+        // Brush folder exists, no need to copy resources again
+        if (dir.exists()) {
             return Status::OK;
         } else {
             dir.mkdir(appDataBrushesPath);
@@ -323,8 +324,10 @@ struct MPBrushParser {
         return status;
     }
 
-    static void renameMoveBrushFileIfNeeded(QString originalPreset, QString originalName, QString newPreset, QString newName)
+    static Status renameMoveBrushFileIfNeeded(QString originalPreset, QString originalName, QString newPreset, QString newName)
     {
+
+        Status status = Status::OK;
         const QString groupPath = getBrushesPath() + QDir::separator() + newPreset;
         const QString brushPath = getBrushesPath() + QDir::separator() + newPreset + QDir::separator() + newName;
 
@@ -339,23 +342,50 @@ struct MPBrushParser {
         QString absoluteBrushPath = brushPath + BRUSH_CONTENT_EXT;
         QString absoluteBrushPreviewPath = brushPath+ BRUSH_PREVIEW_EXT;
         if (!presetDir.exists()) {
-            presetDir.mkpath(groupPath);
+            bool pathCreated = presetDir.mkpath(groupPath);
+
+            if (!pathCreated) {
+                status = Status::FAIL;
+
+                status.setTitle(QObject::tr("Something went wrong"));
+                status.setDescription(QObject::tr("Couldn't create preset dir, verify that the folder is writable"));
+                return status;
+            }
         }
 
         QFile brushFile(brushPath);
         if (!brushFile.exists()) {
 
             QFile moveFile(oldBrushPath);
-            qDebug() << "didMove: " << moveFile.rename(absoluteOldBrushPath, absoluteBrushPath);
+            moveFile.rename(absoluteOldBrushPath, absoluteBrushPath);
+
+            if (moveFile.error() != QFile::NoError) {
+                status = Status::FAIL;
+
+                status.setTitle(QObject::tr("Something went wrong"));
+                status.setDescription(QObject::tr("Failed to rename or move: ") + moveFile.fileName() + QObject::tr(" verify that the folder is writable")
+                                      + QObject::tr("The following error was given: ") + moveFile.errorString());
+                return status;
+            }
         }
 
         QFile brushImageFile(absoluteBrushPreviewPath);
         if (!brushImageFile.exists()) {
-            QFile moveImage(absoluteOldBrushPreviewPath);
-            qDebug() << "didMove: " << moveImage.rename(absoluteOldBrushPreviewPath, absoluteBrushPreviewPath);
+            QFile moveImageFile(absoluteOldBrushPreviewPath);
+            moveImageFile.rename(absoluteOldBrushPreviewPath, absoluteBrushPreviewPath);
+
+            if (moveImageFile.error() != QFile::NoError) {
+                status = Status::FAIL;
+
+                status.setTitle(QObject::tr("Something went wrong"));
+                status.setDescription(QObject::tr("Failed to rename or move: ") + moveImageFile.fileName() + QObject::tr(" verify that the folder is writable")
+                                      + QObject::tr("The following error was given: ") + moveImageFile.errorString());
+                return status;
+            }
 
         }
 
+        return status;
     }
 
     static Status writeBrushIcon(const QPixmap& iconPix, const QString brushPreset, const QString brushName) {
@@ -363,8 +393,11 @@ struct MPBrushParser {
 
         const QString brushPath = getBrushesPath() + QDir::separator() + brushPreset + QDir::separator() + brushName;
 
+        const QString brushFileName = brushPath+BRUSH_PREVIEW_EXT;
         if (iconPix.save(brushPath+BRUSH_PREVIEW_EXT) == false) {
             status = Status::FAIL;
+            status.setTitle(QObject::tr("Error saving brushImage"));
+            status.setDescription(QObject::tr("Failed to save: ") + brushFileName);
         }
         return status;
     }
@@ -383,24 +416,50 @@ struct MPBrushParser {
 
         QDir dir(groupPath);
         if (!dir.exists()) {
-            dir.mkpath(groupPath);
+            bool pathCreated = dir.mkpath(groupPath);
+
+            if (!pathCreated) {
+                status = Status::FAIL;
+
+                status.setTitle(QObject::tr("Something went wrong"));
+                status.setDescription(QObject::tr("Couldn't create dir: ") + dir.path() + QObject::tr("verify that the folder is writable"));
+                return status;
+            }
         }
 
-        if (file.error() || fileImage.error()) {
+        if (file.error() != QFile::NoError || fileImage.error() != QFile::NoError) {
             status = Status::FAIL;
             status.setTitle(QObject::tr("File error"));
             status.setDescription(QObject::tr("Failed to read files: ") + file.errorString() + " " + fileImage.errorString());
         } else {
+
             if (!file.exists() && !fileImage.exists()) {
                 QFile fileToCopy(oldBrushPath+BRUSH_CONTENT_EXT);
-                qDebug() << "copy myb file" << fileToCopy.copy(oldBrushPath+BRUSH_CONTENT_EXT, brushPath+BRUSH_CONTENT_EXT);
+                fileToCopy.copy(oldBrushPath+BRUSH_CONTENT_EXT, brushPath+BRUSH_CONTENT_EXT);
+
+                if (fileToCopy.error() != QFile::NoError) {
+                    status = Status::FAIL;
+                    status.setTitle("Error: Copy file");
+                    status.setDescription(QObject::tr("Failed to copy: ") + fileToCopy.fileName() + ", the folder error was given: "
+                                          + fileToCopy.errorString());
+
+                    return status;
+                }
 
                 fileToCopy.setFileName(oldBrushPath+BRUSH_PREVIEW_EXT);
-                qDebug() << "copy image: " << fileToCopy.copy(oldBrushPath+BRUSH_PREVIEW_EXT, brushPath+BRUSH_PREVIEW_EXT);
+                fileToCopy.copy(oldBrushPath+BRUSH_PREVIEW_EXT, brushPath+BRUSH_PREVIEW_EXT);
+
+                if (fileToCopy.error() != QFile::NoError) {
+                    status = Status::FAIL;
+                    status.setTitle(QObject::tr("Error: Copy file"));
+                    status.setDescription(QObject::tr("Failed to copy: ") + fileToCopy.fileName() + QObject::tr(", the folder error was given: ")
+                                          + fileToCopy.errorString());
+                    return status;
+                }
+
             } else {
 
-                // TODO: handle copy failure
-                QString clonePostFix = "_clone";
+                QString clonePostFix = BRUSH_COPY_POSTFIX;
 
                 int countClones = 0;
                 for (int i = 0; i < dir.entryList().count(); i++) {
@@ -420,6 +479,15 @@ struct MPBrushParser {
                 file.copy(newFileName);
                 fileImage.copy(newImageName);
 
+                if (file.error() != QFile::NoError || fileImage.error() != QFile::NoError) {
+                    status = Status::FAIL;
+                    status.setTitle(QObject::tr("Error: Copy file(s)"));
+                    status.setDescription(QObject::tr("Failed to copy: ") +
+                                          file.fileName() + "\n " + fileImage.fileName() +
+                                          QObject::tr(", the folder error was given: ") + file.errorString() + "\n " + fileImage.errorString());
+                    return status;
+                }
+
                 newName = clonedName;
             }
         }
@@ -427,16 +495,23 @@ struct MPBrushParser {
         return status;
     }
 
-    static void addBrushFileToList(const QString toolName, const QString& brushPreset, const QString& brushName)
+    static Status addBrushFileToList(const QString toolName, const QString& brushPreset, const QString& brushName)
     {
+        Status st = Status::OK;
         QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
 
         QFile file(brushConfigPath);
         file.open(QIODevice::ReadOnly | QIODevice::Text);
 
-        QTextStream stream(&file);
+        if (file.error() != QFile::NoError) {
+            st = Status::FAIL;
 
-        QStringList newFilesList;
+            st.setTitle(QObject::tr("Failed to open file"));
+            st.setDescription(QObject::tr("The following error was given: \n") + file.errorString());
+            return st;
+        }
+
+        QTextStream stream(&file);
 
         bool brushGroupFound = false;
 
@@ -451,6 +526,7 @@ struct MPBrushParser {
         }
 
         QString groupKey = "Group:" + toolName;
+        QStringList newFilesList;
         for (QString line : cleanupFilesList) {
 
             // Assume we have found the beginning of a group/preset
@@ -469,30 +545,47 @@ struct MPBrushParser {
         }
         file.close();
 
-        QFile editConfig(brushConfigPath);
+        QFile editConfigFile(brushConfigPath);
+        editConfigFile.open(QFile::ReadWrite);
 
-        // TODO: better error handling
-        qDebug() << "open: " << editConfig.open(QFile::ReadWrite);
+        if (editConfigFile.error() != QFile::NoError) {
+            st = Status::FAIL;
 
-        qDebug() << editConfig.error();
-        QTextStream editStream(&editConfig);
+            st.setTitle(QObject::tr("Failed to open file"));
+            st.setDescription(QObject::tr("The following error was given: \n") + file.errorString());
+            return st;
+        }
+
+        QTextStream editStream(&editConfigFile);
 
         for (QString line : newFilesList) {
             editStream << line + "\n";
         }
 
-        editConfig.close();
+        editConfigFile.close();
+
+        return st;
     }
 
     // MAYBE: There's no need to blacklist files anymore since it's all been moved to disk
     // simply deleting the brush now and removing it from the config file should be enough.
     // might be better for performance if the user owns a lot of brushes...
-    static void blackListBrushFile(const QString& brushPreset, const QString& brushName)
+    static Status blackListBrushFile(const QString& brushPreset, const QString& brushName)
     {
+        Status st = Status::OK;
         QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
 
         QFile file(brushConfigPath);
+
         file.open(QIODevice::ReadOnly | QIODevice::Text);
+
+        if (file.error() != QFile::NoError) {
+            st = Status::FAIL;
+
+            st.setTitle(QObject::tr("Failed to open file"));
+            st.setDescription(QObject::tr("The following error was given: \n") + file.errorString());
+            return st;
+        }
 
         QTextStream stream(&file);
 
@@ -509,19 +602,26 @@ struct MPBrushParser {
         }
         file.close();
 
-        QFile editConfig(brushConfigPath);
+        QFile editConfigFile(brushConfigPath);
 
-        // TODO: better error handling
-        qDebug() << "open: " << editConfig.open(QFile::ReadWrite);
+        editConfigFile.open(QFile::ReadWrite);
+        if (editConfigFile.error() != QFile::NoError) {
+            st = Status::FAIL;
 
-        qDebug() << editConfig.error();
-        QTextStream editStream(&editConfig);
+            st.setTitle(QObject::tr("Failed to open file"));
+            st.setDescription(QObject::tr("The following error was given: \n") + file.errorString());
+            return st;
+        }
+
+        QTextStream editStream(&editConfigFile);
 
         for (QString line : blacklistedFiles) {
             editStream << line + "\n";
         }
 
-        editConfig.close();
+        editConfigFile.close();
+
+        return Status::OK;
     }
 };
 
