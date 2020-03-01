@@ -77,9 +77,6 @@ struct MPBrushParser {
         QStringList brushesGroup;
         QMap<QString, QStringList> brushes;
 
-//        copyResourcesToAppData();
-//        // end of copy process
-
         while (!file.atEnd())
         {
             QString line ( file.readLine().trimmed() );
@@ -111,7 +108,11 @@ struct MPBrushParser {
     {
         QString appDataBrushesPath = getBrushesPath();
         QDir dir(appDataBrushesPath);
-        if (!dir.exists()) {
+        if (dir.exists()) {
+
+            // Brush folder exist, no need to copy resources again
+            return Status::OK;
+        } else {
             dir.mkdir(appDataBrushesPath);
         }
 
@@ -483,6 +484,9 @@ struct MPBrushParser {
         editConfig.close();
     }
 
+    // MAYBE: There's no need to blacklist files anymore since it's all been moved to disk
+    // simply deleting the brush now and removing it from the config file should be enough.
+    // might be better for performance if the user owns a lot of brushes...
     static void blackListBrushFile(const QString& brushPreset, const QString& brushName)
     {
         QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
