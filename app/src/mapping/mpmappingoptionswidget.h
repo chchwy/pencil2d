@@ -4,6 +4,7 @@
 #include <QToolButton>
 #include <QDialog>
 #include <QLabel>
+#include <QPointer>
 
 #include "brushsetting.h"
 
@@ -29,9 +30,7 @@ signals:
     void didPress(BrushInputType inputType);
 
 private:
-
     BrushInputType mInputType;
-//    const MappingControlPoints* mControlPoints = nullptr;
 };
 
 
@@ -80,7 +79,7 @@ private:
     QHBoxLayout* mHBoxLayout = nullptr;
     ComboBox* mMappingOptionsComboBox = nullptr;
 
-    MPMappingWidget* mMappingWidget = nullptr;
+    QPointer<MPMappingWidget> mMappingWidget;
 
     BrushSettingType mSettingType;
     Editor* mEditor = nullptr;

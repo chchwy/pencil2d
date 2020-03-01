@@ -140,6 +140,7 @@ void MPMappingOptionsWidget::showInputMapper(BrushInputType inputType)
     auto info = mEditor->getBrushInputInfo(inputType);
 
     if (mMappingWidget) {
+        mHBoxLayout->removeWidget(mMappingWidget);
         delete mMappingWidget;
     }
 
@@ -168,16 +169,12 @@ void MPMappingOptionsWidget::removeAction(BrushInputType input)
         return;
     }
 
-//     TODO: figure out if we can use qscopedpointer instead of deleting manually
-//     that's no good... :/
-
     for (int i = 0; i < mOptions.count(); i++) {
 
         MPMappingOption& option = mOptions[i];
         if (input == mOptions[i].inputType) {
 
             delete mMappingWidget;
-            mMappingWidget = nullptr;
 
             option.deleteAll();
             mOptions.removeAt(i);
