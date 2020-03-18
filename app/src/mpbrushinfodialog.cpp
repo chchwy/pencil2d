@@ -32,16 +32,16 @@ MPBrushInfoDialog::MPBrushInfoDialog(DialogContext dialogContext, QWidget* paren
     QVBoxLayout* vMain2Layout = new QVBoxLayout();
     QHBoxLayout* hMainLayout = new QHBoxLayout();
 
+    vMain2Layout->setContentsMargins(0,2,2,0);
+    hMainLayout->setContentsMargins(0,0,0,0);
+
     mImageLabel = new QLabel();
     mNameTextEdit = new QPlainTextEdit();
     mNameTextEdit->setMinimumSize(QSize(100,30));
     mNameTextEdit->setMaximumSize(QSize(200,30));
     mNameTextEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Maximum);
 
-    mPresetTextEdit = new QPlainTextEdit();
-    mPresetTextEdit->setMinimumSize(QSize(100,30));
-    mPresetTextEdit->setMaximumSize(QSize(200,30));
-    mPresetTextEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Maximum);
+    mPresetComboBox = new ComboBox(this);
 
     mCommentTextEdit = new QPlainTextEdit();
     mCommentTextEdit->setMinimumSize(QSize(200,100));
@@ -53,7 +53,7 @@ MPBrushInfoDialog::MPBrushInfoDialog(DialogContext dialogContext, QWidget* paren
     mVersionTextEdit->setMaximumSize(QSize(200,30));
     mVersionTextEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Maximum);
 
-    mShowInToolComboBox = new ComboBox();
+    mToolComboBox = new ComboBox();
 
     mSetImageButton = new QPushButton();
     mSetImageFromClipBoard = new QPushButton();
@@ -70,7 +70,6 @@ MPBrushInfoDialog::MPBrushInfoDialog(DialogContext dialogContext, QWidget* paren
 
     QWidget* toolbarSpacer = new QWidget(this);
     toolbarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-//    vMain2Layout->addSpacerItem(toolbarSpacer);
 
     toolbar->addWidget(toolbarSpacer);
     toolbar->addWidget(saveButton);
@@ -79,14 +78,39 @@ MPBrushInfoDialog::MPBrushInfoDialog(DialogContext dialogContext, QWidget* paren
     QLabel* nameLabel = new QLabel();
     nameLabel->setText(tr("Name"));
 
-    QLabel* presetLabel = new QLabel();
-    presetLabel->setText(tr("Preset"));
-    presetLabel->setToolTip(tr("In which preset do you want this brush displayed"));
     QLabel* descriptionLabel = new QLabel();
     descriptionLabel->setText(tr("Description"));
 
-    QLabel* comboDescriptionLabel = new QLabel();
-    comboDescriptionLabel->setText(tr("Show brush in tool"));
+    QLabel* brushPlacementDescription = new QLabel(this);
+    brushPlacementDescription->setText(tr("Show brush in"));
+
+    QHBoxLayout* presetLayout = new QHBoxLayout();
+
+    presetLayout->setContentsMargins(0,0,0,0);
+
+    QLabel* presetLabel = new QLabel();
+    presetLabel->setText(tr("Preset"));
+    presetLabel->setToolTip(tr("In which preset do you want this brush displayed"));
+
+    presetLayout->addWidget(presetLabel);
+    presetLayout->addWidget(mPresetComboBox);
+
+    mPresetComboBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
+    mPresetComboBox->setContentsMargins(0,0,0,0);
+
+    QHBoxLayout* toolLayout = new QHBoxLayout();
+
+    toolLayout->setContentsMargins(0,0,0,0);
+
+    QLabel* toolDescription = new QLabel();
+    toolDescription->setText(tr("Tool"));
+
+    toolLayout->addWidget(toolDescription);
+    toolLayout->addWidget(mToolComboBox);
+
+    mToolComboBox->setContentsMargins(0,0,0,0);
+
+    mToolComboBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
 
     QLabel* versionLabel = new QLabel();
     versionLabel->setText(tr("Version"));
@@ -98,6 +122,10 @@ MPBrushInfoDialog::MPBrushInfoDialog(DialogContext dialogContext, QWidget* paren
     vMain2Layout->addWidget(mImageLabel);
     vMain2Layout->addWidget(mSetImageButton);
     vMain2Layout->addWidget(mSetImageFromClipBoard);
+
+    vMain2Layout->addWidget(brushPlacementDescription);
+    vMain2Layout->addLayout(presetLayout);
+    vMain2Layout->addLayout(toolLayout);
     vMainLayout->addWidget(toolbar);
     mSetImageButton->setText(tr("Add image"));
 
@@ -109,15 +137,11 @@ MPBrushInfoDialog::MPBrushInfoDialog(DialogContext dialogContext, QWidget* paren
     vRightLayout->addWidget(nameLabel);
     vRightLayout->addWidget(mNameTextEdit);
 
-    vRightLayout->addWidget(presetLabel);
-    vRightLayout->addWidget(mPresetTextEdit);
-
     vRightLayout->addWidget(descriptionLabel);
     vRightLayout->addWidget(mCommentTextEdit);
+
     vRightLayout->addWidget(versionLabel);
     vRightLayout->addWidget(mVersionTextEdit);
-    vRightLayout->addWidget(comboDescriptionLabel);
-    vRightLayout->addWidget(mShowInToolComboBox);
 
     mImageLabel->setText(("Image here"));
     mImageLabel->setAlignment(Qt::AlignCenter);
@@ -125,21 +149,23 @@ MPBrushInfoDialog::MPBrushInfoDialog(DialogContext dialogContext, QWidget* paren
     mImageLabel->setStyleSheet("QLabel {"
                                "border: 1px solid;"
                                "}");
-    mImageLabel->setMinimumSize(QSize(128,128));
-    mImageLabel->setMaximumSize(QSize(128,128));
+    mImageLabel->setMinimumSize(QSize(64,64));
 
     connect(mSetImageButton, &QPushButton::pressed, this, &MPBrushInfoDialog::didPressSetImage);
     connect(mSetImageFromClipBoard, &QPushButton::pressed, this, &MPBrushInfoDialog::didPressSetImageFromClipBoard);
-    connect(mShowInToolComboBox, &ComboBox::activated, this, &MPBrushInfoDialog::didSelectToolOption);
+    connect(mToolComboBox, &ComboBox::activated, this, &MPBrushInfoDialog::didSelectToolOption);
     connect(cancelButton, &QPushButton::pressed, this, &MPBrushInfoDialog::didPressCancel);
     connect(saveButton, &QPushButton::pressed, this, &MPBrushInfoDialog::didPressSave);
 
     connect(mNameTextEdit, &QPlainTextEdit::textChanged, this, &MPBrushInfoDialog::didUpdateName);
     connect(mCommentTextEdit, &QPlainTextEdit::textChanged, this, &MPBrushInfoDialog::didUpdateComment);
     connect(mVersionTextEdit, &QPlainTextEdit::textChanged, this, &MPBrushInfoDialog::didUpdateVersion);
-    connect(mPresetTextEdit, &QPlainTextEdit::textChanged, this, &MPBrushInfoDialog::didUpdatePreset);
+    connect(mPresetComboBox, &ComboBox::activated, this, &MPBrushInfoDialog::didUpdatePreset);
 
     setLayout(vMainLayout);
+
+    // calculate layout and set it fixed size.
+    this->layout()->setSizeConstraint(QLayout::SetFixedSize);
 
     if (dialogContext == Clone) {
         saveButton->setText(tr("Clone"));
@@ -157,13 +183,25 @@ void MPBrushInfoDialog::initUI()
     toolTypes.append(ToolType::POLYLINE);
 
     for (ToolType toolType: toolTypes) {
-        mShowInToolComboBox->addItem(mEditor->getTool(toolType)->typeName(), static_cast<int>(toolType));
+        mToolComboBox->addItem(mEditor->getTool(toolType)->typeName(), static_cast<int>(toolType));
+    }
+
+    QFile fileOrder(MPBrushParser::getBrushConfigPath(BRUSH_CONFIG));
+
+    if (fileOrder.open(QIODevice::ReadOnly))
+    {
+        // TODO: will probably have to create a brush importer
+        auto brushPresets = MPBrushParser::parseConfig(fileOrder, MPCONF::getBrushesPath());
+
+        for (MPBrushPreset preset : brushPresets) {
+            mPresetComboBox->addItem(preset.name);
+        }
     }
 }
 
-void MPBrushInfoDialog::setBrushInfo(QString brushName, QString brushGroup, ToolType tool, QJsonDocument brushJsonDoc)
+void MPBrushInfoDialog::setBrushInfo(QString brushName, QString brushPreset, ToolType tool, QJsonDocument brushJsonDoc)
 {
-    auto status = MPBrushParser::readBrushFromFile(brushGroup, brushName);
+    auto status = MPBrushParser::readBrushFromFile(brushPreset, brushName);
 
     if (status.errorcode != Status::OK) {
 
@@ -174,8 +212,8 @@ void MPBrushInfoDialog::setBrushInfo(QString brushName, QString brushGroup, Tool
 
     mBrushName = brushName;
 
-    mBrushPreset = brushGroup;
-    mOriginalPreset = brushGroup;
+    mBrushPreset = brushPreset;
+    mOriginalPreset = brushPreset;
 
     mOriginalName = brushName;
 
@@ -188,13 +226,14 @@ void MPBrushInfoDialog::setBrushInfo(QString brushName, QString brushGroup, Tool
     mImageLabel->setPixmap(imagePix);
 
     mNameTextEdit->setPlainText(brushName);
-    mPresetTextEdit->setPlainText(brushGroup);
+    mPresetComboBox->setCurrentItemFrom(brushPreset);
     mCommentTextEdit->setPlainText(mBrushInfo.comment);
     mVersionTextEdit->setPlainText(QString::number(mBrushInfo.version));
 
-    mToolName = mShowInToolComboBox->currentText();
-
-    mShowInToolComboBox->setCurrentItemFrom(static_cast<ToolType>(tool));
+    mToolComboBox->setCurrentItemFrom(static_cast<ToolType>(tool));
+    mToolName = mToolComboBox->currentText();
+    mOldToolName = mToolName;
+    mOldPresetName = brushPreset;
 }
 
 void MPBrushInfoDialog::didPressSetImage()
@@ -253,42 +292,54 @@ void MPBrushInfoDialog::didPressSave()
 
         // Change spaces with underscores
         QString noSpaceName = mBrushName.replace(QRegExp("[ ]"), "_");
-        QString noSpacePreset = mBrushPreset.replace(QRegExp("[ ]"), "_");
 
         Status status = Status::OK;
         if (mDialogContext == DialogContext::Clone) {
 
-            status = MPBrushParser::copyRenameBrushFileIfNeeded(mOriginalPreset, mOriginalName, noSpacePreset, noSpaceName);
+            status = MPBrushParser::copyRenameBrushFileIfNeeded(mOriginalPreset, mOriginalName, mBrushPreset, noSpaceName);
 
-            if (mIconModified && status.ok()) {
-                status = MPBrushParser::writeBrushIcon(*mImageLabel->pixmap(), noSpacePreset, noSpaceName);
-            } else {
-                QMessageBox::warning(this, status.title(),
-                                                   status.description());
-                return;
+            if (!status.ok()) {
+               QMessageBox::warning(this, status.title(),
+                                                  status.description());
+               return;
+            }
+
+            if (mIconModified) {
+                status = MPBrushParser::writeBrushIcon(*mImageLabel->pixmap(), mBrushPreset, noSpaceName);
+            }
+
+            if (!status.ok()) {
+               QMessageBox::warning(this, status.title(),
+                                                  status.description());
+               return;
             }
         } else { // Edit
-            status = MPBrushParser::renameMoveBrushFileIfNeeded(mOriginalPreset, mOriginalName, noSpacePreset, noSpaceName);
+            status = MPBrushParser::renameMoveBrushFileIfNeeded(mOriginalPreset, mOriginalName, mBrushPreset, noSpaceName);
 
             if (status.fail()) {
                 QMessageBox::warning(this, status.title(), status.description());
                 return;
             }
         }
-        status = MPBrushParser::writeBrushToFile(noSpacePreset, noSpaceName, doc.toJson());
+        status = MPBrushParser::writeBrushToFile(mBrushPreset, noSpaceName, doc.toJson());
 
         if (status.fail()) {
             QMessageBox::warning(this, status.title(), status.description());
             return;
         } else {
-            status = MPBrushParser::addBrushFileToList(mToolName, noSpacePreset, noSpaceName);
+            status = MPCONF::addBrush(mToolName, mBrushPreset, noSpaceName);
+
+            if (status.ok()) {
+            // TODO: brush is added twice?
+                status = MPCONF::removeBrush(mOldPresetName, mOldToolName, noSpaceName);
+            }
         }
 
         if (status.fail()) {
             QMessageBox::warning(this, status.title(), status.description());
             return;
         } else {
-            emit updatedBrushInfo(noSpaceName, noSpacePreset);
+            emit updatedBrushInfo(noSpaceName, mBrushPreset);
             close();
         }
     }
@@ -309,7 +360,7 @@ void MPBrushInfoDialog::didUpdateVersion()
     mBrushInfo.version = mVersionTextEdit->toPlainText().toDouble();
 }
 
-void MPBrushInfoDialog::didUpdatePreset()
+void MPBrushInfoDialog::didUpdatePreset(int index, QString name, int data)
 {
-    mBrushPreset = mPresetTextEdit->toPlainText();
+    mBrushPreset = name;
 }

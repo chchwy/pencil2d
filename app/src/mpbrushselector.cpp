@@ -13,7 +13,6 @@
 #include <QTabWidget>
 #include <QLayout>
 #include <QToolButton>
-#include <QComboBox>
 #include <QMessageBox>
 
 #include <QJsonParseError>
@@ -26,9 +25,11 @@
 #include "pencilerror.h"
 #include "editor.h"
 #include "toolmanager.h"
+#include "combobox.h"
 
 #include "mpbrushutils.h"
 #include "mpbrushconfigurator.h"
+#include "mpbrushpresetswidget.h"
 
 
 MPBrushSelector::MPBrushSelector(QWidget *parent)
@@ -36,47 +37,45 @@ MPBrushSelector::MPBrushSelector(QWidget *parent)
 {
     setWindowTitle(tr("Brush Selector", "Window title of mypaint brush selector"));
 
-    QWidget* containerWidget = new QWidget(this);
-    QVBoxLayout* vLayout = new QVBoxLayout(nullptr);
-    QHBoxLayout* hLayout = new QHBoxLayout(this);
+    QWidget* containerWidget = new QWidget(parent);
+    mVLayout = new QVBoxLayout();
 
-    mPresetComboBox = new QComboBox(this);
+    mVLayout->setContentsMargins(2,2,2,2);
+    QHBoxLayout* hLayout = new QHBoxLayout();
 
-
-    // TODO: show presets based on brush folders...
-    mPresetComboBox->addItem("Deevad");
+    mPresetComboBox = new ComboBox();
 
     QToolButton* configuratorButton = new QToolButton(this);
-    QToolButton* addPresetButton = new QToolButton(this);
-
-    mTabWidget = new QTabWidget(this);
+    QToolButton* presetsManagerButton = new QToolButton(this);
 
     configuratorButton->setText(tr("config"));
     configuratorButton->setToolTip(tr("Open brush configurator window"));
 
     hLayout->addWidget(configuratorButton);
     hLayout->addWidget(mPresetComboBox);
-    hLayout->addWidget(addPresetButton);
+    hLayout->addWidget(presetsManagerButton);
 
-    vLayout->addLayout(hLayout);
-    vLayout->addWidget(mTabWidget);
+    mVLayout->addLayout(hLayout);
 
-    vLayout->setMargin(8);
+    QSpacerItem* spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-    containerWidget->setLayout(vLayout);
+    mVLayout->setContentsMargins(8,2,8,8);
+    mVLayout->addSpacerItem(spacer);
+
+    containerWidget->setLayout(mVLayout);
     setWidget(containerWidget);
-    mTabWidget->tabBar()->hide();
 
     MPBrushParser::copyResourcesToAppData();
 
-    m_brushesPath = MPBrushParser::getBrushesPath();
+    mBrushesPath = MPCONF::getBrushesPath();
     // end of copy process
 
     // First, we parse the "brushes.conf" file to fill m_brushLib
     loadBrushes();
 
     connect(configuratorButton, &QToolButton::pressed, this, &MPBrushSelector::openConfigurator);
-    connect(addPresetButton, &QToolButton::pressed, this, &MPBrushSelector::showNotImplementedPopup);
+    connect(presetsManagerButton, &QToolButton::pressed, this, &MPBrushSelector::showPresetManager);
+    connect(mPresetComboBox, &ComboBox::activated, this, &MPBrushSelector::changeBrushPreset);
 }
 
 void MPBrushSelector::initUI()
@@ -91,21 +90,33 @@ void MPBrushSelector::updateUI()
 
 void MPBrushSelector::loadBrushes()
 {
-    // TODO: removing brushes is almost there
-    // we just need to change brush path from using the internal to an external
-    // when should this happen though? and should we save it in settings?
     QFile fileOrder(MPBrushParser::getBrushConfigPath(BRUSH_CONFIG));
 
     if (fileOrder.open(QIODevice::ReadOnly))
     {
-        // TODO: will probably have to create a brush importer, group has to match brush type
-        // otherwise there could be undefined behaviour...
-        m_brushLib = MPBrushParser::parseConfig(fileOrder, m_brushesPath);
+        // TODO: will probably have to create a brush importer
+        mBrushPresets = MPBrushParser::parseConfig(fileOrder, mBrushesPath);
+
+        if (mPresetComboBox->count() > 0) {
+            mPresetComboBox->clear();
+        }
+
+        for (MPBrushPreset preset : mBrushPresets) {
+            mPresetComboBox->addItem(preset.name);
+        }
+
+        QSettings settings(PENCIL2D,PENCIL2D);
+        QString lastPreset = settings.value(SETTING_MPBRUSHPRESET).toString();
+
+        if (lastPreset.isEmpty()) {
+            currentPresetName = mBrushPresets.first().name;
+            settings.setValue(SETTING_MPBRUSHPRESET, currentPresetName);
+        } else {
+            currentPresetName = lastPreset;
+            mPresetComboBox->setCurrentItemFrom(lastPreset);
+        }
 
         if (!mTabsLoaded) {
-
-            // add tabs corresponding to the drawing tools pencil use
-            // FIXME: this is a HACK but I'm too lazy to change it.
             addToolTabs();
             mTabsLoaded = true;
         }
@@ -115,9 +126,9 @@ void MPBrushSelector::loadBrushes()
 
 void MPBrushSelector::addToolTabs()
 {
-    for (const QString &brushKey : m_brushLib.keys())
-    {
-        QListWidget* listWidget = new QListWidget(mTabWidget);
+
+    for (int i = 0; i < TOOL_TYPE_COUNT; i++) {
+        QListWidget* listWidget = new QListWidget(nullptr);
         listWidget->setUniformItemSizes(true);
         listWidget->setViewMode        (QListView::IconMode);
         listWidget->setResizeMode      (QListView::Adjust);
@@ -127,18 +138,19 @@ void MPBrushSelector::addToolTabs()
         listWidget->setIconSize        (QSize(ICON_SZ,ICON_SZ));
         connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(itemClicked(QListWidgetItem*)));
 
-        mTabWidget->addTab(listWidget, brushKey);
-        mToolListWidgets.insert(brushKey, listWidget);
-    }
-    QListWidget* emptyWidget = new QListWidget();
+        ToolType tool = static_cast<ToolType>(i);
+        QString toolName = BaseTool::TypeName(tool);
 
-    mTabWidget->addTab(emptyWidget, "");
+        mToolListWidgets.insert(toolName, listWidget);
+    }
 }
 
 void MPBrushSelector::updateBrushList(QString brushName, QString brushPreset)
 {
+    currentPresetName = brushPreset;
+
     loadBrushes();
-    selectBrush(brushPreset, brushName);
+    selectBrush(brushName);
 }
 
 void MPBrushSelector::reloadBrushList()
@@ -148,6 +160,15 @@ void MPBrushSelector::reloadBrushList()
 
 void MPBrushSelector::populateList()
 {
+    // Make sure currentBrushPreset is loaded here
+    for (const MPBrushPreset& pre : mBrushPresets) {
+        if (pre.name == currentPresetName) {
+            currentBrushPreset = pre;
+            break;
+        }
+    }
+    MPBrushPreset preset = currentBrushPreset;
+
     QMapIterator<QString, QListWidget*> toolListIt(mToolListWidgets);
     while(toolListIt.hasNext()) {
         toolListIt.next();
@@ -156,19 +177,16 @@ void MPBrushSelector::populateList()
         // clear existing widgets before re-adding
         widget->clear();
 
-        Q_ASSERT(mToolListWidgets.count() == m_brushLib.keys().count());
-
-        // Has to be a tool, can't be any arbitrary name
-        QString brushKey = m_brushLib.find(toolListIt.key()).key();
-
-        const QStringList subList = m_brushLib.value(brushKey);
+        const MPBrushPreset subList = preset;
         if (subList.isEmpty()) continue; // this should not happen...
 
-        for (int n = 0 ; n < subList.count() ; n++) {
-            QString brushKeyAndName (subList.at(n));
-            QIcon preview(m_brushesPath + QDir::separator() + brushKeyAndName + BRUSH_PREVIEW_EXT);
-            QListWidgetItem* p_item = new QListWidgetItem(preview, QString(), widget, n);
-            p_item->setToolTip(QString("%1 in '%2'.").arg(brushKeyAndName).arg(brushKey));
+        int brushIndex = 0;
+        for (const QString& brush : subList.brushesForTool(toolListIt.key().toLower())) {
+
+            QIcon preview(mBrushesPath + QDir::separator() + currentPresetName + QDir::separator() + brush + BRUSH_PREVIEW_EXT);
+            QListWidgetItem* p_item = new QListWidgetItem(preview, nullptr, widget, brushIndex);
+            p_item->setToolTip(QString("%1").arg(brush));
+            brushIndex++;
         }
     }
 }
@@ -178,80 +196,71 @@ void MPBrushSelector::itemClicked(QListWidgetItem *itemWidget)
     QListWidget* listWidget = itemWidget->listWidget();
     if (listWidget)
     {
-        QString toolName = "";
-        // first of all, we will deselect all other items in other panels :
-        for (int p = 0 ; p < mTabWidget->count() ; p++)
-        {
-            QListWidget* otherListWidget = dynamic_cast<QListWidget*>(mTabWidget->widget(p));
-            if (otherListWidget != listWidget)
-            {
-                otherListWidget->clearSelection();
-            }
-            else
-            {
-                toolName = mTabWidget->tabText(p);
-            }
-
-        }
         // fine, let's read this one and emit the content to any receiver:
-        const QStringList subList = m_brushLib.value(toolName);
-        QString brushKeyAndName (subList.at(itemWidget->type()));
+        const MPBrushPreset preset = currentBrushPreset;
 
-        QRegularExpression re("(\\w+?[\\/])(\\w+)");
-        QRegularExpressionMatch match = re.match(brushKeyAndName);
-        QString brushPreset = "";
         QString brushName = "";
-        if (match.hasMatch()) {
-            brushPreset = match.captured(1);
-            if (brushPreset.endsWith("/")) {
-                brushPreset.truncate(brushPreset.length()-1);
+        int brushIndex = 0;
+        for (const QString& brush : preset.brushesForTool(currentToolName)) {
+            if (brushIndex == itemWidget->type()) {
+                brushName = brush;
+                break;
             }
-
-            brushName = match.captured(2);
+            brushIndex++;
         }
 
-        auto status = MPBrushParser::readBrushFromFile(brushPreset, brushName);
+        auto status = MPBrushParser::readBrushFromFile(currentPresetName, brushName);
         if (status.errorcode == Status::OK)
         {
             currentBrushName = brushName;
-            currentBrushPreset = brushPreset;
             currentBrushData = status.data;
-            emit brushSelected(currentToolType, brushPreset, brushName, status.data); // Read the whole file and broadcast is as a char* buffer
+            emit brushSelected(currentToolType, currentPresetName, brushName, status.data); // Read the whole file and broadcast is as a char* buffer
         }
     }
 }
 
 void MPBrushSelector::loadToolBrushes(QString toolName)
 {
-    // first of all, we will deselect all other items in other panels :
-    bool foundSelection = false;
+    // CONSIDERATION: Maybe there's no need to store brushes in individual lists...
+    QMap<QString, QListWidget*>::iterator widgetIt;
 
-    for (int i = 0 ; i < mTabWidget->count() ; i++)
+    for (widgetIt = mToolListWidgets.begin(); widgetIt != mToolListWidgets.end(); ++widgetIt)
     {
-        QString caption = mTabWidget->tabText(i);
+        const QString& toolNameKey = widgetIt.key();
+        QListWidget* newWidget = widgetIt.value();
 
-        if (caption == toolName) {
-            mTabWidget->setCurrentIndex(i);
-            foundSelection = true;
-            break;
+        newWidget->setHidden(true);
+        if (toolNameKey.compare(toolName,Qt::CaseInsensitive) == 0) {
+
+            // make sure the widget exists already and has been added to the layout
+            if (newWidget != currentListWidget) {
+                if (currentListWidget != nullptr) {
+                    mVLayout->replaceWidget(currentListWidget, newWidget);
+                } else {
+                    mVLayout->addWidget(newWidget);
+                }
+            }
+            qDebug() << "layout item count: " << mVLayout->count();
+            qDebug() << "layout children: " << mVLayout->children().count();
+            currentListWidget = newWidget;
+
+            // We found current tool, so show the related listwidget
+            if (currentListWidget->isHidden()) {
+                currentListWidget->setHidden(false);
+            }
         }
     }
-    // If there is no tab matching the current tool,
-    // we select the last one (empty)
-    if (!foundSelection) {
-        mTabWidget->setCurrentIndex(mTabWidget->count() - 1);
-    }
 
-    const QStringList subList = m_brushLib.value(toolName);
+    const MPBrushPreset subList = currentBrushPreset;
 
     if (!subList.isEmpty()) {
-        QString lastUsed;
         if (toolName == "empty") {
-            // last tab which is empty
-            mTabWidget->setCurrentIndex(mTabWidget->count()-1);
-        } else if (!anyBrushSelected() && lastUsed.isEmpty()) {
-            QString brushName (subList.at(0));
-            selectBrush("", brushName);
+
+        } else /*if (!anyBrushSelected()) */{
+            if (!subList.brushesForTool(toolName).isEmpty()) {
+                QString brushName (subList.brushesForTool(toolName).first());
+                selectBrush(brushName);
+            }
         }
     }
 }
@@ -283,37 +292,34 @@ void MPBrushSelector::typeChanged(ToolType eToolMode)
     }
 
     currentToolType = eToolMode;
+    currentToolName = toolName;
     loadToolBrushes(toolName);
 }
 
-void MPBrushSelector::selectBrush(QString brushPreset, QString brushName)
+void MPBrushSelector::selectBrush(QString brushName)
 {
+    Q_UNUSED(brushName)
     if (!isValid()) return;
-    QListWidget* listWidget = nullptr;
+    QListWidget* listWidget = currentListWidget;
     QListWidgetItem* itemWidget = nullptr;
 
-    QString identifier = brushName;
-    if (!brushPreset.isEmpty()) {
-        identifier = brushPreset + QDir::separator() + brushName;
-    }
-    for (int page = mTabWidget->count()-1 ; page >= 0 && !itemWidget ; page--)
-    {
-        // reverse loop so we leave it with first page
-        listWidget = dynamic_cast<QListWidget*>(mTabWidget->widget(page));
-        QString caption = mTabWidget->tabText(page);
-        const QStringList subList = m_brushLib.value(caption);
-        if (brushName.isEmpty()) { break; }
+    const MPBrushPreset preset = currentBrushPreset;
 
-        for (int idx = 0; idx < subList.count(); idx++)
-        {
-            if (subList.at(idx) == identifier) {
-                itemWidget = listWidget->item(idx);
-                break;
-            }
+    Q_ASSERT(listWidget != nullptr);
+
+    int listWidgetIdx = 0;
+    for (int i = 0; i < listWidget->count(); i++)
+    {
+        QListWidgetItem* item = listWidget->item(i);
+        if (item->type() == listWidgetIdx) {
+            itemWidget = listWidget->item(listWidgetIdx);
+            break;
         }
+        listWidgetIdx++;
     }
+
     // default one : we use the first tab page & the first item available:
-    if (!itemWidget && listWidget && listWidget->count())
+    if (!itemWidget && listWidget && listWidget->count() > 0)
     {
         itemWidget = listWidget->item(0);
     }
@@ -321,7 +327,7 @@ void MPBrushSelector::selectBrush(QString brushPreset, QString brushName)
     // Update GUI + load the brush (if any)
     if (itemWidget)
     {
-        mTabWidget->setCurrentWidget(listWidget);
+//        mTabWidget->setCurrentWidget(listWidget);
         listWidget->setCurrentItem(itemWidget);
         itemClicked(itemWidget);
     }
@@ -329,20 +335,19 @@ void MPBrushSelector::selectBrush(QString brushPreset, QString brushName)
 
 bool MPBrushSelector::anyBrushSelected()
 {
-    QListWidgetItem* item = nullptr;
 
-    int currentTabIndex = mTabWidget->currentIndex();
-    QListWidget* listWidget = static_cast<QListWidget*>(mTabWidget->widget(currentTabIndex));
-    QString caption = mTabWidget->tabText(currentTabIndex);
-    const QStringList subList = m_brushLib.value(caption);
+//    int currentTabIndex = mTabWidget->currentIndex();
+//    QListWidget* listWidget = static_cast<QListWidget*>(mTabWidget->widget(currentTabIndex));
+//    QString caption = mTabWidget->tabText(currentTabIndex);
+//    const MPBrushPreset subList = currentBrushPreset;
 
-    for (int idx = 0; idx < subList.count(); idx++)
-    {
-        item = listWidget->item(idx);
-        if (item->isSelected()) {
-            return true;
-        }
-    }
+//    for (int idx = 0; idx < subList.brushesForTool(caption).count(); idx++)
+//    {
+//        item = listWidget->item(idx);
+//        if (item->isSelected()) {
+//            return true;
+//        }
+//    }
 
     return false;
 }
@@ -364,12 +369,33 @@ void MPBrushSelector::openConfigurator()
             mBrushConfiguratorWidget->show();
         }
     }
-    emit brushSelected(currentToolType, currentBrushPreset, currentBrushName, currentBrushData);
+    emit brushSelected(currentToolType, currentPresetName, currentBrushName, currentBrushData);
 }
 
 void MPBrushSelector::reloadCurrentBrush()
 {
-    emit brushSelected(currentToolType, currentBrushPreset, currentBrushName, currentBrushData);
+    emit brushSelected(currentToolType, currentPresetName, currentBrushName, currentBrushData);
+}
+
+void MPBrushSelector::showPresetManager()
+{
+    if (mPresetsWidget == nullptr) {
+        mPresetsWidget = new MPBrushPresetsWidget(mBrushPresets, this);
+        connect(mPresetsWidget, &MPBrushPresetsWidget::presetsChanged, this, &MPBrushSelector::reloadBrushList);
+    }
+    mPresetsWidget->show();
+}
+
+void MPBrushSelector::changeBrushPreset(int index, QString name, int data)
+{
+    Q_UNUSED(index)
+    Q_UNUSED(data)
+
+    QSettings settings(PENCIL2D,PENCIL2D);
+    settings.setValue(SETTING_MPBRUSHPRESET, name);
+
+    currentPresetName = name;
+    populateList();
 }
 
 void MPBrushSelector::showNotImplementedPopup()

@@ -222,6 +222,8 @@ enum StabilizationLevel
 #define SETTING_FLIP_ROLL_DRAWINGS      "FlipRollDrawings"
 #define SETTING_FLIP_INBETWEEN_MSEC     "FlipInbetween"
 
+#define SETTING_MPBRUSHPRESET "MpBrushPreset"
+
 
 #define SETTING_DRAW_ON_EMPTY_FRAME_ACTION  "DrawOnEmptyFrameAction"
 

@@ -47,6 +47,7 @@ HEADERS += \
     src/mapping/mpmappingwidget.h \
     src/mpbrushconfigurator.h \
     src/mpbrushinfodialog.h \
+    src/mpbrushpresetswidget.h \
     src/shortcutfilter.h \
     src/timeline2.h \
     src/actioncommands.h \
@@ -87,6 +88,7 @@ SOURCES += \
     src/mapping/mpmappingwidget.cpp \
     src/mpbrushconfigurator.cpp \
     src/mpbrushinfodialog.cpp \
+    src/mpbrushpresetswidget.cpp \
     src/shortcutfilter.cpp \
     src/timeline2.cpp \
     src/actioncommands.cpp \
@@ -115,6 +117,7 @@ SOURCES += \
     src/mpbrushselector.cpp
 
 FORMS += \
+    src/mpbrushpresetswidget.ui \
     ui/mainwindow2.ui \
     ui/timeline2.ui \
     ui/shortcutspage.ui \

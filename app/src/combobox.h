@@ -14,7 +14,7 @@ public:
     void insertItem(const QString& text, int index, int value);
     void setItemEnabled(int index, bool disable);
     void setCurrentItemFrom(int value);
-
+    void setCurrentItemFrom(QString text);
 signals:
     void activated(int index, QString name, int data);
 

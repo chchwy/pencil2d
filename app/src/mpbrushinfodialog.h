@@ -41,16 +41,16 @@ private:
     void didPressCancel();
     void didPressSave();
     void didUpdateName();
-    void didUpdatePreset();
+    void didUpdatePreset(int index, QString name, int data);
     void didUpdateComment();
     void didUpdateVersion();
 
     QLabel* mImageLabel = nullptr;
     QPlainTextEdit* mNameTextEdit = nullptr;
-    QPlainTextEdit* mPresetTextEdit = nullptr;
+    ComboBox* mPresetComboBox = nullptr;
     QPlainTextEdit* mCommentTextEdit = nullptr;
     QPlainTextEdit* mVersionTextEdit = nullptr;
-    ComboBox* mShowInToolComboBox = nullptr;
+    ComboBox* mToolComboBox = nullptr;
     QPushButton* mSetImageButton = nullptr;
     QPushButton* mSetImageFromClipBoard = nullptr;
 
@@ -67,6 +67,9 @@ private:
     QString mBrushComment;
     QString mBrushVersion;
     QString mToolName;
+
+    QString mOldToolName;
+    QString mOldPresetName;
 
     bool mIconModified = false;
 

@@ -1,6 +1,7 @@
 #include "combobox.h"
 
 #include <QStandardItemModel>
+#include <QDebug>
 
 ComboBox::ComboBox(QWidget* parent)
     : QComboBox(parent)
@@ -26,7 +27,8 @@ void ComboBox::insertItem(const QString& text, int index, int value)
 void ComboBox::triggerActivatedVariant(int index)
 {
     int data = itemData(index).toInt();
-    activated(index, itemText(index), data);
+    QString text = itemText(index);
+    activated(index, text, data);
 }
 
 /// Sets current index based on data given
@@ -35,6 +37,15 @@ void ComboBox::triggerActivatedVariant(int index)
 void ComboBox::setCurrentItemFrom(int value)
 {
     int index = this->findData(QVariant(value));
+    setCurrentIndex(index);
+}
+
+/// Sets current index based on data given
+/// \param value value should match the data in your list
+///
+void ComboBox::setCurrentItemFrom(QString text)
+{
+    int index = this->findText(text);
     setCurrentIndex(index);
 }
 

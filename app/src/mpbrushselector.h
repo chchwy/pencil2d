@@ -8,10 +8,11 @@
 #ifndef MPBRUSHSELECTOR_H
 #define MPBRUSHSELECTOR_H
 
-//#include <QTabWidget>
 #include <QMap>
 #include <QString>
+#include <QPointer>
 
+#include "mpbrushutils.h"
 #include "basedockwidget.h"
 #include "pencildef.h"
 
@@ -19,21 +20,18 @@ class QListWidgetItem;
 class QTabWidget;
 class QListWidget;
 class MPBrushConfigurator;
-class QComboBox;
+class ComboBox;
+class QVBoxLayout;
+class MPBrushPresetsWidget;
 
-// MPBrushSelector is a TabWidget showing the various brushes (display the small screenshots)
-// it allows the user to select it and emit a signal.
-// NOTE : The order is not properly kept as I did not realize the file order.conf
-//        was containing this information. Will be fixed soon.
-//
 class MPBrushSelector : public BaseDockWidget
 {
 
   Q_OBJECT
 public:
-  MPBrushSelector(QWidget* parent = 0 );
+  MPBrushSelector(QWidget* parent = nullptr );
 
-  bool isValid() { return !m_brushLib.isEmpty(); }
+  bool isValid() { return !mBrushPresets.isEmpty(); }
   void loadToolBrushes(QString toolName);
 
   void initUI() override;
@@ -43,17 +41,18 @@ public:
 
 public slots:
   void reloadCurrentBrush();
-  void selectBrush(QString brushPreset, QString brushName);
+  void selectBrush(QString brushName);
   void typeChanged(ToolType);
   void reloadBrushList();
   void updateBrushList(QString brushName, QString brushPreset);
+  void showPresetManager();
 
 signals:
   void brushSelected (ToolType toolType, const QString& brushGroup, const QString& brushName, const QByteArray& content);
 
 protected:
-  QMap<QString, QStringList> m_brushLib;
-  QString              m_brushesPath;
+  QVector<MPBrushPreset> mBrushPresets;
+  QString mBrushesPath;
 
 protected slots:
   void itemClicked ( QListWidgetItem *);
@@ -70,18 +69,26 @@ private:
 
   void openConfigurator();
   void showNotImplementedPopup();
+  void changeBrushPreset(int index, QString name, int data);
 
-  QTabWidget* mTabWidget;
+//  QTabWidget* mTabWidget;
+
+  QVBoxLayout* mVLayout = nullptr;
   QMap<QString, QListWidget*> mToolListWidgets;
-  QComboBox* mPresetComboBox;
+  ComboBox* mPresetComboBox;
+
+  MPBrushPreset currentBrushPreset;
 
   MPBrushConfigurator* mBrushConfiguratorWidget = nullptr;
 
-  QString currentBrushPreset;
+  QString currentPresetName;
   QString currentBrushName;
   QString currentToolName;
   ToolType currentToolType;
   QByteArray currentBrushData;
+
+  QPointer<QListWidget> currentListWidget;
+  QPointer<MPBrushPresetsWidget> mPresetsWidget;
 };
 
 
