@@ -1,5 +1,4 @@
 [Desktop Entry]
-Version=1.1
 Type=Application
 Name=Pencil2D
 GenericName=Animation Software
@@ -7,15 +6,11 @@ Comment=Create traditional hand-drawn animation using both bitmap and vector gra
 Icon=pencil2d
 Exec=pencil2d %f
 MimeType=application/x-pencil2d-pcl;application/x-pencil2d-pclx;application/x-pencil2d-palette;
-Categories=Graphics;2DGraphics;VectorGraphics;RasterGraphics;Qt;AudioVideo;Video;
+Categories=Graphics;2DGraphics;VectorGraphics;RasterGraphics;
 Keywords=picture;drawing;vector;bitmap;cartoon;
 
-
 # Translations
 
-
-
-# Translations
 Name[he]=Pencil2D
 GenericName[he]=תוכנת הנפשה
 Comment[he]=צרו הנפשה מסורתית מצויירת ביד באמצעות כלי מפת ביטים וכלים וקטוריים

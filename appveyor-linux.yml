@@ -1,0 +1,46 @@
+image: Ubuntu1604
+  
+skip_commits:
+  files:
+    - '*.md'
+    - docs/*
+
+install:
+  - sudo add-apt-repository ppa:beineri/opt-qt597-xenial
+  - sudo apt-get update
+  - sudo apt-get install -y build-essential libgl1-mesa-dev
+  - sudo apt-get install -y qt59-meta-minimal qt59tools qt59multimedia qt59svg qt59xmlpatterns
+  - sudo apt-get install -y qtchooser
+  - sudo apt-get install -y python3-pip
+  - sudo apt-get install -y ffmpeg
+  - sudo python3 -m pip freeze > requirements.txt
+  - sudo python3 -m pip install -r requirements.txt
+  - sudo python3 -m pip install --upgrade oauth2client
+  - sudo python3 -m pip install --upgrade google-api-python-client
+
+before_build:
+  - qtchooser -install qt59 /opt/qt59/bin/qmake
+  - export QT_SELECT=qt59
+  - python3 --version
+  - qmake --version
+
+build_script:
+  - mkdir "build" && cd build
+  - qmake ../pencil2d.pro PREFIX=/usr CONFIG+=release CONFIG+=GIT CONFIG+=PENCIL2D_NIGHTLY
+  - make
+
+after_build:
+  - echo "${PWD}"
+  - make INSTALL_ROOT="${PWD}/Pencil2D" install
+  - echo "Creating AppImage..."
+  - install -Dm755 /usr/bin/ffmpeg Pencil2D/usr/plugins/ffmpeg
+  - wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+  - chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+  - export VERSION=0.6.4 # linuxdeployqt uses this for naming the file
+  - ./linuxdeployqt-continuous-x86_64.AppImage Pencil2D/usr/share/applications/*.desktop -appimage
+  - mv Pencil2D*.AppImage* "pencil2d-linux-$(date +"%Y-%m-%d").AppImage"
+  - ls -al
+
+test_script:
+  - ./tests/tests
+
