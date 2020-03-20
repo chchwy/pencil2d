@@ -90,7 +90,7 @@ void MPBrushSelector::updateUI()
 
 void MPBrushSelector::loadBrushes()
 {
-    QFile fileOrder(MPBrushParser::getBrushConfigPath(BRUSH_CONFIG));
+    QFile fileOrder(MPBrushParser::getBrushConfigPath(BrushConfigFile));
 
     if (fileOrder.open(QIODevice::ReadOnly))
     {

@@ -186,7 +186,7 @@ void MPBrushInfoDialog::initUI()
         mToolComboBox->addItem(mEditor->getTool(toolType)->typeName(), static_cast<int>(toolType));
     }
 
-    QFile fileOrder(MPBrushParser::getBrushConfigPath(BRUSH_CONFIG));
+    QFile fileOrder(MPBrushParser::getBrushConfigPath(BrushConfigFile));
 
     if (fileOrder.open(QIODevice::ReadOnly))
     {
