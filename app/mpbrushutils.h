@@ -465,7 +465,7 @@ struct MPCONF {
     static QString getBrushesPath()
     {
         QStringList pathList = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation);
-        return pathList.first() + "/" + "brushes";
+        return pathList.first() + QDir::separator() + "brushes";
     }
 
     static QString getValue(const QString& text) {
