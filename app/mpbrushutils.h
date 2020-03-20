@@ -19,8 +19,10 @@
 
 static const QString BRUSH_CONTENT_EXT = ".myb";
 static const QString BRUSH_PREVIEW_EXT = "_prev.png";
-static const QString BRUSH_CONFIG = "brushes.conf";
 static const QString BRUSH_QRC = ":brushes";
+static const QString BrushesFolderName = "brushes";
+static const QString BrushConfigExtension = ".conf";
+static const QString BrushConfigFile = BrushesFolderName+BrushConfigExtension;
 static const int ICON_SZ = 64;
 static const QString BRUSH_COPY_POSTFIX = "_clone";
 static const QString DefaultPreset = "deevad";
@@ -34,7 +36,7 @@ struct MPCONF {
     static Status renamePreset(const QString& oldName, const QString& newName)
     {
         Status st = Status::OK;
-        QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
+        QString brushConfigPath = getBrushesPath() + QDir::separator() + BrushConfigFile;
 
         QFile file(brushConfigPath);
         file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -94,7 +96,7 @@ struct MPCONF {
     static Status addPreset(const QString& presetName)
     {
         Status st = Status::OK;
-        QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
+        QString brushConfigPath = getBrushesPath() + QDir::separator() + BrushConfigFile;
 
         QFile file(brushConfigPath);
         file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -166,7 +168,7 @@ struct MPCONF {
     static Status removePreset(const QString presetName)
     {
         Status st = Status::OK;
-        QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
+        QString brushConfigPath = getBrushesPath() + QDir::separator() + BrushConfigFile;
 
         QFile file(brushConfigPath);
         file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -229,10 +231,11 @@ struct MPCONF {
         return st;
     }
 
+    // TODO: handle case where no conf file exists ...
     static Status addBrush(const QString toolName, const QString& brushPreset, const QString& brushName)
     {
         Status st = Status::OK;
-        QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
+        QString brushConfigPath = getBrushesPath() + QDir::separator() + BrushConfigFile;
 
         QFile file(brushConfigPath);
         file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -277,7 +280,7 @@ struct MPCONF {
                 }
             }
 
-            if ((searchingTool && searchingPreset) /*|| isBrushToken(line)*/) {
+            if (searchingTool && searchingPreset) {
                 if (!brushAdded) {
 
                     if (isToolToken(line)) {
@@ -319,7 +322,7 @@ struct MPCONF {
     static Status removeBrush(const QString& brushPreset, const QString& toolName, const QString& brushName)
     {
         Status st = Status::OK;
-        QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
+        QString brushConfigPath = getBrushesPath() + QDir::separator() + BrushConfigFile;
 
         QFile file(brushConfigPath);
 
@@ -399,7 +402,7 @@ struct MPCONF {
     static Status blackListBrushFile(const QString& brushPreset, const QString& brushName)
     {
         Status st = Status::OK;
-        QString brushConfigPath = getBrushesPath() + QDir::separator() + BRUSH_CONFIG;
+        QString brushConfigPath = getBrushesPath() + QDir::separator() + BrushConfigFile;
 
         QFile file(brushConfigPath);
 
@@ -733,20 +736,37 @@ struct MPBrushParser {
         QDir dir(appDataBrushesPath);
 
         // Brush folder exists, no need to copy resources again
+        Status st = Status::OK;
         if (dir.exists()) {
             return Status::OK;
         } else {
-            dir.mkdir(appDataBrushesPath);
+            bool success = dir.mkpath(appDataBrushesPath);
+
+            if (!success) {
+                st = Status::FAIL;
+                st.setTitle(QObject::tr("Folder creation failed"));
+                st.setDescription(QObject::tr("Creating brushes folder failed"));
+                return st;
+            }
         }
 
         dir.setPath(BRUSH_QRC);
 
-        QString internalBrushConfigPath = QString(BRUSH_QRC) + QDir::separator() + BRUSH_CONFIG;
+        QString internalBrushConfigPath = BRUSH_QRC + QDir::separator() + BrushConfigFile;
 
-        QFile appDataFile(appDataBrushesPath+QDir::separator()+BRUSH_CONFIG);
+        QFile appDataFile(appDataBrushesPath+QDir::separator()+BrushConfigFile);
         if (!appDataFile.exists()) {
             QFile resFile(internalBrushConfigPath);
-            resFile.copy(appDataFile.fileName());
+            bool success = resFile.copy(appDataFile.fileName());
+
+            if (!success) {
+                st = Status::FAIL;
+                st.setTitle(QObject::tr("Copy failure"));
+                st.setDescription(QObject::tr("The file: ") + resFile.fileName() +
+                                  QObject::tr(" couldn't be copied to:" ) + appDataFile.fileName() +
+                                  QObject::tr("\nThe following error was given:") + resFile.errorString());
+                return st;
+            }
 
             // make sure file has read and write access
             appDataFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
@@ -761,10 +781,17 @@ struct MPBrushParser {
                 continue;
             }
 
-            QDir internalBrushDir(QString(BRUSH_QRC) + QDir::separator() +entry);
-            QDir externalBrushDir(appDataBrushesPath + QDir::separator() +entry);
+            QDir internalBrushDir(BRUSH_QRC + QDir::separator() + entry);
+            QDir externalBrushDir(appDataBrushesPath + QDir::separator() + entry);
             if (!externalBrushDir.exists()) {
-                externalBrushDir.mkpath(appDataBrushesPath + QDir::separator() + entry);
+                bool success = externalBrushDir.mkpath(appDataBrushesPath + QDir::separator() + entry);
+
+                if (!success) {
+                    st = Status::FAIL;
+                    st.setTitle(QObject::tr("Folder creation failed"));
+                    st.setDescription(QObject::tr("Creating folder for: ") + entry + QObject::tr("failed"));
+                    return st;
+                }
             }
 
             QStringList dirContent = internalBrushDir.entryList();
@@ -773,14 +800,22 @@ struct MPBrushParser {
                 QFile brushFile(externalBrushDir.path() + QDir::separator() + entryDown);
 
                 if (!brushFile.exists()) {
-                    internalBrushFile.copy(brushFile.fileName());
+                    bool success = internalBrushFile.copy(brushFile.fileName());
+
+                    if (!success) {
+                        st = Status::FAIL;
+                        st.setTitle(QObject::tr("Copy failure"));
+                        st.setDescription(QObject::tr("The file: ") + brushFile.fileName()+
+                                          QObject::tr(" couldn't be copied to:" ) + internalBrushFile.fileName() +
+                                          QObject::tr("\nThe following error was given:") + internalBrushFile.errorString());
+                        return st;
+                    }
                     brushFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
                 }
-
             }
         }
 
-        return Status::OK;
+        return st;
     }
 
     static QString getBrushPreviewImagePath(const QString& brushPreset, const QString brushName)
