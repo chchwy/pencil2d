@@ -248,10 +248,11 @@ void MPSurface::saveSurface(const QString path)
  */
 QList<QPoint> MPSurface::findCorrespondingTiles(const QRect& rect)
 {
+    QRect searchRect = QRect(rect.topLeft(), rect.size());
     const int tileWidth = MYPAINT_TILE_SIZE;
     const int tileHeight = MYPAINT_TILE_SIZE;
-    const float imageWidth = rect.width();
-    const float imageHeight = rect.height();
+    const float imageWidth = searchRect.width();
+    const float imageHeight = searchRect.height();
     const int nbTilesOnWidth = static_cast<int>(ceil(imageWidth / tileWidth));
     const int nbTilesOnHeight = static_cast<int>(ceil(imageHeight / tileHeight));
 
@@ -260,7 +261,7 @@ QList<QPoint> MPSurface::findCorrespondingTiles(const QRect& rect)
     QList<QPoint> corners;
     const QPoint& cornerOffset = QPoint(tileWidth, tileHeight);
 
-    corners.append({rect.topLeft(), rect.topRight(), rect.bottomLeft(), rect.bottomRight()});
+    corners.append({searchRect.topLeft(), searchRect.topRight(), searchRect.bottomLeft(), searchRect.bottomRight()});
     for (int h=0; h < nbTilesOnHeight; h++) {
         for (int w=0; w < nbTilesOnWidth; w++) {
 
@@ -273,7 +274,7 @@ QList<QPoint> MPSurface::findCorrespondingTiles(const QRect& rect)
                     continue;
                 }
 
-                if (QRect(movedPos, QSize(tileWidth,tileHeight)).intersects(rect)) {
+                if (QRect(movedPos, QSize(tileWidth,tileHeight)).intersects(searchRect)) {
                     points.append(movedPos);
                 }
             }
@@ -425,9 +426,11 @@ MPTile* MPSurface::getTileFromIdx(const QPoint& idx)
 
         QPoint tilePos (getTilePos(idx));
         selectedTile->setPos(tilePos);
-    }
 
-    this->onNewTileFunction(this, selectedTile);
+        this->onNewTileFunction(this, selectedTile);
+    } else {
+        this->onUpdateTileFunction(this, selectedTile);
+    }
 
     return selectedTile;
 }

@@ -136,7 +136,9 @@ private:
 
     bool bMultiLayerOnionSkin = false;
     bool mIsPainting = false;
-    bool mUseCanvasBuffer = false;
+
+    // Polyline requires this
+    bool mPaintOnTopOfBuffer = true;
 
     // Handle selection transformation
     bool mRenderTransform = false;

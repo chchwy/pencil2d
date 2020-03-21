@@ -55,6 +55,8 @@ public:
     float getValue(MyPaintBrushSetting setting);
     void setValue(MyPaintBrushSetting setting, float value);
 
+    float getState(MyPaintBrushState state);
+
     int getNumberOfMappingPoints(MyPaintBrushSetting id, MyPaintBrushInput input);
     void setNumberOfMappingPoints(MyPaintBrushSetting setting, MyPaintBrushInput input, int value);
 

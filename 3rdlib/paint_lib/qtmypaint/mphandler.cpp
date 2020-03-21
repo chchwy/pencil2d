@@ -117,7 +117,6 @@ void MPHandler::loadImage(const QImage &image, const QPoint topLeft)
     m_surface->loadImage(image, topLeft);
 }
 
-
 /**
  * @brief MPHandler::saveSurface
  * Debug method to check the content of surface
@@ -211,6 +210,11 @@ MPHandler::endStroke()
 float MPHandler::getBrushValue(MyPaintBrushSetting setting)
 {
     return this->m_brush->getValue(setting);
+}
+
+float MPHandler::getBrushState(MyPaintBrushState state)
+{
+    return this->m_brush->getState(state);
 }
 
 void

@@ -66,6 +66,10 @@ enum class BrushSettingType {
         BRUSH_SETTINGS_COUNT
 };
 
+enum class BrushState {
+    BRUSH_STATE_ACTUAL_RADIUS
+};
+
 enum class BrushInputType {
         BRUSH_INPUT_PRESSURE,
         BRUSH_INPUT_SPEED1,

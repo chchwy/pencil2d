@@ -200,6 +200,7 @@ public:
 
     void paintBitmapBuffer(QPainter::CompositionMode composition = QPainter::CompositionMode_Source);
 //    void paintBitmapBufferRect(const QRect& rect);
+    void paintCanvasCursor(QPainter& painter);
     void paintCanvasCursor();
     void clearBitmapBuffer();
     void refreshBitmap(const QRectF& rect, int rad);
@@ -226,7 +227,6 @@ public:
     QPixmap mTransCursImg;
 
     MPHandler* mMyPaint = nullptr;
-    MPHandler* mMyPaintBuffer = nullptr;
     QHash<QString, MPTile*> mBufferTiles;
 private:
 
@@ -234,7 +234,7 @@ private:
     bool mFrameFirstLoad = false;
 //    void drawCanvas(int frame, QRect rect);
     void settingUpdated(SETTING setting);
-    void paintSelectionAnchors();
+    void paintSelectionAnchors(QPainter& painter);
 
     void updateFrame();
     void drawCanvas(int frame);

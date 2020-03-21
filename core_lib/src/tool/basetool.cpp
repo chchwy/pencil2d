@@ -120,33 +120,18 @@ bool BaseTool::isDrawingTool()
  * @brief precision circular cursor: used for drawing a cursor within scribble area.
  * @return QPixmap
  */
-QPixmap BaseTool::canvasCursor(float width, float feather, bool useFeather, float scalingFac, int windowWidth)
+QPixmap BaseTool::canvasCursor(float width, float scalingFac, int windowWidth)
 {
-    float propWidth = width * scalingFac;
-    float propFeather = feather * scalingFac;
+    qreal propWidth = static_cast<qreal>(width * scalingFac);
 
-    float cursorWidth = 0.0f;
-    float xyA = 0.0f;
-    float xyB = 0.0f;
-    float whA = 0.0f;
-    float whB = 0.0f;
+    qreal cursorWidth = propWidth*2.0;
+    qreal whA = 0.0;
+    qreal whB = 0.0;
 
-    if (useFeather)
-    {
-        cursorWidth = propWidth + 0.5 * propFeather;
-        xyA = 1 + propFeather / 2;
-        xyB = 1 + propFeather / 8;
-        whA = qMax<float>(0, propWidth - xyA - 1);
-        whB = qMax<float>(0, cursorWidth - propFeather / 4 - 2);
-    }
-    else
-    {
-        cursorWidth = (propWidth + 0.5);
-        whA = qMax<float>(0, propWidth - 1);
-        whB = qMax<float>(0, cursorWidth / 4 - 2);
-    }
+    qreal radius = cursorWidth / 2.0;
 
-    float radius = cursorWidth / 2;
+    whA = qMax<qreal>(0, cursorWidth);
+    whB = qMax<qreal>(0, cursorWidth);
 
     // deallocate when cursor width gets some value larger than the widget
     if (cursorWidth > windowWidth * 2)
@@ -154,9 +139,11 @@ QPixmap BaseTool::canvasCursor(float width, float feather, bool useFeather, floa
         return QPixmap(0, 0);
     }
 
-    if (cursorWidth < 1) { cursorWidth = 1; }
+    if (cursorWidth <= 0) { cursorWidth = 0.1; }
 
-    QPixmap cursorPixmap = QPixmap(cursorWidth, cursorWidth);
+    int extraSpace = 2;
+    QPixmap cursorPixmap = QPixmap(static_cast<int>(cursorWidth)+extraSpace,
+                                   static_cast<int>(cursorWidth)+extraSpace);
     if (!cursorPixmap.isNull())
     {
         cursorPixmap.fill(QColor(255, 255, 255, 0));
@@ -168,31 +155,19 @@ QPixmap BaseTool::canvasCursor(float width, float feather, bool useFeather, floa
         cursorPen.setStyle(Qt::SolidLine);
         cursorPen.setColor(QColor(0, 0, 0, 127));
         cursorPainter.setPen(cursorPen);
-        cursorPainter.drawLine(QPointF(radius - 2, radius), QPointF(radius + 2, radius));
-        cursorPainter.drawLine(QPointF(radius, radius - 2), QPointF(radius, radius + 2));
-
-        // Draw outer circle
-        if (useFeather)
-        {
-            cursorPen.setStyle(Qt::DotLine);
-            cursorPen.setColor(QColor(0, 0, 0, 255));
-            cursorPainter.setPen(cursorPen);
-            cursorPainter.drawEllipse(QRectF(xyB, xyB, whB, whB));
-            cursorPen.setDashOffset(4);
-            cursorPen.setColor(QColor(255, 255, 255, 255));
-            cursorPainter.setPen(cursorPen);
-            cursorPainter.drawEllipse(QRectF(xyB, xyB, whB, whB));
-        }
+        cursorPainter.drawLine(QPointF(radius - 2.0, radius), QPointF(radius + 2.0, radius));
+        cursorPainter.drawLine(QPointF(radius, radius - 2.0), QPointF(radius, radius + 2.0));
 
         // Draw inner circle
         cursorPen.setStyle(Qt::DotLine);
+        cursorPen.setDashOffset(4);
         cursorPen.setColor(QColor(0, 0, 0, 255));
         cursorPainter.setPen(cursorPen);
-        cursorPainter.drawEllipse(QRectF(xyA, xyA, whA, whA));
-        cursorPen.setDashOffset(4);
+        cursorPainter.drawEllipse(QRectF(0, 0, whA, whA));
+        cursorPen.setDashOffset(3);
         cursorPen.setColor(QColor(255, 255, 255, 255));
         cursorPainter.setPen(cursorPen);
-        cursorPainter.drawEllipse(QRectF(xyA, xyA, whA, whA));
+        cursorPainter.drawEllipse(QRectF(0, 0, whA, whA));
 
         cursorPainter.end();
     }

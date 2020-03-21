@@ -111,6 +111,11 @@ float MPBrush::getValue(MyPaintBrushSetting setting)
     return mypaint_brush_get_base_value(brush, setting);
 }
 
+float MPBrush::getState(MyPaintBrushState state)
+{
+    return mypaint_brush_get_state(brush, state);
+}
+
 void MPBrush::setValue(MyPaintBrushSetting setting, float value)
 {
     mypaint_brush_set_base_value(brush, setting, value);

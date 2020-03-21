@@ -88,7 +88,7 @@ void CanvasPainter::paint(QPainter& painter, const Object* object, int layerInde
 
     mIsPainting = isPainting;
     mTilesToBeRendered = tilesToBeRendered;
-    mUseCanvasBuffer = useCanvasBuffer;
+    mPaintOnTopOfBuffer = useCanvasBuffer;
 
     initPaint(object, layerIndex, frameIndex);
 
@@ -182,7 +182,6 @@ void CanvasPainter::paintOnionSkin(QPainter& painter)
 
 void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameIndex, bool colorizeOnionSkin)
 {
-
     LayerBitmap* bitmapLayer = static_cast<LayerBitmap*>(layer);
     BitmapImage* bitmapImage = bitmapLayer->getLastBitmapImageAtFrame(frameIndex);
 
@@ -190,16 +189,15 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameI
         paintColoredOnionSkin(painter, frameIndex);
     }
 
+    QImage image = bitmapImage->image()->copy();
+
     QTransform v = mViewTransform;
     if (mIsPainting && !mTilesToBeRendered.isEmpty()) {
 
-        if (mUseCanvasBuffer) {
-            painter.save();
-            painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-            const QRect& mappedBounds = v.mapRect(bitmapImage->bounds());
-            painter.drawImage(mappedBounds, *bitmapImage->image());
-            painter.restore();
-        }
+        const QRect& mappedBounds = v.mapRect(bitmapImage->bounds());
+
+        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        painter.drawImage(mappedBounds, image);
 
         for (MPTile* item : mTilesToBeRendered) {
 
@@ -214,6 +212,13 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameI
 
             QRect alignedRect = tileRect.toRect();
             if (isRectInsideCanvas(alignedRect)) {
+
+                // remove previous bitmap to avoid multiplying alpha...
+                if (!mPaintOnTopOfBuffer) {
+                    painter.fillRect(alignedRect, Qt::white);
+                }
+
+                painter.setCompositionMode(QPainter::CompositionMode::CompositionMode_SourceOver);
                 painter.drawPixmap(alignedRect, pix);
             }
         }

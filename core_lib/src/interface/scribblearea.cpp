@@ -291,17 +291,14 @@ void ScribbleArea::drawCanvas(int frame)
     mCanvasPainter.setCanvas( &mCanvas );
     mCanvasPainter.setViewTransform( mEditor->view()->getView());
 
-    bool useCanvasBuffer = false;
+    bool paintOnTopOfImage = false;
     if (currentTool()->type() == POLYLINE) {
-        useCanvasBuffer = true;
+        paintOnTopOfImage = true;
     }
-    mCanvasPainter.paint(painter, object, mEditor->layers()->currentLayerIndex(), frame, tilesToBeRendered.values(), mIsPainting, useCanvasBuffer);
+    mCanvasPainter.paint(painter, object, mEditor->layers()->currentLayerIndex(), frame, tilesToBeRendered.values(), mIsPainting, paintOnTopOfImage);
 
-    painter.save();
-    painter.setTransform(mEditor->view()->getView());
-    painter.setPen(Qt::red);
-    painter.drawRect(debugBlitRect);
-    painter.restore();
+    paintCanvasCursor(painter);
+    paintSelectionAnchors(painter);
 
     // Cache current frame for faster render
     //
@@ -946,10 +943,8 @@ void ScribbleArea::refreshVector(const QRectF& rect, int rad)
     update(rect.normalized().adjusted(-rad, -rad, +rad, +rad).toRect());
 }
 
-void ScribbleArea::paintCanvasCursor()
+void ScribbleArea::paintCanvasCursor(QPainter& painter)
 {
-    QPainter painter(this);
-
     QTransform view = mEditor->view()->getView();
     QPointF mousePos = currentTool()->getCurrentPoint();
     int centerCal = mCursorImg.width() / 2;
@@ -970,16 +965,16 @@ void ScribbleArea::paintCanvasCursor()
 void ScribbleArea::updateCanvasCursor()
 {
     float scalingFac = mEditor->view()->scaling();
-    qreal brushWidth = currentTool()->properties.width;
-    qreal brushFeather = currentTool()->properties.feather;
+    float brushWidth = mMyPaint->getBrushState(MyPaintBrushState::MYPAINT_BRUSH_STATE_ACTUAL_RADIUS);
+
     if (currentTool()->isAdjusting())
     {
+        qreal brushFeather = currentTool()->properties.feather;
         mCursorImg = currentTool()->quickSizeCursor(static_cast<float>(brushWidth), static_cast<float>(brushFeather), scalingFac);
     }
     else if (mEditor->preference()->isOn(SETTING::DOTTED_CURSOR))
     {
-        bool useFeather = currentTool()->properties.useFeather;
-        mCursorImg = currentTool()->canvasCursor(static_cast<float>(brushWidth), static_cast<float>(brushFeather), useFeather, scalingFac, width());
+        mCursorImg = currentTool()->canvasCursor(static_cast<float>(brushWidth), scalingFac, width());
     }
     else
     {
@@ -990,8 +985,8 @@ void ScribbleArea::updateCanvasCursor()
     QPoint translatedPos = QPoint(static_cast<int>(mTransformedCursorPos.x() - mCursorCenterPos.x()),
                                   static_cast<int>(mTransformedCursorPos.y() - mCursorCenterPos.y()));
 
-    update(mCursorImg.rect().translated(translatedPos));
-
+    QRect cursorRect = mCursorImg.rect().translated(translatedPos);
+    update(cursorRect);
 }
 
 void ScribbleArea::handleDrawingOnEmptyFrame()
@@ -1060,8 +1055,6 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 //            mPixmapCacheKeys[frameNumber] = QPixmapCache::insert(mCanvas);
 //            //qDebug() << "Repaint canvas!";
             drawCanvas(mEditor->currentFrame());
-            paintCanvasCursor();
-            paintSelectionAnchors();
         }
 //    }
 
@@ -1081,7 +1074,6 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 //    paintCanvasCursor(painter);
 
 //    painter.setCompositionMode(-QPainter::CompositionMode_DestinationOut);
-//    updateCanvasCursor();
 
     //        // paints the selection outline
     //        if (mSomethingSelected && !myTempTransformedSelection.isNull())
@@ -1201,10 +1193,8 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
     event->accept();
 }
 
-void ScribbleArea::paintSelectionAnchors()
+void ScribbleArea::paintSelectionAnchors(QPainter& painter)
 {
-    QPainter painter(this);
-
     Object* object = mEditor->object();
 
     auto selectMan = mEditor->select();
@@ -1286,7 +1276,6 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 
     tile->setDirty(true);
     mBufferTiles.insert(QString::number(pos.x())+"_"+QString::number(pos.y()), tile);
-
 }
 
 /************************************************************************************/
@@ -1302,12 +1291,20 @@ void ScribbleArea::startStroke()
     mMyPaint->startStroke();
     mIsPainting = true;
 
-    qDebug() << "start stroke";
+    QRect canvasRect = mEditor->view()->mapScreenToCanvas(rect()).toRect();
 
+    qDebug() << canvasRect;
+
+    QRect bounds = currentBitmapImage(mEditor->layers()->currentLayer())->bounds();
+
+    if (canvasRect.width() < bounds.width() && canvasRect.height() < bounds.height()) {
+        bounds = canvasRect;
+    }
 }
 
 void ScribbleArea::setBrushWidth(float width)
 {
+    Q_UNUSED(width)
 //    mMyPaint->setBrushWidth(width);
 }
 
@@ -1328,6 +1325,7 @@ void ScribbleArea::updateDirtyTiles()
 {
     QTransform v = mEditor->view()->getView();
     QHashIterator<QString, MPTile*> i(mBufferTiles);
+    int counter = 0;
     while (i.hasNext()) {
         i.next();
         MPTile* tile = i.value();
@@ -1339,6 +1337,9 @@ void ScribbleArea::updateDirtyTiles()
             update(mappedRect.toRect());
 
             tile->setDirty(false);
+//            qDebug() << "found dirty tile: ";
+//            qDebug() << "tile clean counter" << counter;
+            counter++;
         }
     }
 }
@@ -1680,6 +1681,10 @@ void ScribbleArea::brushSettingChanged(BrushSettingType settingType, float value
 {
     qDebug() << "value before mypaint: " << value;
     mMyPaint->setBrushValue(static_cast<MyPaintBrushSetting>(settingType), value);
+
+    float brushWidth = mMyPaint->getBrushState(MyPaintBrushState::MYPAINT_BRUSH_STATE_ACTUAL_RADIUS);
+    qDebug() << "brushWidth after change: " << brushWidth;
+    updateCanvasCursor();
 }
 
 float ScribbleArea::getBrushSetting(BrushSettingType settingType)
