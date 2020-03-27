@@ -1299,29 +1299,14 @@ void MainWindow2::makeConnections(Editor* editor, ColorInspector* colorInspector
 }
 
 void MainWindow2::makeConnections(Editor* editor, ScribbleArea* scribbleArea)
-{
-
-    // TODO: add this
-//    connect( editor->tools(), &ToolManager::toolChanged, editor, &Editor::setCurrentTool );
-
-    connect( editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::showCurrentFrame );
-
-//    connect( editor, &Editor::toggleOnionPrev, scribbleArea, &ScribbleArea::toggleOnionPrev );
-//    connect( editor, &Editor::toggleOnionNext, scribbleArea, &ScribbleArea::toggleOnionNext );
-//    connect( editor, &Editor::toggleMultiLayerOnionSkin, scribbleArea, &ScribbleArea::toggleMultiLayerOnionSkin );
-
-//    connect( editor, &Editor::selectAll, scribbleArea, &ScribbleArea::selectAll );
-
+{   
+    connect(editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::showCurrentFrame );
+    connect(editor->tools(), &ToolManager::toolChanged, scribbleArea, &ScribbleArea::setCurrentTool );
     connect(editor->view(), &ViewManager::viewChanged, scribbleArea, &ScribbleArea::updateAllFrames );
     connect(editor->tools(), &ToolManager::toolChanged, scribbleArea, &ScribbleArea::setCurrentTool);
     connect(editor->tools(), &ToolManager::toolPropertyChanged, scribbleArea, &ScribbleArea::updateToolCursor);
     connect(editor->layers(), &LayerManager::currentLayerChanged, scribbleArea, &ScribbleArea::layerChanged);
     connect(editor->layers(), &LayerManager::layerDeleted, scribbleArea, &ScribbleArea::updateAllFrames);
-
-//    connect(editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::updateFrame);
-
-//    connect(editor->view(), &ViewManager::viewChanged, scribbleArea, &ScribbleArea::updateAllFrames);
-    //connect( editor->preference(), &PreferenceManager::preferenceChanged, scribbleArea, &ScribbleArea::onPreferencedChanged );
 }
 
 void MainWindow2::makeConnections(Editor* pEditor, TimeLine* pTimeline)

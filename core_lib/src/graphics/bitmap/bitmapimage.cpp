@@ -713,14 +713,11 @@ void BitmapImage::clear()
 
 void BitmapImage::clear(QRect rectangle)
 {
-    QRect clearRectangle = mBounds.intersected(rectangle);
-    clearRectangle.moveTopLeft(clearRectangle.topLeft() - mBounds.topLeft());
-
-    setCompositionModeBounds(clearRectangle, true, QPainter::CompositionMode_Clear);
+    extend(QRect(rectangle.topLeft(), rectangle.size()));
 
     QPainter painter(image());
     painter.setCompositionMode(QPainter::CompositionMode_Clear);
-    painter.fillRect(clearRectangle, QColor(0, 0, 0, 0));
+    painter.fillRect(QRect(rectangle.topLeft()-topLeft(), rectangle.size()), Qt::transparent);
     painter.end();
 
     modification();

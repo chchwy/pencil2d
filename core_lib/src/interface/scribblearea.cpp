@@ -266,7 +266,6 @@ void ScribbleArea::showCurrentFrame()
 void ScribbleArea::updateFrame()
 {
     update();
-
     qDebug() << "update + clear frame";
 }
 
@@ -363,9 +362,6 @@ void ScribbleArea::updateFrame(int frame)
 void ScribbleArea::reloadMyPaint()
 {
     mFrameFirstLoad = true;
-    mIsPainting = false;
-
-    mMyPaint->clearSurface();
 }
 
 void ScribbleArea::layerChanged()
