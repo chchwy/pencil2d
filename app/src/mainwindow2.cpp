@@ -1305,7 +1305,6 @@ void MainWindow2::makeConnections(Editor* editor, ScribbleArea* scribbleArea)
 //    connect( editor->tools(), &ToolManager::toolChanged, editor, &Editor::setCurrentTool );
 
     connect( editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::showCurrentFrame );
-    connect( editor->layers(), &LayerManager::currentLayerChanged, scribbleArea, &ScribbleArea::updateAllFrames );
 
 //    connect( editor, &Editor::toggleOnionPrev, scribbleArea, &ScribbleArea::toggleOnionPrev );
 //    connect( editor, &Editor::toggleOnionNext, scribbleArea, &ScribbleArea::toggleOnionNext );
@@ -1313,10 +1312,10 @@ void MainWindow2::makeConnections(Editor* editor, ScribbleArea* scribbleArea)
 
 //    connect( editor, &Editor::selectAll, scribbleArea, &ScribbleArea::selectAll );
 
-    connect( editor->view(), &ViewManager::viewChanged, scribbleArea, &ScribbleArea::updateAllFrames );
+    connect(editor->view(), &ViewManager::viewChanged, scribbleArea, &ScribbleArea::updateAllFrames );
     connect(editor->tools(), &ToolManager::toolChanged, scribbleArea, &ScribbleArea::setCurrentTool);
     connect(editor->tools(), &ToolManager::toolPropertyChanged, scribbleArea, &ScribbleArea::updateToolCursor);
-    connect(editor->layers(), &LayerManager::currentLayerChanged, scribbleArea, &ScribbleArea::updateAllFrames);
+    connect(editor->layers(), &LayerManager::currentLayerChanged, scribbleArea, &ScribbleArea::layerChanged);
     connect(editor->layers(), &LayerManager::layerDeleted, scribbleArea, &ScribbleArea::updateAllFrames);
 
 //    connect(editor, &Editor::currentFrameChanged, scribbleArea, &ScribbleArea::updateFrame);

@@ -92,7 +92,7 @@ void CanvasPainter::paint(QPainter& painter, const Object* object, int layerInde
 
     initPaint(object, layerIndex, frameIndex);
 
-    paintCurrentFrame(painter);
+    paintFrames(painter);
     paintCameraBorder(painter);
 
     // post effects
@@ -180,30 +180,53 @@ void CanvasPainter::paintOnionSkin(QPainter& painter)
     }
 }
 
-void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameIndex, bool colorizeOnionSkin)
+void CanvasPainter::paintCurrentBitmapFrame(QPainter& painter, BitmapImage* image)
 {
-    LayerBitmap* bitmapLayer = static_cast<LayerBitmap*>(layer);
-    BitmapImage* bitmapImage = bitmapLayer->getLastBitmapImageAtFrame(frameIndex);
-
-    if (colorizeOnionSkin) {
-        paintColoredOnionSkin(painter, frameIndex);
-    }
-
-    QImage image = bitmapImage->image()->copy();
-
     QTransform v = mViewTransform;
-    if (mIsPainting && !mTilesToBeRendered.isEmpty()) {
 
-        const QRect& mappedBounds = v.mapRect(bitmapImage->bounds());
+    if (image->bounds().isValid()) {
+        QImage imageCopy = image->image()->copy();
 
-        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-        painter.drawImage(mappedBounds, image);
+        QRectF mappedBounds = v.mapRect(image->bounds());
+        // Scale image to new smaller or greater size depending on zoom level
+        imageCopy = imageCopy.scaled(mappedBounds.size().toSize(),
+                                             Qt::IgnoreAspectRatio, Qt::FastTransformation);
+
+        QPainter newPaint(&imageCopy);
+        newPaint.translate(-mappedBounds.topLeft());
 
         for (MPTile* item : mTilesToBeRendered) {
-
             QRectF tileRect = QRectF(item->pos(),
                                    QSizeF(item->boundingRect().width(),
                                          item->boundingRect().height()));
+
+            tileRect = v.mapRect(tileRect);
+
+            QPixmap pix = item->pixmap();
+            QRect alignedRect = tileRect.toRect();
+            prescaleSurface(painter, pix, alignedRect);
+
+            if (isRectInsideCanvas(alignedRect)) {
+
+                // Tools that require continous clearing should not get in here
+                // eg. polyline because it's already clearing its surface per dab it creates
+                if (!mPaintOnTopOfBuffer) {
+                    newPaint.setCompositionMode(QPainter::CompositionMode_Clear);
+                    newPaint.fillRect(alignedRect, Qt::transparent);
+                }
+
+                painter.drawPixmap(alignedRect, pix);
+            }
+        }
+        newPaint.end();
+
+        // Paint the modified layer image
+        painter.drawImage(mappedBounds, imageCopy);
+    } else {
+        for (MPTile* item : mTilesToBeRendered) {
+            QRectF tileRect = QRectF(item->pos(),
+                                     QSizeF(item->boundingRect().width(),
+                                            item->boundingRect().height()));
             tileRect = v.mapRect(tileRect);
 
             QPixmap pix = item->pixmap();
@@ -212,17 +235,27 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int frameI
 
             QRect alignedRect = tileRect.toRect();
             if (isRectInsideCanvas(alignedRect)) {
-
-                // remove previous bitmap to avoid multiplying alpha...
-                if (!mPaintOnTopOfBuffer) {
-                    painter.fillRect(alignedRect, Qt::white);
-                }
-
                 painter.setCompositionMode(QPainter::CompositionMode::CompositionMode_SourceOver);
                 painter.drawPixmap(alignedRect, pix);
             }
         }
-    } else {
+    }
+}
+
+void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int layerIndex, int frameIndex, bool colorizeOnionSkin)
+{
+    LayerBitmap* bitmapLayer = static_cast<LayerBitmap*>(layer);
+    BitmapImage* bitmapImage = bitmapLayer->getLastBitmapImageAtFrame(frameIndex);
+
+    if (colorizeOnionSkin) {
+        paintColoredOnionSkin(painter, frameIndex);
+    }
+
+    QTransform v = mViewTransform;
+
+    if (mIsPainting && layerIndex == mCurrentLayerIndex) {
+        paintCurrentBitmapFrame(painter, bitmapImage);
+    } else if (layerIndex != mCurrentLayerIndex || !mIsPainting) {
         const QRect& mappedBounds = v.mapRect(bitmapImage->bounds());
         painter.drawImage(mappedBounds, *bitmapImage->image());
     }
@@ -278,67 +311,67 @@ void CanvasPainter::paintColoredOnionSkin(QPainter& painter, const int frameInde
 //                     false);
 }
 
-void CanvasPainter::paintBitmapFrame(QPainter& painter,
-                                     Layer* layer,
-                                     int nFrame,
-                                     bool colorize,
-                                     bool useLastKeyFrame)
-{
-#ifdef _DEBUG
-    LayerBitmap* bitmapLayer = dynamic_cast<LayerBitmap*>(layer);
-    if (bitmapLayer == nullptr)
-    {
-        Q_ASSERT(bitmapLayer);
-        return;
-    }
-#else
-    LayerBitmap* bitmapLayer = static_cast<LayerBitmap*>(layer);
-#endif
+//void CanvasPainter::paintBitmapFrame(QPainter& painter,
+//                                     Layer* layer,
+//                                     int nFrame,
+//                                     bool colorize,
+//                                     bool useLastKeyFrame)
+//{
+//#ifdef _DEBUG
+//    LayerBitmap* bitmapLayer = dynamic_cast<LayerBitmap*>(layer);
+//    if (bitmapLayer == nullptr)
+//    {
+//        Q_ASSERT(bitmapLayer);
+//        return;
+//    }
+//#else
+//    LayerBitmap* bitmapLayer = static_cast<LayerBitmap*>(layer);
+//#endif
 
-    //qCDebug(mLog) << "Paint Onion skin bitmap, Frame = " << nFrame;
-    BitmapImage* paintedImage = nullptr;
-    if (useLastKeyFrame)
-    {
-        paintedImage = bitmapLayer->getLastBitmapImageAtFrame(nFrame, 0);
-    }
-    else
-    {
-        paintedImage = bitmapLayer->getBitmapImageAtFrame(nFrame);
-    }
+//    //qCDebug(mLog) << "Paint Onion skin bitmap, Frame = " << nFrame;
+//    BitmapImage* paintedImage = nullptr;
+//    if (useLastKeyFrame)
+//    {
+//        paintedImage = bitmapLayer->getLastBitmapImageAtFrame(nFrame, 0);
+//    }
+//    else
+//    {
+//        paintedImage = bitmapLayer->getBitmapImageAtFrame(nFrame);
+//    }
 
-    if (paintedImage == nullptr || paintedImage->bounds().isEmpty())
-    {
-        return;
-    }
+//    if (paintedImage == nullptr || paintedImage->bounds().isEmpty())
+//    {
+//        return;
+//    }
 
-//    QImage* pImage = new QImage( mCanvas->size(), QImage::Format_ARGB32_Premultiplied );
+////    QImage* pImage = new QImage( mCanvas->size(), QImage::Format_ARGB32_Premultiplied );
 
-    paintedImage->loadFile(); // Critical! force the BitmapImage to load the image
-    //qCDebug(mLog) << "Paint Image Size:" << paintedImage->image()->size();
+//    paintedImage->loadFile(); // Critical! force the BitmapImage to load the image
+//    //qCDebug(mLog) << "Paint Image Size:" << paintedImage->image()->size();
 
-    BitmapImage paintToImage;
-    paintToImage.paste(paintedImage);
+//    BitmapImage paintToImage;
+//    paintToImage.paste(paintedImage);
 
-    if (colorize)
-    {
-//        paintColoredOnionSkin(painter);
-    }
+//    if (colorize)
+//    {
+////        paintColoredOnionSkin(painter);
+//    }
 
-    // If the current frame on the current layer has a transformation, we apply it.
-    if (mRenderTransform && nFrame == mFrameNumber && layer == mObject->getLayer(mCurrentLayerIndex))
-    {
-        paintToImage.clear(mSelection);
-        paintTransformedSelection(painter);
-    }
+//    // If the current frame on the current layer has a transformation, we apply it.
+//    if (mRenderTransform && nFrame == mFrameNumber && layer == mObject->getLayer(mCurrentLayerIndex))
+//    {
+//        paintToImage.clear(mSelection);
+//        paintTransformedSelection(painter);
+//    }
 
-    qDebug() << paintToImage.bounds();
-    painter.setWorldMatrixEnabled(true);
-//    painter.drawRect(paintToImage.bounds());
-//    qDebug() << painter.transform();
-//    paintToImage.setBounds(QRect(mCanvas->rect().topLeft(), paintToImage.size()));
-    paintToImage.paintImage(painter);
-//    paintToImage.paintImage()
-}
+//    qDebug() << paintToImage.bounds();
+//    painter.setWorldMatrixEnabled(true);
+////    painter.drawRect(paintToImage.bounds());
+////    qDebug() << painter.transform();
+////    paintToImage.setBounds(QRect(mCanvas->rect().topLeft(), paintToImage.size()));
+//    paintToImage.paintImage(painter);
+////    paintToImage.paintImage()
+//}
 
 
 void CanvasPainter::prescale(BitmapImage* bitmapImage)
@@ -457,7 +490,7 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
     }
 }
 
-void CanvasPainter::paintCurrentFrame(QPainter& painter)
+void CanvasPainter::paintFrames(QPainter& painter)
 {
     //bool isCamera = mObject->getLayer(mCurrentLayerIndex)->type() == Layer::CAMERA;
     painter.setOpacity(1.0);
@@ -472,14 +505,15 @@ void CanvasPainter::paintCurrentFrameAtLayer(QPainter& painter, int layerIndex)
 {
     Layer* layer = mObject->getLayer(layerIndex);
 
-//    if (layer->visible() == false)
-//        continue;
+    if (layer->visible() == false) {
+        return;
+    }
 
     if (layerIndex == mCurrentLayerIndex || mOptions.showLayersCount > 0)
     {
         switch (layer->type())
         {
-        case Layer::BITMAP: { paintBitmapFrame(painter, layer, mFrameNumber, false); break; }
+        case Layer::BITMAP: { paintBitmapFrame(painter, layer, layerIndex, mFrameNumber, false); break; }
 //        case Layer::VECTOR: { paintVectorFrame(painter, layer, mFrameNumber, false); break; }
         default: break;
         }

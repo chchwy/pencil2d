@@ -241,15 +241,11 @@ void ScribbleArea::prepareForDrawing()
 
     Layer* layer = mEditor->layers()->currentLayer();
 
+    mMyPaint->clearSurface();
     switch(layer->type()) {
         case Layer::BITMAP:
         {
             updateMyPaintCanvas();
-            break;
-        }
-        case Layer::VECTOR:
-        {
-            Q_ASSERT("Not implemented for vector");
             break;
         }
         default:
@@ -263,7 +259,6 @@ void ScribbleArea::prepareForDrawing()
  */
 void ScribbleArea::showCurrentFrame()
 {
-    mMyPaint->clearSurface();
     mFrameFirstLoad = true;
     updateFrame();
 }
@@ -271,6 +266,8 @@ void ScribbleArea::showCurrentFrame()
 void ScribbleArea::updateFrame()
 {
     update();
+
+    qDebug() << "update + clear frame";
 }
 
 void ScribbleArea::drawCanvas(int frame)
@@ -283,9 +280,7 @@ void ScribbleArea::drawCanvas(int frame)
 
     QHash<QString, MPTile*> tilesToBeRendered;
 
-    if (mIsPainting) {
-        tilesToBeRendered = mBufferTiles;
-    }
+    tilesToBeRendered = mBufferTiles;
 
     mCanvasPainter.setOptions( getRenderOptions() );
     mCanvasPainter.setCanvas( &mCanvas );
@@ -295,6 +290,7 @@ void ScribbleArea::drawCanvas(int frame)
     if (currentTool()->type() == POLYLINE) {
         paintOnTopOfImage = true;
     }
+
     mCanvasPainter.paint(painter, object, mEditor->layers()->currentLayerIndex(), frame, tilesToBeRendered.values(), mIsPainting, paintOnTopOfImage);
 
     paintCanvasCursor(painter);
@@ -364,6 +360,30 @@ void ScribbleArea::updateFrame(int frame)
     }
 }
 
+void ScribbleArea::reloadMyPaint()
+{
+    mFrameFirstLoad = true;
+    mIsPainting = false;
+
+    mMyPaint->clearSurface();
+}
+
+void ScribbleArea::layerChanged()
+{
+    Layer* layer = mEditor->layers()->currentLayer();
+    switch(layer->type())
+    {
+    case Layer::BITMAP:
+        reloadMyPaint();
+        break;
+    case Layer::VECTOR:
+        updateAllFrames();
+        break;
+    default:
+        break;
+    }
+}
+
 void ScribbleArea::updateAllFrames()
 {
     QPixmapCache::clear();
@@ -371,6 +391,7 @@ void ScribbleArea::updateAllFrames()
     if (mEditor) {
         updateFrame();
     }
+
     mNeedUpdateAll = false;
 }
 
@@ -1275,6 +1296,7 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
     QPointF pos = tile->pos();
 
     tile->setDirty(true);
+
     mBufferTiles.insert(QString::number(pos.x())+"_"+QString::number(pos.y()), tile);
 }
 
@@ -1285,6 +1307,7 @@ void ScribbleArea::startStroke()
 {
 
     if (mFrameFirstLoad) {
+        qDebug() << "first frame load";
         prepareForDrawing();
         mFrameFirstLoad = false;
     }
@@ -1292,8 +1315,6 @@ void ScribbleArea::startStroke()
     mIsPainting = true;
 
     QRect canvasRect = mEditor->view()->mapScreenToCanvas(rect()).toRect();
-
-    qDebug() << canvasRect;
 
     QRect bounds = currentBitmapImage(mEditor->layers()->currentLayer())->bounds();
 

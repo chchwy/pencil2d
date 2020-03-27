@@ -215,6 +215,8 @@ public:
 
     void clearTilesBuffer();
 
+    void layerChanged();
+
     /// Call this when starting to use a paint tool. Checks whether we are drawing
     /// on an empty frame, and if so, takes action according to use preference.
     void handleDrawingOnEmptyFrame();
@@ -230,9 +232,12 @@ public:
     QHash<QString, MPTile*> mBufferTiles;
 private:
 
-    /// Used to load frame into mypaint. Should only be true if the user  scrubbed prior this
-    bool mFrameFirstLoad = false;
-//    void drawCanvas(int frame, QRect rect);
+    /** reloadMyPaint
+     * Use this method whenver the mypaint surface should be cleared
+     * eg. when changing layer
+     */
+    void reloadMyPaint();
+
     void settingUpdated(SETTING setting);
     void paintSelectionAnchors(QPainter& painter);
 
@@ -264,6 +269,9 @@ private:
     std::unique_ptr<StrokeManager> mStrokeManager;
 
     Editor* mEditor = nullptr;
+
+    /// Used to load frame into mypaint. Should only be true when the surface is not valid anymore
+    bool mFrameFirstLoad = false;
 
     bool mIsSimplified = false;
     bool mShowThinLines = false;
@@ -320,10 +328,6 @@ private:
     QRectF mDebugRect;
     QLoggingCategory mLog;
     std::deque<clock_t> mDebugTimeQue;
-
-    // mypaint
-//    QHash<QString, MPTile*> mTiles;
-//    QHash<QString, MPTile*> mBufferTiles;
 
     bool isInPreviewMode = false;
     bool mNeedQuickUpdate = false;

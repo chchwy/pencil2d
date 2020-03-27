@@ -97,16 +97,14 @@ private:
 
     void paintPostEffects(QPainter& painter);
 
-    void paintCurrentFrame(QPainter& painter);
+    void paintFrames(QPainter& painter);
     void paintCurrentFrameAtLayer(QPainter& painter, int layerIndex);
     void paintCachedFrameAtLayer(QPainter& painter, int layerIndex);
 
     void paintColoredOnionSkin(QPainter& painter, const int frameIndex);
 
-    void paintBitmapFrame(QPainter&, Layer* layer, int nFrame, bool colorize, bool useLastKeyFrame);
-
-
-    void paintBitmapFrame(QPainter& painter, Layer* layer, int frameIndex, bool colorizeOnionSkin);
+    void paintBitmapFrame(QPainter& painter, Layer* layer, int layerIndex, int frameIndex, bool colorizeOnionSkin);
+    void paintCurrentBitmapFrame(QPainter& painter, BitmapImage* image);
     void paintVectorFrame(QPainter&, Layer* layer, int nFrame, bool colorize, bool useLastKeyFrame);
 
     void paintTransformedSelection(QPainter& painter);
