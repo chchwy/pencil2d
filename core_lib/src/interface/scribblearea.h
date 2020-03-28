@@ -287,8 +287,9 @@ private:
     bool mNeedUpdateAll = false;
 
     /**
-     * @brief updateMyPaintCanvas
-     * Intended use is when moving pixels manually, eg. floodfilling or selection
+     * @brief ScribbleArea::updateMyPaintCanvas
+     * Loads an image into libmypaint
+       should preferably only be used when loading new content that is otherwise not added automatically.
      */
     void updateMyPaintCanvas(BitmapImage* bitmapImage = nullptr);
 

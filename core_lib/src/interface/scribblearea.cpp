@@ -218,11 +218,6 @@ void ScribbleArea::applyBackgroundShadow(QPainter& painter)
     }
 }
 
-/**
- * @brief ScribbleArea::updateMyPaintCanvas
- * Loads an image into libmypaint
-   should preferably only be used when loading new content that is otherwise not added automatically.
- */
 void ScribbleArea::updateMyPaintCanvas(BitmapImage* bitmapImage)
 {
     Layer* layer = mEditor->layers()->currentLayer();
