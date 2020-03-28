@@ -41,6 +41,7 @@ void CanvasPainter::setCanvas(QPixmap* canvas)
 {
     Q_ASSERT(canvas);
     mCanvas = canvas;
+    mCanvasRect = mCanvas->rect();
 }
 
 void CanvasPainter::setViewTransform(const QTransform view)
@@ -187,41 +188,43 @@ void CanvasPainter::paintCurrentBitmapFrame(QPainter& painter, BitmapImage* imag
     if (image->bounds().isValid()) {
         QImage imageCopy = image->image()->copy();
 
-        QRectF mappedBounds = v.mapRect(image->bounds());
-        // Scale image to new smaller or greater size depending on zoom level
-        imageCopy = imageCopy.scaled(mappedBounds.size().toSize(),
-                                             Qt::IgnoreAspectRatio, Qt::FastTransformation);
-
         QPainter newPaint(&imageCopy);
-        newPaint.translate(-mappedBounds.topLeft());
 
         for (MPTile* item : mTilesToBeRendered) {
-            QRectF tileRect = QRectF(item->pos(),
-                                   QSizeF(item->boundingRect().width(),
-                                         item->boundingRect().height()));
-
-            tileRect = v.mapRect(tileRect);
 
             QPixmap pix = item->pixmap();
-            QRect alignedRect = tileRect.toRect();
-            prescaleSurface(painter, pix, alignedRect);
 
+            QRectF rawRect = QRectF(QPointF(item->pos()), QSizeF(item->boundingRect().size()));
+            QRect alignedRect = v.mapRect(rawRect).toRect();
             if (isRectInsideCanvas(alignedRect)) {
+
 
                 // Tools that require continous clearing should not get in here
                 // eg. polyline because it's already clearing its surface per dab it creates
                 if (!mPaintOnTopOfBuffer) {
                     newPaint.setCompositionMode(QPainter::CompositionMode_Clear);
-                    newPaint.fillRect(alignedRect, Qt::transparent);
+                    newPaint.save();
+                    newPaint.translate(-image->bounds().topLeft());
+                    newPaint.drawPixmap(rawRect, pix, QRectF(pix.rect()));
+                    newPaint.restore();
                 }
 
-                painter.drawPixmap(alignedRect, pix);
+                painter.save();
+                painter.translate(-mCanvas->rect().width()/2, -mCanvas->rect().height()/2);
+                painter.setTransform(v);
+
+                painter.drawPixmap(rawRect, pix, QRectF(pix.rect()));
+                painter.restore();
             }
         }
         newPaint.end();
 
+        painter.save();
+
         // Paint the modified layer image
-        painter.drawImage(mappedBounds, imageCopy);
+        painter.setTransform(v);
+        painter.drawImage(QRectF(image->bounds()), imageCopy, QRectF(imageCopy.rect()));
+        painter.restore();
     } else {
         for (MPTile* item : mTilesToBeRendered) {
             QRectF tileRect = QRectF(item->pos(),
@@ -231,12 +234,17 @@ void CanvasPainter::paintCurrentBitmapFrame(QPainter& painter, BitmapImage* imag
 
             QPixmap pix = item->pixmap();
 
-            prescaleSurface(painter, pix, tileRect);
-
             QRect alignedRect = tileRect.toRect();
+
             if (isRectInsideCanvas(alignedRect)) {
-                painter.setCompositionMode(QPainter::CompositionMode::CompositionMode_SourceOver);
-                painter.drawPixmap(alignedRect, pix);
+                QRectF rawRect = QRectF(item->pos(), item->boundingRect().size());
+
+                painter.save();
+                painter.translate(-mCanvas->rect().width()/2, -mCanvas->rect().height()/2);
+                painter.setTransform(v);
+
+                painter.drawPixmap(rawRect, pix, pix.rect());
+                painter.restore();
             }
         }
     }
@@ -256,8 +264,11 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int layerI
     if (mIsPainting && layerIndex == mCurrentLayerIndex) {
         paintCurrentBitmapFrame(painter, bitmapImage);
     } else if (layerIndex != mCurrentLayerIndex || !mIsPainting) {
-        const QRect& mappedBounds = v.mapRect(bitmapImage->bounds());
-        painter.drawImage(mappedBounds, *bitmapImage->image());
+
+        painter.save();
+        painter.setTransform(v);
+        painter.drawImage(QRectF(bitmapImage->bounds()), *bitmapImage->image());
+        painter.restore();
     }
 
     if (mRenderTransform) {
@@ -267,7 +278,7 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int layerI
 
 bool CanvasPainter::isRectInsideCanvas(const QRect& rect) const
 {
-    return mCanvas->rect().adjusted(-rect.width(),
+    return mCanvasRect.adjusted(-rect.width(),
                                     -rect.width(),
                                     rect.width(),
                                     rect.width()).contains(rect);

@@ -124,6 +124,7 @@ private:
     QPixmap* mCanvas = nullptr;
     QTransform mViewTransform;
     QTransform mViewInverse;
+    QRect mCanvasRect;
 
     QRect mCameraRect;
 
