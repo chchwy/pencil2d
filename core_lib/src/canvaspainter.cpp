@@ -220,7 +220,6 @@ void CanvasPainter::paintCurrentBitmapFrame(QPainter& painter, BitmapImage* imag
                 }
             }
         }
-
         painter.save();
 
         // Paint the modified layer image
@@ -269,7 +268,7 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int layerI
 
         painter.save();
         painter.setTransform(v);
-        painter.drawImage(QRectF(bitmapImage->bounds()), *bitmapImage->image());
+        painter.drawImage(bitmapImage->bounds(), *bitmapImage->image());
         painter.restore();
     }
 
