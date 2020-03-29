@@ -194,36 +194,38 @@ void CanvasPainter::paintCurrentBitmapFrame(QPainter& painter, BitmapImage* imag
 
             QPixmap pix = item->pixmap();
 
-            QRectF rawRect = QRectF(QPointF(item->pos()), QSizeF(item->boundingRect().size()));
-            QRect alignedRect = v.mapRect(rawRect).toRect();
+            QRect rawRect = QRect(QPoint(item->pos()), QSize(item->boundingRect().size()));
+            QRect alignedRect = v.mapRect(rawRect);
             if (isRectInsideCanvas(alignedRect)) {
 
 
                 // Tools that require continous clearing should not get in here
                 // eg. polyline because it's already clearing its surface per dab it creates
                 if (!mPaintOnTopOfBuffer) {
-                    newPaint.setCompositionMode(QPainter::CompositionMode_Clear);
+                    newPaint.setCompositionMode(QPainter::CompositionMode_Source);
                     newPaint.save();
                     newPaint.translate(-image->bounds().topLeft());
-                    newPaint.drawPixmap(rawRect, pix, QRectF(pix.rect()));
+                    newPaint.drawPixmap(rawRect, pix, pix.rect());
                     newPaint.restore();
                 }
 
-                painter.save();
-                painter.translate(-mCanvas->rect().width()/2, -mCanvas->rect().height()/2);
-                painter.setTransform(v);
+                // Fixes not drawing on the same tile, that could otherwise cause small artifacts.
+                if (!image->bounds().contains(rawRect)) {
+                    painter.save();
+                    painter.translate(-mCanvas->rect().width()/2, -mCanvas->rect().height()/2);
+                    painter.setTransform(v);
 
-                painter.drawPixmap(rawRect, pix, QRectF(pix.rect()));
-                painter.restore();
+                    painter.drawPixmap(rawRect, pix, pix.rect());
+                    painter.restore();
+                }
             }
         }
-        newPaint.end();
 
         painter.save();
 
         // Paint the modified layer image
         painter.setTransform(v);
-        painter.drawImage(QRectF(image->bounds()), imageCopy, QRectF(imageCopy.rect()));
+        painter.drawImage(image->bounds(), imageCopy);
         painter.restore();
     } else {
         for (MPTile* item : mTilesToBeRendered) {
