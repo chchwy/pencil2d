@@ -368,11 +368,11 @@ void ScribbleArea::layerChanged()
         reloadMyPaint();
         break;
     case Layer::VECTOR:
-        updateAllFrames();
         break;
     default:
         break;
     }
+    updateAllFrames();
 }
 
 void ScribbleArea::updateAllFrames()
