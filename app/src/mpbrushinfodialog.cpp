@@ -329,9 +329,9 @@ void MPBrushInfoDialog::didPressSave()
         } else {
             status = MPCONF::addBrush(mToolName, mBrushPreset, noSpaceName);
 
-            if (status.ok()) {
-            // TODO: brush is added twice?
-                status = MPCONF::removeBrush(mOldPresetName, mOldToolName, noSpaceName);
+            if (status.fail()) {
+                QMessageBox::warning(this, status.title(), status.description());
+                return;
             }
         }
 

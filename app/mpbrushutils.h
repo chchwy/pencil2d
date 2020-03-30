@@ -993,19 +993,19 @@ struct MPBrushParser {
     static Status copyRenameBrushFileIfNeeded(const QString& originalPreset, const QString& originalName, const QString& newPreset, QString& newName)
     {
         QString brushesPath = MPCONF::getBrushesPath();
-        QString groupPath = brushesPath + QDir::separator() + newPreset;
+        QString presetPath = brushesPath + QDir::separator() + newPreset;
         QString brushPath = brushesPath + QDir::separator() + newPreset + QDir::separator() + newName;
 
-        QString oldGroupPath = brushesPath + QDir::separator() + originalPreset;
+        QString oldPresetPath = brushesPath + QDir::separator() + originalPreset;
         QString oldBrushPath = brushesPath + QDir::separator() + originalPreset + QDir::separator() + originalName;
 
         Status status = Status::OK;
         QFile file(brushPath + BRUSH_CONTENT_EXT);
         QFile fileImage(brushPath + BRUSH_PREVIEW_EXT);
 
-        QDir dir(groupPath);
+        QDir dir(presetPath);
         if (!dir.exists()) {
-            bool pathCreated = dir.mkpath(groupPath);
+            bool pathCreated = dir.mkpath(presetPath);
 
             if (!pathCreated) {
                 status = Status::FAIL;
@@ -1054,15 +1054,18 @@ struct MPBrushParser {
                 for (int i = 0; i < dir.entryList().count(); i++) {
                     QString x = dir.entryList()[i];
 
-                    if (x == newName+BRUSH_CONTENT_EXT) {
+                    if (x.compare(newName+BRUSH_CONTENT_EXT) == 0) {
                         countClones++;
                     }
                 }
 
                 QString clonedName = newName;
-                clonedName = clonedName.append(clonePostFix+QString::number(countClones));
 
-                QString clonedPath = oldGroupPath + QDir::separator() + clonedName;
+                if (newName.compare(originalName) == 0) {
+                    clonedName = clonedName.append(clonePostFix+QString::number(countClones));
+                }
+
+                QString clonedPath = oldPresetPath + QDir::separator() + clonedName;
                 QString newFileName = clonedPath+BRUSH_CONTENT_EXT;
                 QString newImageName = clonedPath+BRUSH_PREVIEW_EXT;
                 file.copy(newFileName);
