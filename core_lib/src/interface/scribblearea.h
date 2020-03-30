@@ -238,6 +238,11 @@ private:
      */
     void reloadMyPaint();
 
+    /** updatePixmapCache
+     * Updates the qpixmap cache that is used for gettign the canvas images from cache, to render them faster
+     */
+    void updatePixmapCache();
+
     void settingUpdated(SETTING setting);
     void paintSelectionAnchors(QPainter& painter);
 

@@ -260,8 +260,22 @@ void ScribbleArea::showCurrentFrame()
 
 void ScribbleArea::updateFrame()
 {
+    updatePixmapCache();
     update();
     qDebug() << "update + clear frame";
+}
+
+void ScribbleArea::updatePixmapCache()
+{
+    auto frame = mEditor->currentFrame();
+    int frameNumber = mEditor->layers()->LastFrameAtFrame(frame);
+    if (mPixmapCacheKeys.size() <= static_cast<unsigned>(frame))
+    {
+        mPixmapCacheKeys.resize(static_cast<unsigned>(frame + 10)); // a buffer
+    }
+
+    QPixmapCache::remove(mPixmapCacheKeys[static_cast<unsigned>(frameNumber)]);
+    mPixmapCacheKeys[static_cast<unsigned>(frameNumber)] = QPixmapCache::Key();
 }
 
 void ScribbleArea::drawCanvas(int frame)
