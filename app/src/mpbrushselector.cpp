@@ -209,13 +209,18 @@ void MPBrushSelector::itemClicked(QListWidgetItem *itemWidget)
             brushIndex++;
         }
 
-        auto status = MPBrushParser::readBrushFromFile(currentPresetName, brushName);
-        if (status.errorcode == Status::OK)
-        {
-            currentBrushName = brushName;
-            currentBrushData = status.data;
-            emit brushSelected(currentToolType, currentPresetName, brushName, status.data); // Read the whole file and broadcast is as a char* buffer
-        }
+        loadBrushFromFile(brushName);
+    }
+}
+
+void MPBrushSelector::loadBrushFromFile(const QString& brushName)
+{
+    auto status = MPBrushParser::readBrushFromFile(currentPresetName, brushName);
+    if (status.errorcode == Status::OK)
+    {
+        currentBrushName = brushName;
+        currentBrushData = status.data;
+        emit brushSelected(currentToolType, currentPresetName, brushName, status.data); // Read the whole file and broadcast is as a char* buffer
     }
 }
 
@@ -374,7 +379,7 @@ void MPBrushSelector::openConfigurator()
 
 void MPBrushSelector::reloadCurrentBrush()
 {
-    emit brushSelected(currentToolType, currentPresetName, currentBrushName, currentBrushData);
+    loadBrushFromFile(currentBrushName);
 }
 
 void MPBrushSelector::showPresetManager()

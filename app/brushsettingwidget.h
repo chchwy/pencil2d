@@ -28,17 +28,19 @@ public:
     void changeText();
 
     BrushSettingType setting() { return mSettingType; }
+    qreal currentValue() { return mCurrentValue; }
 
 public slots:
     void notifyInputMappingRemoved(BrushInputType input);
 
 Q_SIGNALS:
-    void brushSettingChanged(qreal value, BrushSettingType setting);
+    void brushSettingChanged(qreal previousValue, qreal value, BrushSettingType setting);
     void brushMappingForInputChanged(QVector<QPointF> points, BrushSettingType setting, BrushInputType inputType);
     void brushMappingRemoved(BrushSettingType setting, BrushInputType);
 
 private:
 
+    void onSliderChanged(qreal value);
     void openMappingWindow();
 
     void setValueInternal(qreal value);
@@ -63,11 +65,14 @@ private:
     qreal mMappedValue = 0.0;
 
     qreal mCurrentValue;
+    qreal mInitialValue;
 
     QWidget* mParent = nullptr;
     MPMappingOptionsWidget* mMappingWidget = nullptr;
 
     const QString mSettingName;
+
+    bool first = false;
 };
 
 #endif // BRUSHSETTINGWIDGET_H

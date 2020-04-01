@@ -61,6 +61,7 @@ void SpinSlider::init(QString text, GROWTH_TYPE type, VALUE_TYPE dataType, qreal
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     connect(mSlider, &QSlider::valueChanged, this, &SpinSlider::onSliderValueChanged);
+    connect(mSlider, &QSlider::sliderReleased, this, &SpinSlider::onSliderReleased);
 }
 
 void SpinSlider::changeValue(qreal value)
@@ -85,6 +86,11 @@ void SpinSlider::onSliderValueChanged(int v)
     }
 
     changeValue(value2);
+}
+
+void SpinSlider::onSliderReleased()
+{
+    emit valueOnRelease(mValue);
 }
 
 void SpinSlider::setLabel(QString newText)

@@ -54,7 +54,8 @@ BrushSettingWidget::BrushSettingWidget(const QString name, BrushSettingType sett
 
     mValueSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-    connect(mValueSlider, &SpinSlider::valueChanged, this, &BrushSettingWidget::updateSetting);
+    connect(mValueSlider, &SpinSlider::valueChanged, this, &BrushSettingWidget::onSliderChanged);
+    connect(mValueSlider, &SpinSlider::valueOnRelease, this, &BrushSettingWidget::updateSetting);
     connect(mValueBox, static_cast<void(QDoubleSpinBox::*)(qreal)>(&QDoubleSpinBox::valueChanged), this, &BrushSettingWidget::updateSetting);
     connect(mMappingButton, &QToolButton::pressed, this, &BrushSettingWidget::openMappingWindow);
 }
@@ -62,10 +63,22 @@ BrushSettingWidget::BrushSettingWidget(const QString name, BrushSettingType sett
 void BrushSettingWidget::updateUI()
 {
     BrushSettingInfo info = mEditor->getBrushSettingInfo(mSettingType);
-    setValue(static_cast<qreal>(mEditor->getMPBrushSetting(mSettingType)));
+
+    qreal baseValue = static_cast<qreal>(mEditor->getMPBrushSetting(mSettingType));
+    setValue(baseValue);
     setRange(static_cast<qreal>(info.min), static_cast<qreal>(info.max));
+
+    if (!first) {
+        mInitialValue = baseValue;
+        first = false;
+    }
     setToolTip(info.tooltip);
     closeMappingWindow();
+}
+
+void BrushSettingWidget::onSliderChanged(qreal value)
+{
+    setValueInternal(value);
 }
 
 void BrushSettingWidget::setValue(qreal value)
@@ -79,9 +92,6 @@ void BrushSettingWidget::setValue(qreal value)
     mValueBox->setValue(mappedValue);
 
     mVisualBox->setValue(value);
-
-    qDebug() << "mapped value: " << mappedValue;
-    qDebug() << "visual value: " << value;
 
     mCurrentValue = value;
 }
@@ -126,9 +136,10 @@ void BrushSettingWidget::updateSetting(qreal value)
 {
     qreal normalize = MathUtils::normalize(value, mMappedMin, mMappedMax);
     qreal mappedToOrig = MathUtils::mapFromNormalized(normalize, mMin, mMax);
+
     setValueInternal(value);
 
-    emit brushSettingChanged(mappedToOrig, this->mSettingType);
+    emit brushSettingChanged(mInitialValue, mappedToOrig, this->mSettingType);
 }
 
 void BrushSettingWidget::updateBrushMapping(QVector<QPointF> newPoints, BrushInputType inputType)

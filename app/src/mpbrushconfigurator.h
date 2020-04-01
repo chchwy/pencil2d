@@ -127,6 +127,11 @@ public:
 signals:
     void updateBrushList(QString brushName, QString brushPreset);
     void refreshBrushList();
+
+    /** reloadBrushSettings
+     *  Reloads brush settings from disk
+     *  Use in case the brush needs to refresh after modifications.
+     */
     void reloadBrushSettings();
 
 private:
@@ -134,7 +139,7 @@ private:
     void updateMapValuesButton();
     void updateSettingsView(QTreeWidgetItem* item);
 
-    void updateBrushSetting(qreal value, BrushSettingType settingType);
+    void updateBrushSetting(qreal oldValue, qreal value, BrushSettingType settingType);
     void updateBrushMapping(QVector<QPointF> points, BrushSettingType settingType, BrushInputType input);
     void removeBrushMappingForInput(BrushSettingType setting, BrushInputType input);
 
@@ -160,13 +165,13 @@ private:
 
     void showNotImplementedPopup();
 
-    void pressedSaveBrush();
     void pressedRemoveBrush();
     void pressedEditBrush();
     void pressedCloneBrush();
     void pressedDiscardBrush();
 
-    void writeBrushChanges(QJsonDocument& document, QJsonParseError& error);
+    void applyChanges(QHash<int, BrushChanges> changes);
+    void writeModifications(QJsonDocument& document, QJsonParseError& error, QHash<int, BrushChanges> modifications);
 
     void openBrushInfoWidget(DialogContext dialogContext);
 
@@ -187,19 +192,18 @@ private:
 
     QPushButton* mDiscardChangesButton = nullptr;
     QPushButton* mMapValuesButton = nullptr;
-    QPushButton* mSaveBrushButton = nullptr;
     bool mMapValuesButtonPressed = false;
 
     Editor* mEditor = nullptr;
 
     QList<BrushSettingWidget*> mBrushWidgets;
-    QHash<int, BrushChanges> mBrushChanges;
+    QHash<int, BrushChanges> mCurrentModifications;
+    QHash<int, BrushChanges> mOldModifications;
     QString mBrushName;
-    QString mBrushGroup;
+    QString mPreset;
     ToolType mToolType;
 
     QSize mImageSize = QSize(32,32);
-
 };
 
 #endif // MPBRUSHCONFIGURATOR_H

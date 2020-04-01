@@ -47,10 +47,6 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     QScrollArea* scrollArea = new QScrollArea(nullptr);
 
     QToolBar* toolbar = new QToolBar(this);
-    mSaveBrushButton = new QPushButton(parent);
-    mSaveBrushButton->setText(tr("Save"));
-
-    mSaveBrushButton->setEnabled(false);
 
     QPushButton* cloneBrushButton = new QPushButton(parent);
     cloneBrushButton->setDefault(false);
@@ -69,9 +65,6 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     deleteBrushButton->setText(tr("Delete"));
     deleteBrushButton->setToolTip(tr("Delete current brush and close window"));
 
-//    mMapValuesButton = new QPushButton(parent);
-//    mMapValuesButton->setText("MyPaint values");
-
     setLayout(vLayout);
 
     QWidget* settingsContainer = new QWidget(this);
@@ -79,11 +72,9 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
 
     settingsContainer->setLayout(hLayout);
 
-    toolbar->addWidget(mSaveBrushButton);
     toolbar->addWidget(cloneBrushButton);
     toolbar->addSeparator();
     toolbar->addWidget(editBrushButton);
-//    toolbar->addWidget(mMapValuesButton);
     toolbar->addSeparator();
 
     QWidget* resetSpacer = new QWidget(parent);
@@ -127,7 +118,6 @@ MPBrushConfigurator::MPBrushConfigurator(QWidget *parent)
     connect(mNavigatorWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, &MPBrushConfigurator::brushCategorySelectionChanged);
     connect(mMapValuesButton, &QPushButton::pressed, this, &MPBrushConfigurator::updateMapValuesButton);
 
-    connect(mSaveBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedSaveBrush);
     connect(cloneBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedCloneBrush);
     connect(deleteBrushButton, &QPushButton::pressed, this, &MPBrushConfigurator::pressedRemoveBrush);
 
@@ -169,16 +159,23 @@ void MPBrushConfigurator::updateUI()
         }
     }
 
-    QPixmap pix(QPixmap(MPBrushParser::getBrushImagePath(mBrushGroup, mBrushName)));
+    mDiscardChangesButton->setEnabled(!mOldModifications.isEmpty());
+
+    QPixmap pix(QPixmap(MPBrushParser::getBrushImagePath(mPreset, mBrushName)));
     mBrushImageWidget->setPixmap(pix.scaled(mImageSize, Qt::KeepAspectRatio));
     mBrushNameWidget->setText(mBrushName);
 }
 
-void MPBrushConfigurator::updateConfig(ToolType toolType, const QString& brushGroup, const QString& brushName, const QByteArray& content)
+void MPBrushConfigurator::updateConfig(ToolType toolType, const QString& preset, const QString& brushName, const QByteArray& content)
 {
+
+    if (mBrushName != brushName && mPreset != mPreset) {
+        mOldModifications.clear();
+    }
+
     mToolType = toolType;
     mBrushName = brushName;
-    mBrushGroup = brushGroup;
+    mPreset = preset;
     Q_UNUSED(content)
     updateUI();
 }
@@ -396,17 +393,27 @@ void MPBrushConfigurator::addBrushSettingsSpacer()
     vBoxLayout->addItem(spacer);
 }
 
-void MPBrushConfigurator::updateBrushSetting(qreal value, BrushSettingType settingType)
+void MPBrushConfigurator::updateBrushSetting(qreal oldValue, qreal value, BrushSettingType settingType)
 {
-    if (!mBrushChanges.contains(static_cast<int>(settingType))) {
+    int settingTypeInt = static_cast<int>(settingType);
+
+    // Adds old brush value and only save once, so we can discard it later if needed
+    if (!mOldModifications.contains(settingTypeInt)) {
+        BrushChanges changes;
+        changes.baseValue = oldValue;
+        changes.settingsType = settingType;
+        mOldModifications.insert(settingTypeInt, changes);
+    }
+
+    if (!mCurrentModifications.contains(settingTypeInt)) {
         BrushChanges changes;
         changes.baseValue = value;
         changes.settingsType = settingType;
 
-        mBrushChanges.insert(static_cast<int>(settingType), changes);
+        mCurrentModifications.insert(settingTypeInt, changes);
     } else {
         BrushChanges outerChanges;
-        QHashIterator<int, BrushChanges> changesHash(mBrushChanges);
+        QHashIterator<int, BrushChanges> changesHash(mCurrentModifications);
         while (changesHash.hasNext()) {
             changesHash.next();
 
@@ -415,22 +422,19 @@ void MPBrushConfigurator::updateBrushSetting(qreal value, BrushSettingType setti
                 innerChanges.baseValue = value;
                 innerChanges.settingsType = settingType;
                 outerChanges = innerChanges;
-                mBrushChanges.insert(static_cast<int>(settingType), outerChanges);
+                mCurrentModifications.insert(settingTypeInt, outerChanges);
                 break;
             }
         }
     }
 
-    if (!mBrushChanges.isEmpty()) {
-        mSaveBrushButton->setEnabled(true);
+    if (!mCurrentModifications.isEmpty()) {
         mDiscardChangesButton->setEnabled(true);
     }
 
-    qDebug() << "number of changes: " << mBrushChanges.count();
-//    for (const BrushChanges& changes : mBrushChanges) {
-//        qDebug() << static_cast<int>(changes.settingsType);
-//    }
     mEditor->setMPBrushSetting(settingType, static_cast<float>(value));
+
+    applyChanges(mCurrentModifications);
 }
 
 void MPBrushConfigurator::updateBrushMapping(QVector<QPointF> points, BrushSettingType setting, BrushInputType input)
@@ -438,7 +442,7 @@ void MPBrushConfigurator::updateBrushMapping(QVector<QPointF> points, BrushSetti
 
     // if no base value has been provided, use the default value from brush settings
     qreal baseValue = static_cast<qreal>(mEditor->getBrushSettingInfo(setting).defaultValue);
-    if (mBrushChanges.isEmpty()) {
+    if (mCurrentModifications.isEmpty()) {
         BrushChanges changes;
         changes.baseValue = baseValue;
         changes.settingsType = setting;
@@ -446,9 +450,9 @@ void MPBrushConfigurator::updateBrushMapping(QVector<QPointF> points, BrushSetti
 
         changes.listOfinputChanges.insert(static_cast<int>(input), InputChanges { mappedInputs, input });
 
-        mBrushChanges.insert(static_cast<int>(setting),changes);
+        mCurrentModifications.insert(static_cast<int>(setting),changes);
     } else {
-        QHashIterator<int, BrushChanges> it(mBrushChanges);
+        QHashIterator<int, BrushChanges> it(mCurrentModifications);
         while (it.hasNext()) {
             it.next();
             BrushChanges changes = it.value();
@@ -457,42 +461,41 @@ void MPBrushConfigurator::updateBrushMapping(QVector<QPointF> points, BrushSetti
                 auto mappedInputs = points;
                 changes.listOfinputChanges.insert(static_cast<int>(input), InputChanges { mappedInputs, input });
 
-                mBrushChanges.insert(static_cast<int>(setting), changes);
+                mCurrentModifications.insert(static_cast<int>(setting), changes);
             }
         }
 
-        QHashIterator<int, BrushChanges> itBrush(mBrushChanges);
+        QHashIterator<int, BrushChanges> itBrush(mCurrentModifications);
         while (itBrush.hasNext()) {
             itBrush.next();
 
             QHashIterator<int, InputChanges> i(itBrush.value().listOfinputChanges);
             while (i.hasNext()) {
                   i.next();
-            qDebug() << i.value().mappedPoints;
             }
         }
     }
 
-    if (!mBrushChanges.isEmpty()) {
-        mSaveBrushButton->setEnabled(true);
+    if (!mCurrentModifications.isEmpty()) {
         mDiscardChangesButton->setEnabled(true);
     }
 
     mEditor->setBrushInputMapping(points, setting, input);
+    applyChanges(mCurrentModifications);
 }
 
 void MPBrushConfigurator::removeBrushMappingForInput(BrushSettingType setting, BrushInputType input)
 {
-    if (mBrushChanges.isEmpty()) {
+    if (mCurrentModifications.isEmpty()) {
         BrushChanges changes;
         changes.baseValue = static_cast<qreal>(mEditor->getBrushSettingInfo(setting).defaultValue);
         changes.settingsType = setting;
 
         changes.listOfinputChanges.insert(static_cast<int>(input), InputChanges { {}, input, false });
 
-        mBrushChanges.insert(static_cast<int>(setting),changes);
+        mCurrentModifications.insert(static_cast<int>(setting),changes);
     } else {
-        QHashIterator<int, BrushChanges> brushIt(mBrushChanges);
+        QHashIterator<int, BrushChanges> brushIt(mCurrentModifications);
         while (brushIt.hasNext()) {
             brushIt.next();
 
@@ -508,17 +511,13 @@ void MPBrushConfigurator::removeBrushMappingForInput(BrushSettingType setting, B
                           inputChanges.enabled = false;
                           inputChanges.inputType = input;
                           changes.listOfinputChanges.find(inputIt.key()).value() = inputChanges;
-                          mBrushChanges.insert(static_cast<int>(setting), changes);
-//                          mBrushChanges.find(brushIt.key()).value().listOfinputChanges.find(inputIt.key())
+                          mCurrentModifications.insert(static_cast<int>(setting), changes);
                       }
                 }
             }
         }
     }
 
-    if (!mBrushChanges.isEmpty()) {
-        mSaveBrushButton->setEnabled(true);
-    }
     mEditor->setBrushInputMapping({}, setting, input);
 }
 
@@ -526,32 +525,33 @@ void MPBrushConfigurator::updateMapValuesButton()
 {
     mMapValuesButtonPressed = !mMapValuesButtonPressed;
     if (mMapValuesButtonPressed) {
-        mMapValuesButton->setText(tr("Pencil2D vkalues"));
+        mMapValuesButton->setText(tr("Pencil2D values"));
     } else {
         mMapValuesButton->setText(tr("MyPaint values"));
     }
 }
 
-void MPBrushConfigurator::pressedSaveBrush()
-{   
-    auto status = MPBrushParser::readBrushFromFile(mBrushGroup, mBrushName);
+void MPBrushConfigurator::applyChanges(QHash<int, BrushChanges> changes)
+{
+    auto status = MPBrushParser::readBrushFromFile(mPreset, mBrushName);
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(status.data, &error);
 
-    writeBrushChanges(doc, error);
+    writeModifications(doc, error, changes);
 
-    Status statusWrite = MPBrushParser::writeBrushToFile(mBrushGroup, mBrushName, doc.toJson());
+    Status statusWrite = MPBrushParser::writeBrushToFile(mPreset, mBrushName, doc.toJson());
 
-    if (statusWrite == Status::OK) {
-        mSaveBrushButton->setEnabled(false);
-        mBrushChanges.clear();
-    } else {
+    if (statusWrite.fail()) {
         QMessageBox::warning(this, statusWrite.title(), statusWrite.description());
     }
+
+    mCurrentModifications.clear();
+    emit reloadBrushSettings();
 }
 
-void MPBrushConfigurator::writeBrushChanges(QJsonDocument& document, QJsonParseError& error)
+void MPBrushConfigurator::writeModifications(QJsonDocument& document, QJsonParseError& error, QHash<int, BrushChanges> modifications)
 {
+
     QJsonObject rootObject = document.object();
 
     if (error.error != QJsonParseError::NoError) {
@@ -568,7 +568,7 @@ void MPBrushConfigurator::writeBrushChanges(QJsonDocument& document, QJsonParseE
     QJsonValueRef settingsContainerRef = settingsContainerObjIt.value();
 
     QJsonObject settingsContainerObj = settingsContainerRef.toObject();
-    QHashIterator<int, BrushChanges> settingIt(mBrushChanges);
+    QHashIterator<int, BrushChanges> settingIt(modifications);
     while (settingIt.hasNext()) {
         settingIt.next();
 
@@ -601,7 +601,7 @@ void MPBrushConfigurator::pressedRemoveBrush()
                                    tr("Are you sure you want to delete this brush?"),
                                    QMessageBox::No | QMessageBox::Yes, QMessageBox::Yes);
     if (ret == QMessageBox::Yes) {
-        auto st = MPCONF::blackListBrushFile(mBrushGroup, mBrushName);
+        auto st = MPCONF::blackListBrushFile(mPreset, mBrushName);
 
         if (st.ok()) {
             emit refreshBrushList();
@@ -624,13 +624,11 @@ void MPBrushConfigurator::openBrushInfoWidget(DialogContext dialogContext)
     mBrushInfoWidget->setCore(mEditor);
     mBrushInfoWidget->initUI();
 
-    auto status = MPBrushParser::readBrushFromFile(mBrushGroup, mBrushName);
+    auto status = MPBrushParser::readBrushFromFile(mPreset, mBrushName);
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(status.data, &error);
 
-    writeBrushChanges(doc, error);
-
-    mBrushInfoWidget->setBrushInfo(mBrushName, mBrushGroup, mToolType, doc);
+    mBrushInfoWidget->setBrushInfo(mBrushName, mPreset, mToolType, doc);
     mBrushInfoWidget->show();
 }
 
@@ -646,10 +644,19 @@ void MPBrushConfigurator::pressedCloneBrush()
 
 void MPBrushConfigurator::pressedDiscardBrush()
 {
-    mBrushChanges.clear();
-    mSaveBrushButton->setEnabled(false);
+    QHashIterator<int, BrushChanges> changesIt(mOldModifications);
+
+    while (changesIt.hasNext()) {
+        changesIt.next();
+
+        mEditor->setMPBrushSetting(static_cast<BrushSettingType>(changesIt.key()),
+                                   static_cast<float>(changesIt.value().baseValue));
+    }
+
+    applyChanges(mOldModifications);
+    updateUI();
+    mOldModifications.clear();
     mDiscardChangesButton->setEnabled(false);
-    emit reloadBrushSettings();
 }
 
 void MPBrushConfigurator::showNotImplementedPopup()

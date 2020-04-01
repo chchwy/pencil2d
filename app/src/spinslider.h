@@ -52,9 +52,11 @@ public:
 
 signals:
     void valueChanged(qreal);
+    void valueOnRelease(qreal);
 
 private:
     void onSliderValueChanged(int);
+    void onSliderReleased();
     void changeValue(qreal);
 
 private:

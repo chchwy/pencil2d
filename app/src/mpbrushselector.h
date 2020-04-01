@@ -62,6 +62,7 @@ private:
   Editor* mEditor = nullptr;
   bool mTabsLoaded = false;
 
+  void loadBrushFromFile(const QString& brushName);
   void populateList();
   bool anyBrushSelected();
   void loadBrushes();
