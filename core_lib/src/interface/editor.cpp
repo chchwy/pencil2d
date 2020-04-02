@@ -1089,10 +1089,11 @@ void Editor::clearCurrentFrame()
     mScribbleArea->clearCanvas();
 }
 
-void Editor::loadBrush(ToolType toolType, const QString brushGroup, const QString& brushName, const QByteArray &content)
+void Editor::loadBrush(ToolType toolType, const QString preset, const QString& brushName, const QByteArray &content)
 {
-    QString toolName = BaseTool::TypeName(toolType);
-    mPreferenceManager->set("LastBrushFor_"+toolName, brushGroup+brushName);
+    Q_UNUSED(toolType)
+    Q_UNUSED(preset)
+    Q_UNUSED(brushName)
     mScribbleArea->loadMPBrush(content);
 }
 

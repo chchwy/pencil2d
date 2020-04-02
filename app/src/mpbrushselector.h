@@ -64,7 +64,6 @@ private:
 
   void loadBrushFromFile(const QString& brushName);
   void populateList();
-  bool anyBrushSelected();
   void loadBrushes();
   void addToolTabs();
 
@@ -85,6 +84,7 @@ private:
   QString currentPresetName;
   QString currentBrushName;
   QString currentToolName;
+  QString oldToolname;
   ToolType currentToolType;
   QByteArray currentBrushData;
 
