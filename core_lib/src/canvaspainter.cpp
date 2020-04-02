@@ -256,6 +256,8 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int layerI
     LayerBitmap* bitmapLayer = static_cast<LayerBitmap*>(layer);
     BitmapImage* bitmapImage = bitmapLayer->getLastBitmapImageAtFrame(frameIndex);
 
+    if (bitmapImage == nullptr) { return; }
+
     if (colorizeOnionSkin) {
         paintColoredOnionSkin(painter, frameIndex);
     }
