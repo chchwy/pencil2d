@@ -22,101 +22,119 @@ GNU General Public License for more details.
 #include <QTransform>
 #include <QPainter>
 #include "log.h"
+#include "pencildef.h"
 
+#include "layer.h"
 
 class Object;
-class Layer;
 class BitmapImage;
 class ViewManager;
 class MPTile;
 
-enum class RENDER_LEVEL
-{
-    ALL,
-    BACK_ONLY,
-    CURRENT_LAYER_ONLY,
-    TOP_ONLY,
-    CACHED // for preview
-};
-
 struct CanvasPainterOptions
 {
-
-    struct VectorOptions
-    {
-        bool thinLinesEnabled = false;
-        bool outlineEnabled = false;
-    };
-
-    float onionSkinMaxOpacity = 0.5f;
-    float onionSkinMinOpacity = 0.1f;
-    float zoomLevel = 1.0f;
-    bool prevColoredOnionSkinEnabled = false;
-    bool nextColoredOnionSkinEnabled = false;
-    bool antiAliasingEnabled = false;
-    bool onionSkinAbsoluteEnabled = false;
+    bool  bPrevOnionSkin = false;
+    bool  bNextOnionSkin = false;
+    int   nPrevOnionSkinCount = 3;
+    int   nNextOnionSkinCount = 3;
+    float fOnionSkinMaxOpacity = 0.5f;
+    float fOnionSkinMinOpacity = 0.1f;
+    bool  bColorizePrevOnion = false;
+    bool  bColorizeNextOnion = false;
+    bool  bAntiAlias = false;
+    bool  bGrid = false;
+    int   nGridSizeW = 50; /* This is the grid Width IN PIXELS. The grid will scale with the image, though */
+    int   nGridSizeH = 50; /* This is the grid Height IN PIXELS. The grid will scale with the image, though */
+    bool  bCenter = false;
+    bool  bThirds = false;
+    bool  bGoldenRatio = false;
+    bool  bActionSafe = true;
+    int   nActionSafe = 5;
+    bool  bSafeArea = false;
+    bool  bTitleSafe = true;
+    int   nTitleSafe = 10;
+    bool bShowSafeAreaHelperText = true;
+    bool  bAxis = false;
+    bool  bThinLines = false;
+    bool  bOutlines = false;
+    bool  bIsOnionAbsolute = false;
+    LayerVisibility eLayerVisibility = LayerVisibility::RELATED;
+    float fLayerVisibilityThreshold;
+    float scaling = 1.0f;
     bool isPlaying = false;
     bool onionWhilePlayback = false;
-    bool gridEnabld = false;
-    bool axisEnabled = false;
-    bool prevOnionSkinEnabled = false;
-    bool nextOnionSkinEnabled = false;
-    int gridSizeW = 50; /* This is the grid Width IN PIXELS. The grid will scale with the image, though */
-    int gridSizeH = 50; /* This is the grid Height IN PIXELS. The grid will scale with the image, though */
-    int prevOnionSkinCount = 3;
-    int nextOnionSkinCount = 3;
-    int showLayersCount = 3;
-    VectorOptions vectorOptions;
-};
+    bool isPainting = false;
+    QList<MPTile*> tilesToBeRendered;
+    bool useCanvasBuffer;
 
+    QPainter::CompositionMode cmBufferBlendMode = QPainter::CompositionMode_SourceOver;
+};
 
 class CanvasPainter : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit CanvasPainter(QObject* parent = 0);
+    explicit CanvasPainter(QObject* parent = nullptr);
     virtual ~CanvasPainter();
 
     void setCanvas(QPixmap* canvas);
-    void setViewTransform(const QTransform view);
+    void setViewTransform(const QTransform view, const QTransform viewInverse);
     void setOptions(const CanvasPainterOptions& p) { mOptions = p; }
     void setTransformedSelection(QRect selection, QRect movingSelection, QTransform transform);
     void ignoreTransformedSelection();
     QRect getCameraRect();
 
-    void paint(QPainter& painter, const Object* object, int layerIndex, int frameIndex, QList<MPTile*> tilesToBeRendered, bool isPainting, bool useCanvasBuffer);
-    void paintFrameAtLayer(QPixmap &image, Object* object, int layer, int frame);
+    void setPaintSettings(const Object* object, int currentLayer, int frame, QRect rect, BitmapImage* buffer);
+    void paint();
+    void paintCached();
     void renderGrid(QPainter& painter);
-
-    void initPaint(const Object *object, int layer, int frame);
+    void renderOverlays(QPainter& painter);
+    void resetLayerCache();
 
 private:
-    void paintBackground(QPainter& painter);
+
+    /**
+     * CanvasPainter::initializePainter
+     * Enriches the painter with a context and sets it's initial matrix.
+     * @param The in/out painter
+     * @param The paint device ie. a pixmap
+     */
+    void initializePainter(QPainter& painter, QPixmap& pixmap);
+
+    void renderPreLayers(QPainter& painter);
+    void renderCurLayer(QPainter& painter);
+    void renderPostLayers(QPainter& painter);
+
+    void paintBackground();
     void paintOnionSkin(QPainter& painter);
 
-    void paintPostEffects(QPainter& painter);
+    void renderPostLayers(QPixmap *pixmap);
+    void renderCurLayer(QPixmap *pixmap);
+    void renderPreLayers(QPixmap *pixmap);
 
-    void paintFrames(QPainter& painter);
-    void paintCurrentFrameAtLayer(QPainter& painter, int layerIndex);
-    void paintCachedFrameAtLayer(QPainter& painter, int layerIndex);
-
-    void paintColoredOnionSkin(QPainter& painter, const int frameIndex);
-
-    void paintBitmapFrame(QPainter& painter, Layer* layer, int layerIndex, int frameIndex, bool colorizeOnionSkin);
+    void paintCurrentFrame(QPainter& painter, int startLayer, int endLayer);
     void paintCurrentBitmapFrame(QPainter& painter, BitmapImage* image);
-    void paintVectorFrame(QPainter&, Layer* layer, int nFrame, bool colorize, bool useLastKeyFrame);
+
+    void paintBitmapFrame(QPainter&, Layer* layer, int nLayer, int nFrame, bool colorize, bool useLastKeyFrame, bool isCurrentFrame);
+    void paintVectorFrame(QPainter&, Layer* layer, int nFrame, bool colorize, bool useLastKeyFrame, bool isCurrentFrame);
 
     void paintTransformedSelection(QPainter& painter);
     void paintGrid(QPainter& painter);
+    void paintOverlayCenter(QPainter& painter);
+    void paintOverlayThirds(QPainter& painter);
+    void paintOverlayGolden(QPainter& painter);
+    void paintOverlaySafeAreas(QPainter& painter);
     void paintCameraBorder(QPainter& painter);
-    void paintCameraOutline(QPainter& painter);
     void paintAxis(QPainter& painter);
     void prescale(BitmapImage* bitmapImage);
-    void prescaleSurface(QPainter& painter, QPixmap& pixmap, const QRectF& rect);
+
+    void paintColoredOnionSkin(QPainter& painter, const int frameIndex);
 
     bool isRectInsideCanvas(const QRect& rect) const;
 
+    /** Calculate layer opacity based on current layer offset */
+    qreal calculateRelativeOpacityForLayer(int layerIndex) const;
 private:
     CanvasPainterOptions mOptions;
 
@@ -124,20 +142,17 @@ private:
     QPixmap* mCanvas = nullptr;
     QTransform mViewTransform;
     QTransform mViewInverse;
-    QRect mCanvasRect;
 
     QRect mCameraRect;
+    QRect mCanvasRect;
 
     int mCurrentLayerIndex = 0;
     int mFrameNumber = 0;
+    BitmapImage* mBuffer = nullptr;
 
     QImage mScaledBitmap;
 
     bool bMultiLayerOnionSkin = false;
-    bool mIsPainting = false;
-
-    // Polyline requires this
-    bool mPaintOnTopOfBuffer = true;
 
     // Handle selection transformation
     bool mRenderTransform = false;
@@ -145,9 +160,12 @@ private:
     QRect mMovingSelection;
     QTransform mSelectionTransform;
 
-    QList<MPTile*> mTilesToBeRendered;
-
     QLoggingCategory mLog;
+
+    // Caches specificially for when drawing on the canvas
+    std::unique_ptr<QPixmap> mPreLayersCache, mPostLayersCache;
+
+    constexpr static int OVERLAY_SAFE_CENTER_CROSS_SIZE = 25;
 };
 
 #endif // CANVASRENDERER_H

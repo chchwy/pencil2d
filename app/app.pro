@@ -21,6 +21,10 @@ RESOURCES += \
     ../translations/translations.qrc \
     data/brushes.qrc
 
+MOC_DIR = .moc
+OBJECTS_DIR = .obj
+UI_DIR = .ui
+
 INCLUDEPATH += \
     src \
     src/mapping \
@@ -36,11 +40,11 @@ INCLUDEPATH += \
     ../core_lib/src/external
 
 HEADERS += \
+    src/mainwindow2.h \
     brushsettingitem.h \
     brushsettingwidget.h \
     mpbrushutils.h \
     src/combobox.h \
-    src/mainwindow2.h \
     src/mapping/mappingconfiguratorwidget.h \
     src/mapping/mappingdistributionwidget.h \
     src/mapping/mpmappingoptionswidget.h \
@@ -48,6 +52,11 @@ HEADERS += \
     src/mpbrushconfigurator.h \
     src/mpbrushinfodialog.h \
     src/mpbrushpresetswidget.h \
+    src/importlayersdialog.h \
+    src/importpositiondialog.h \
+    src/onionskinwidget.h \
+    src/predefinedsetmodel.h \
+    src/pegbaralignmentdialog.h \
     src/shortcutfilter.h \
     src/timeline2.h \
     src/actioncommands.h \
@@ -74,14 +83,15 @@ HEADERS += \
     src/doubleprogressdialog.h \
     src/colorslider.h \
     src/checkupdatesdialog.h \
+    src/presetdialog.h \
     src/mpbrushselector.h
 
 SOURCES += \
+    src/main.cpp \
+    src/mainwindow2.cpp \
     brushsettingitem.cpp \
     brushsettingwidget.cpp \
     src/combobox.cpp \
-    src/main.cpp \
-    src/mainwindow2.cpp \
     src/mapping/mappingconfiguratorwidget.cpp \
     src/mapping/mappingdistributionwidget.cpp \
     src/mapping/mpmappingoptionswidget.cpp \
@@ -89,6 +99,11 @@ SOURCES += \
     src/mpbrushconfigurator.cpp \
     src/mpbrushinfodialog.cpp \
     src/mpbrushpresetswidget.cpp \
+    src/onionskinwidget.cpp \
+    src/predefinedsetmodel.cpp \
+    src/pegbaralignmentdialog.cpp \
+    src/importlayersdialog.cpp \
+    src/importpositiondialog.cpp \
     src/shortcutfilter.cpp \
     src/timeline2.cpp \
     src/actioncommands.cpp \
@@ -114,11 +129,17 @@ SOURCES += \
     src/doubleprogressdialog.cpp \
     src/colorslider.cpp \
     src/checkupdatesdialog.cpp \
-    src/mpbrushselector.cpp
+    src/mpbrushselector.cpp \
+    src/presetdialog.cpp
 
 FORMS += \
-    src/mpbrushpresetswidget.ui \
     ui/mainwindow2.ui \
+    src/mpbrushpresetswidget.ui \
+    ui/importimageseqpreview.ui \
+    ui/importlayersdialog.ui \
+    ui/importpositiondialog.ui \
+    ui/onionskin.ui \
+    ui/pegbaralignmentdialog.ui \
     ui/timeline2.ui \
     ui/shortcutspage.ui \
     ui/colorinspector.ui \
@@ -137,7 +158,8 @@ FORMS += \
     ui/timelinepage.ui \
     ui/filespage.ui \
     ui/toolspage.ui \
-    ui/toolboxwidget.ui
+    ui/toolboxwidget.ui \
+    ui/presetdialog.ui
 
 
 

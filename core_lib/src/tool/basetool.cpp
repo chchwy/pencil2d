@@ -215,6 +215,11 @@ QCursor BaseTool::selectMoveCursor(MoveMode mode, ToolType type)
     return QCursor(cursorPixmap);
 }
 
+bool BaseTool::isActive()
+{
+    return strokeManager()->isActive();
+}
+
 /**
  * @brief precision circular cursor: used for drawing stroke size while adjusting
  * @return QPixmap

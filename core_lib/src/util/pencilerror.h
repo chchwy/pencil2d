@@ -20,7 +20,6 @@ GNU General Public License for more details.
 
 #include <QStringList>
 
-
 class DebugDetails
 {
 public:
@@ -36,7 +35,6 @@ private:
     void appendSystemInfo();
     QStringList mDetails;
 };
-
 
 class Status
 {
@@ -75,6 +73,11 @@ public:
 
     struct StatusData{
         QByteArray data;
+        ErrorCode errorcode = Status::OK;
+    };
+
+    struct StatusInt{
+        int value = 0;
         ErrorCode errorcode = Status::OK;
     };
 

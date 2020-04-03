@@ -22,8 +22,8 @@ GNU General Public License for more details.
 #include <QObject>
 #include <QList>
 #include "pencilerror.h"
+#include "pencildef.h"
 #include "basetool.h"
-
 #include "brushsetting.h"
 
 
@@ -98,7 +98,12 @@ public:
 
     void scrubTo(int frameNumber);
 
-    int  allLayers();
+
+    /**
+     * @brief The visiblity value should match any of the VISIBILITY enum values
+     */
+    void setLayerVisibility(LayerVisibility visibility);
+    LayerVisibility layerVisibility();
     bool exportSeqCLI(QString filePath, LayerCamera* cameraLayer, QString format = "PNG", int width = -1, int height = -1, int startFrame = 1, int endFrame = -1, bool transparency = false, bool antialias = true);
     bool exportMovieCLI(QString filePath, LayerCamera* cameraLayer, int width = -1, int height = -1, int startFrame = 1, int endFrame = -1);
 
@@ -129,6 +134,8 @@ Q_SIGNALS:
     void previousFrameChanged(int index);
 
     void needSave();
+    void needDisplayInfo(const QString& title, const QString& body);
+    void needDisplayInfoNoTitle(const QString& body);
 
 public: //slots
     void clearCurrentFrame();
@@ -151,9 +158,11 @@ public: //slots
     KeyFrame* addNewKey();
     void removeKey();
 
+    void notifyAnimationLengthChanged();
     void switchVisibilityOfLayer(int layerNumber);
     void showLayerNotVisibleWarning();
     void swapLayers(int i, int j);
+    Status::StatusInt pegBarAlignment(QStringList layers);
 
     void backup(QString undoText);
     void backup(int layerNumber, int frameNumber, QString undoText);
@@ -163,16 +172,22 @@ public: //slots
 
     void paste();
     void clipboardChanged();
-    void toggleShowAllLayers();
+    void increaseLayerVisibilityIndex();
+    void decreaseLayerVisibilityIndex();
     void flipSelection(bool flipVertical);
 
     void toogleOnionSkinType();
 
     void settingUpdated(SETTING);
 
-    void dontAskAutoSave(bool b) { mAutosaveNerverAskAgain = b; }
-    bool autoSaveNeverAskAgain() { return mAutosaveNerverAskAgain; }
+    void dontAskAutoSave(bool b) { mAutosaveNeverAskAgain = b; }
+    bool autoSaveNeverAskAgain() { return mAutosaveNeverAskAgain; }
     void resetAutoSaveCounter();
+
+    void createNewBitmapLayer(const QString& name);
+    void createNewVectorLayer(const QString& name);
+    void createNewSoundLayer(const QString& name);
+    void createNewCameraLayer(const QString& name);
 
     // mypaint
     void loadBrush(ToolType toolType, const QString brushGroup, const QString& brushName, const QByteArray &content);
@@ -217,7 +232,7 @@ private:
     bool mIsAutosave = true;
     int mAutosaveNumber = 12;
     int mAutosaveCounter = 0;
-    bool mAutosaveNerverAskAgain = false;
+    bool mAutosaveNeverAskAgain = false;
 
     void makeConnections();
     KeyFrame* addKeyFrame(int layerNumber, int frameNumber);

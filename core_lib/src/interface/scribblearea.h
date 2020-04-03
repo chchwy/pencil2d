@@ -95,7 +95,7 @@ public:
 
     void setEffect(SETTING e, bool isOn);
 
-    int showAllLayers() const { return mShowAllLayers; }
+    LayerVisibility getLayerVisibility() const { return mLayerVisibility; }
     qreal getCurveSmoothing() const { return mCurveSmoothingLevel; }
     bool usePressure() const { return mUsePressure; }
     bool makeInvisible() const { return mMakeInvisible; }
@@ -111,11 +111,11 @@ public:
 
     void setModified(int layerNumber, int frameNumber);
     bool shouldUpdateAll() const { return mNeedUpdateAll; }
-    void setAllDirty() { mNeedUpdateAll = true; }
+    void setAllDirty();
 
     void flipSelection(bool flipVertical);
 
-    BaseTool* currentTool();
+    BaseTool* currentTool() const;
     BaseTool* getTool(ToolType eToolMode);
     void setCurrentTool(ToolType eToolMode);
     void setTemporaryTool(ToolType eToolMode);
@@ -124,7 +124,8 @@ public:
     void floodFillError(int errorType);
 
     bool isMouseInUse() const { return mMouseInUse; }
-    bool isPointerInUse() const { return mMouseInUse || mStrokeManager->isTabletInUse(); }
+    bool isTabletInUse() const { return mTabletInUse; }
+    bool isPointerInUse() const { return mMouseInUse || mTabletInUse; }
     bool isTemporaryTool() const { return mInstantTool; }
 
     void showCurrentFrame();
@@ -160,7 +161,9 @@ public slots:
     void setCurveSmoothing(int);
     void toggleThinLines();
     void toggleOutlines();
-    void toggleShowAllLayers();
+    void increaseLayerVisibilityIndex();
+    void decreaseLayerVisibilityIndex();
+    void setLayerVisibility(LayerVisibility visibility);
 
     void updateToolCursor();
     void paletteColorChanged(QColor);
@@ -199,7 +202,6 @@ public:
     void drawPath(QPainterPath path, QPen pen, QBrush brush, QPainter::CompositionMode cm);
 
     void paintBitmapBuffer(QPainter::CompositionMode composition = QPainter::CompositionMode_Source);
-//    void paintBitmapBufferRect(const QRect& rect);
     void paintCanvasCursor(QPainter& painter);
     void paintCanvasCursor();
     void clearBitmapBuffer();
@@ -243,14 +245,15 @@ private:
      */
     void updatePixmapCache();
 
+    void prepCanvas(int frame, QRect rect);
     void settingUpdated(SETTING setting);
-    void paintSelectionAnchors(QPainter& painter);
+    void paintSelectionVisuals();
 
     void updateFrame();
     void drawCanvas(int frame);
     void applyBackgroundShadow(QPainter& painter);
 
-    CanvasPainterOptions getRenderOptions();
+//    CanvasPainterOptions getRenderOptions();
 
     /**
      * @brief ScribbleArea::calculateDeltaTime
@@ -263,7 +266,6 @@ private:
 
     BitmapImage* currentBitmapImage(Layer* layer) const;
     VectorImage* currentVectorImage(Layer* layer) const;
-    BitmapSurface* currentBitmapSurfaceImage(Layer* layer) const;
 
     MoveMode mMoveMode = MoveMode::NONE;
     ToolType mPrevTemporalToolType = ERASER;
@@ -281,8 +283,8 @@ private:
     bool mIsSimplified = false;
     bool mShowThinLines = false;
     bool mQuickSizing = true;
-    int  mShowAllLayers = 1;
-    bool mUsePressure = true;
+    LayerVisibility mLayerVisibility = LayerVisibility::ALL;
+    bool mUsePressure   = true;
     bool mMakeInvisible = false;
     bool mToolCursors = true;
     qreal mCurveSmoothingLevel = 0.0;
@@ -302,7 +304,7 @@ private:
     bool mKeyboardInUse = false;
     bool mMouseInUse = false;
     bool mMouseRightButtonInUse = false;
-    bool mPenHeldDown = false;
+    bool mTabletInUse = false;
 
     // Double click handling for tablet input
     void handleDoubleClick();

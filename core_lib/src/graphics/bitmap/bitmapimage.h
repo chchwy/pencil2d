@@ -65,29 +65,45 @@ public:
     bool contains(QPointF P) { return contains(P.toPoint()); }
     void autoCrop();
 
+    QRgb pixel(int x, int y);
+    QRgb pixel(QPoint p);
+    void setPixel(int x, int y, QRgb colour);
+    void setPixel(QPoint p, QRgb colour);
+    void fillNonAlphaPixels(const QRgb color);
+
+    inline QRgb constScanLine(int x, int y) const;
+    inline void scanLine(int x, int y, QRgb colour);
     void clear();
     void clear(QRect rectangle);
     void clear(QRectF rectangle) { clear(rectangle.toRect()); }
+
+    static inline bool compareColor(QRgb newColor, QRgb oldColor, int tolerance, QHash<QRgb, bool> *cache);
+    static void floodFill(BitmapImage* targetImage, QRect cameraRect, QPoint point, QRgb newColor, int tolerance);
 
     void drawLine(QPointF P1, QPointF P2, QPen pen, QPainter::CompositionMode cm, bool antialiasing);
     void drawRect(QRectF rectangle, QPen pen, QBrush brush, QPainter::CompositionMode cm, bool antialiasing);
     void drawEllipse(QRectF rectangle, QPen pen, QBrush brush, QPainter::CompositionMode cm, bool antialiasing);
     void drawPath(QPainterPath path, QPen pen, QBrush brush, QPainter::CompositionMode cm, bool antialiasing);
 
-    QPoint topLeft() { return mBounds.topLeft(); }
-    QPoint topRight() { return mBounds.topRight(); }
-    QPoint bottomLeft() { return mBounds.bottomLeft(); }
-    QPoint bottomRight() { return mBounds.bottomRight(); }
-    int left() { return mBounds.left(); }
-    int right() { return mBounds.right(); }
-    int top() { return mBounds.top(); }
-    int bottom() { return mBounds.bottom(); }
-    int width() { return mBounds.width(); }
-    int height() { return mBounds.height(); }
-    QSize size() { return mBounds.size(); }
+    QPoint topLeft() { autoCrop(); return mBounds.topLeft(); }
+    QPoint topRight() { autoCrop(); return mBounds.topRight(); }
+    QPoint bottomLeft() { autoCrop(); return mBounds.bottomLeft(); }
+    QPoint bottomRight() { autoCrop(); return mBounds.bottomRight(); }
+    int left() { autoCrop(); return mBounds.left(); }
+    int right() { autoCrop(); return mBounds.right(); }
+    int top() { autoCrop(); return mBounds.top(); }
+    int bottom() { autoCrop(); return mBounds.bottom(); }
+    int width() { autoCrop(); return mBounds.width(); }
+    int height() { autoCrop(); return mBounds.height(); }
+    QSize size() { autoCrop(); return mBounds.size(); }
+
+    // peg bar alignment
+    Status::StatusInt findLeft(QRectF rect, int grayValue);
+    Status::StatusInt findTop(QRectF rect, int grayValue);
 
     QRect& bounds() { return mBounds; }
     void setBounds(QRect bounds) { mBounds = bounds; }
+
 
     /** Determines if the BitmapImage is minimally bounded.
      *

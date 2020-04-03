@@ -108,15 +108,14 @@ signals:
     void needDeleteSelection();
 
 private:
-
     int constrainRotationToAngle(const qreal& rotatedAngle, const int& rotationIncrement) const;
 
     QRectF mSelection;
     QRectF mTempTransformedSelection;
     QRectF mTransformedSelection;
-    qreal mRotatedAngle;
+    qreal mRotatedAngle = 0.0;
 
-    bool mSomethingSelected;
+    bool mSomethingSelected = false;
     QPolygonF mLastSelectionPolygonF;
     QPolygonF mCurrentSelectionPolygonF;
     QPointF mOffset;
@@ -124,10 +123,8 @@ private:
     QList<int> mClosestCurves;
     QList<VertexRef> mClosestVertices;
 
-    MoveMode mMoveMode;
-
+    MoveMode mMoveMode = MoveMode::NONE;
     QTransform mSelectionTransform;
-
     const qreal mSelectionTolerance = 8.0;
 };
 

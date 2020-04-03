@@ -61,7 +61,6 @@ void EraserTool::resetToDefault()
 {
     setWidth(24.0);
     setFeather(48.0);
-    setUseFeather(false);
     setPressure(true);
     setStabilizerLevel(StabilizationLevel::NONE);
 }

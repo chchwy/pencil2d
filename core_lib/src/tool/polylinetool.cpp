@@ -92,6 +92,11 @@ void PolylineTool::setAA(const int AA)
     settings.sync();
 }
 
+bool PolylineTool::isActive()
+{
+    return !mPoints.isEmpty();
+}
+
 QCursor PolylineTool::cursor()
 {
     return Qt::CrossCursor;
@@ -253,7 +258,7 @@ void PolylineTool::endPolyline(QList<QPointF> points)
 
     if (layer->type() == Layer::VECTOR)
     {
-        BezierCurve curve = BezierCurve(points);
+        BezierCurve curve = BezierCurve(points, properties.bezier_state);
         if (mScribbleArea->makeInvisible() == true)
         {
             curve.setWidth(0);

@@ -23,8 +23,6 @@ GNU General Public License for more details.
 #include <QClipboard>
 #include <QTimer>
 #include <QImageReader>
-#include <QFileDialog>
-#include <QInputDialog>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 
@@ -167,6 +165,10 @@ void Editor::settingUpdated(SETTING setting)
         break;
     case SETTING::FRAME_POOL_SIZE:
         mObject->setActiveFramePoolSize(mPreferenceManager->getInt(SETTING::FRAME_POOL_SIZE));
+        break;
+    case SETTING::LAYER_VISIBILITY:
+        mScribbleArea->setLayerVisibility(static_cast<LayerVisibility>(mPreferenceManager->getInt(SETTING::LAYER_VISIBILITY)));
+        emit updateTimeLine();
         break;
     default:
         break;
@@ -609,14 +611,30 @@ void Editor::clipboardChanged()
     }
 }
 
-int Editor::allLayers()
-{
-    return mScribbleArea->showAllLayers();
+void Editor::setLayerVisibility(LayerVisibility visibility) {
+    mScribbleArea->setLayerVisibility(visibility);
+    emit updateTimeLine();
 }
 
-void Editor::toggleShowAllLayers()
+void Editor::notifyAnimationLengthChanged()
 {
-    mScribbleArea->toggleShowAllLayers();
+    layers()->notifyAnimationLengthChanged();
+}
+
+LayerVisibility Editor::layerVisibility()
+{
+    return mScribbleArea->getLayerVisibility();
+}
+
+void Editor::increaseLayerVisibilityIndex()
+{
+    mScribbleArea->increaseLayerVisibilityIndex();
+    emit updateTimeLine();
+}
+
+void Editor::decreaseLayerVisibilityIndex()
+{
+    mScribbleArea->decreaseLayerVisibilityIndex();
     emit updateTimeLine();
 }
 
@@ -677,7 +695,7 @@ void Editor::updateObject()
     setCurrentLayerIndex(mObject->data()->getCurrentLayer());
 
     mAutosaveCounter = 0;
-    mAutosaveNerverAskAgain = false;
+    mAutosaveNeverAskAgain = false;
 
     if (mScribbleArea)
     {
@@ -790,6 +808,8 @@ bool Editor::importBitmapImage(QString filePath, int space)
         return false;
     }
 
+    const QPoint pos = QPoint(static_cast<int>(view()->getImportView().dx()),
+                              static_cast<int>(view()->getImportView().dy())) - QPoint(img.width() / 2, img.height() / 2);
     while (reader.read(&img))
     {
         if (!layer->keyExists(currentFrame()))
@@ -797,8 +817,7 @@ bool Editor::importBitmapImage(QString filePath, int space)
             addNewKey();
         }
         BitmapImage* bitmapImage = layer->getBitmapImageAtFrame(currentFrame());
-
-        BitmapImage importedBitmapImage(mScribbleArea->getCentralPoint().toPoint() - QPoint(img.width() / 2, img.height() / 2), img);
+        BitmapImage importedBitmapImage(pos, img);
         bitmapImage->paste(&importedBitmapImage);
 
         if (space > 1) {
@@ -845,10 +864,40 @@ bool Editor::importVectorImage(QString filePath)
     return ok;
 }
 
+void Editor::createNewBitmapLayer(const QString& name)
+{
+    Layer* layer = layers()->createBitmapLayer(name);
+    layers()->setCurrentLayer(layer);
+}
+
+void Editor::createNewVectorLayer(const QString& name)
+{
+    Layer* layer = layers()->createVectorLayer(name);
+    layers()->setCurrentLayer(layer);
+}
+
+void Editor::createNewSoundLayer(const QString& name)
+{
+    Layer* layer = layers()->createVectorLayer(name);
+    layers()->setCurrentLayer(layer);
+}
+
+void Editor::createNewCameraLayer(const QString& name)
+{
+    Layer* layer = layers()->createCameraLayer(name);
+    layers()->setCurrentLayer(layer);
+}
+
 bool Editor::importImage(QString filePath)
 {
     Layer* layer = layers()->currentLayer();
 
+    if (view()->getImportFollowsCamera())
+    {
+        LayerCamera* camera = static_cast<LayerCamera*>(layers()->getLastCameraLayer());
+        QTransform transform = camera->getViewAtFrame(currentFrame());
+        view()->setImportView(transform);
+    }
     switch (layer->type())
     {
     case Layer::BITMAP:
@@ -991,15 +1040,25 @@ KeyFrame* Editor::addKeyFrame(int layerNumber, int frameIndex)
         return nullptr;
     }
 
+    // Find next available space for a keyframe (where either no key exists or there is an empty sound key)
     while (layer->keyExists(frameIndex))
     {
-        frameIndex += 1;
+        if (layer->type() == Layer::SOUND && static_cast<SoundClip*>(layer->getKeyFrameAt(frameIndex))->fileName().isEmpty()
+                && layer->removeKeyFrame(frameIndex))
+        {
+            break;
+        }
+        else
+        {
+            frameIndex += 1;
+        }
     }
 
     bool ok = layer->addNewKeyFrameAt(frameIndex);
     if (ok)
     {
         scrubTo(frameIndex); // currentFrameChanged() emit inside.
+        layers()->notifyAnimationLengthChanged();
     }
     return layer->getKeyFrameAt(frameIndex);
 }
@@ -1026,6 +1085,7 @@ void Editor::removeKey()
     layer->removeKeyFrame(currentFrame());
 
     scrubBackward();
+    layers()->notifyAnimationLengthChanged();
     Q_EMIT layers()->currentLayerChanged(layers()->currentLayerIndex()); // trigger timeline repaint.
 }
 
@@ -1074,6 +1134,55 @@ void Editor::swapLayers(int i, int j)
     }
     emit updateTimeLine();
     mScribbleArea->updateAllFrames();
+}
+
+Status::StatusInt Editor::pegBarAlignment(QStringList layers)
+{
+    Status::StatusInt retLeft;
+    Status::StatusInt retRight;
+
+    LayerBitmap* layerbitmap = static_cast<LayerBitmap*>(mLayerManager->currentLayer());
+    BitmapImage* img = layerbitmap->getBitmapImageAtFrame(currentFrame());
+    QRectF rect = select()->mySelectionRect();
+    retLeft = img->findLeft(rect, 121);
+    retRight = img->findTop(rect, 121);
+    if (retLeft.errorcode == Status::FAIL || retRight.errorcode == Status::FAIL)
+    {
+        retLeft.errorcode = Status::FAIL;
+        return retLeft;
+    }
+    int peg_x = retLeft.value;
+    int peg_y = retRight.value;
+
+    // move other layers
+    for (int i = 0; i < layers.count(); i++)
+    {
+        layerbitmap = static_cast<LayerBitmap*>(mLayerManager->findLayerByName(layers.at(i)));
+        for (int k = layerbitmap->firstKeyFramePosition(); k <= layerbitmap->getMaxKeyFramePosition(); k++)
+        {
+            if (layerbitmap->keyExists(k))
+            {
+                img = layerbitmap->getBitmapImageAtFrame(k);
+                retLeft = img->findLeft(rect, 121);
+                const QString body = tr("Peg bar not found at %1, %2").arg(layerbitmap->name()).arg(k);
+                if (retLeft.errorcode == Status::FAIL)
+                {
+                    emit needDisplayInfoNoTitle(body);
+                    return retLeft;
+                }
+                retRight = img->findTop(rect, 121);
+                if (retRight.errorcode == Status::FAIL)
+                {
+                    emit needDisplayInfoNoTitle(body);
+                    return retRight;
+                }
+                img->moveTopLeft(QPoint(img->left() + (peg_x - retLeft.value), img->top() + (peg_y - retRight.value)));
+            }
+        }
+    }
+    deselectAll();
+
+    return retLeft;
 }
 
 void Editor::prepareSave()
