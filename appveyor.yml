@@ -1,6 +1,10 @@
 configuration:
   - Release
 
+branches:
+  only:
+  - implement_mypaint_nobitmapsurface
+
 environment:
   MSBUILD_FLAGS: /verbosity:minimal
   matrix:
