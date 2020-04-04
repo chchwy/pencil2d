@@ -150,7 +150,6 @@ void PolylineTool::pointerPressEvent(PointerEvent* event)
     mScribbleArea->setIsPainting(true);
 
     mScribbleArea->paintBitmapBuffer(QPainter::CompositionMode_SourceOver);
-
     mScribbleArea->clearTilesBuffer();
 }
 

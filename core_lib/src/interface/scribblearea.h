@@ -251,9 +251,6 @@ private:
 
     void updateFrame();
     void drawCanvas(int frame);
-    void applyBackgroundShadow(QPainter& painter);
-
-//    CanvasPainterOptions getRenderOptions();
 
     /**
      * @brief ScribbleArea::calculateDeltaTime
