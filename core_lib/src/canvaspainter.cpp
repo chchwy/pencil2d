@@ -382,7 +382,7 @@ void CanvasPainter::paintBitmapTilesOnImage(QPainter& painter, BitmapImage* imag
                 }
 
                 // Fixes not drawing on the same tile, that could otherwise cause small artifacts.
-                if (!image->bounds().contains(rawRect)) {
+                if (!image->bounds().contains(rawRect) || mOptions.useCanvasBuffer) {
                     painter.save();
                     painter.translate(-mCanvas->rect().width()/2, -mCanvas->rect().height()/2);
                     painter.setTransform(v);
