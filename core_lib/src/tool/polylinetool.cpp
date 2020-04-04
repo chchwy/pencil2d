@@ -275,11 +275,9 @@ void PolylineTool::endPolyline(QList<QPointF> points)
     if (layer->type() == Layer::BITMAP)
     {
         drawPolyline(points, points.last());
-        mScribbleArea->paintBitmapBuffer(QPainter::CompositionMode_SourceOver);
     }
     mScribbleArea->setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
-
     mScribbleArea->prepareForDrawing();
-    mScribbleArea->clearBitmapBuffer();
-    mScribbleArea->endStroke();
+
+    endStroke();
 }

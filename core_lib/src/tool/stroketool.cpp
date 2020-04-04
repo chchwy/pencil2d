@@ -52,6 +52,7 @@ StrokeTool::StrokeTool(QObject* parent) : BaseTool(parent)
 
 void StrokeTool::startStroke()
 {
+    mEditor->backup(typeName());
     if (emptyFrameActionEnabled())
     {
         mScribbleArea->handleDrawingOnEmptyFrame();
@@ -101,8 +102,6 @@ bool StrokeTool::emptyFrameActionEnabled()
 
 void StrokeTool::endStroke()
 {
-    mEditor->backup(typeName());
-
     Layer* layer = mEditor->layers()->currentLayer();
     qreal distance = QLineF(getCurrentPixel(), mMouseDownPoint).length();
     if (distance < 1) { isBrushDab = true; } else { isBrushDab = false; }
