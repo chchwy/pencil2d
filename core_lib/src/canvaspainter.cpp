@@ -298,11 +298,11 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter,
     QTransform v = mViewTransform;
 
     bool isPainting = mOptions.isPainting;
-    if (isPainting && nLayer == mCurrentLayerIndex) {
-        paintCurrentBitmapFrame(painter, bitmapImage);
-    } else if (nLayer != mCurrentLayerIndex || !isPainting) {
 
-        qDebug() << "stuff";
+    // Only paint with tiles for the frame we are painting on
+    if (isPainting && nLayer == mCurrentLayerIndex && isCurrentFrame) {
+        paintCurrentBitmapFrame(painter, bitmapImage);
+    } else if (nLayer != mCurrentLayerIndex || !isPainting || !isCurrentFrame) {
         painter.save();
         painter.setTransform(v);
         painter.drawImage(bitmapImage->bounds(), *bitmapImage->image());
@@ -337,8 +337,8 @@ void CanvasPainter::paintCurrentBitmapFrame(QPainter& painter, BitmapImage* imag
                 // Tools that require continous clearing should not get in here
                 // eg. polyline because it's already clearing its surface per dab it creates
                 if (!mOptions.useCanvasBuffer) {
-                    newPaint.setCompositionMode(QPainter::CompositionMode_Source);
                     newPaint.save();
+                    newPaint.setCompositionMode(QPainter::CompositionMode_Source);
                     newPaint.translate(-image->bounds().topLeft());
                     newPaint.drawPixmap(rawRect, pix, pix.rect());
                     newPaint.restore();
@@ -349,8 +349,6 @@ void CanvasPainter::paintCurrentBitmapFrame(QPainter& painter, BitmapImage* imag
                     painter.save();
                     painter.translate(-mCanvas->rect().width()/2, -mCanvas->rect().height()/2);
                     painter.setTransform(v);
-
-//                    painter.fillRect(rawRect, Qt::gray);
                     painter.drawPixmap(rawRect, pix, pix.rect());
                     painter.restore();
                 }

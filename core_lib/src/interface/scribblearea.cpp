@@ -269,67 +269,29 @@ void ScribbleArea::prepareForDrawing()
  */
 void ScribbleArea::showCurrentFrame()
 {
-    mFrameFirstLoad = true;
+    mNeedLoadImageToMyPaint = true;
     updateFrame();
 }
 
 void ScribbleArea::updateFrame()
 {
-//    updatePixmapCache();
+    updatePixmapCache();
     update();
     qDebug() << "update + clear frame";
 }
 
 void ScribbleArea::updatePixmapCache()
 {
-//    auto frame = mEditor->currentFrame();
-//    int frameNumber = mEditor->layers()->LastFrameAtFrame(frame);
-//    if (mPixmapCacheKeys.size() <= static_cast<unsigned>(frame))
-//    {
-//        mPixmapCacheKeys.resize(static_cast<unsigned>(frame + 10)); // a buffer
-//    }
+    auto frame = mEditor->currentFrame();
+    int frameNumber = mEditor->layers()->LastFrameAtFrame(frame);
+    if (mPixmapCacheKeys.size() <= static_cast<unsigned>(frame))
+    {
+        mPixmapCacheKeys.resize(static_cast<unsigned>(frame + 10)); // a buffer
+    }
 
-//    QPixmapCache::remove(mPixmapCacheKeys[static_cast<unsigned>(frameNumber)]);
-//    mPixmapCacheKeys[static_cast<unsigned>(frameNumber)] = QPixmapCache::Key();
+    QPixmapCache::remove(mPixmapCacheKeys[static_cast<unsigned>(frameNumber)]);
+    mPixmapCacheKeys[static_cast<unsigned>(frameNumber)] = QPixmapCache::Key();
 }
-
-//void ScribbleArea::drawCanvas(int frame)
-//{
-//    Object* object = mEditor->object();
-
-//    QPainter painter(this);
-//    painter.setClipping(true);
-//    painter.setClipRect(this->rect());
-
-//    QHash<QString, MPTile*> tilesToBeRendered;
-
-//    tilesToBeRendered = mBufferTiles;
-
-////    mCanvasPainter.setOptions( getRenderOptions() );
-////    mCanvasPainter.setCanvas( &mCanvas );
-//    mCanvasPainter.setViewTransform(mEditor->view()->getView(), mEditor->view()->getViewInverse());
-
-//    bool paintOnTopOfImage = false;
-//    if (currentTool()->type() == POLYLINE) {
-//        paintOnTopOfImage = true;
-//    }
-
-//    mCanvasPainter.paint();
-
-//    paintCanvasCursor(painter);
-////    paintSelectionAnchors(painter);
-
-//    // Cache current frame for faster render
-//    //
-//    QString cachedFrameKey = getCachedFrameKey( frame );
-
-//    QPixmap pm;
-//    if (QPixmapCache::find(cachedFrameKey, &pm)) {
-//        QPixmapCache::remove( cachedFrameKey );
-//    }
-
-//    QPixmapCache::insert( cachedFrameKey, mCanvas );
-//}
 
 QString ScribbleArea::getCachedFrameKey(int frame)
 {
@@ -360,7 +322,7 @@ void ScribbleArea::updateFrame(int frame)
 
 void ScribbleArea::reloadMyPaint()
 {
-    mFrameFirstLoad = true;
+    mNeedLoadImageToMyPaint = true;
 }
 
 void ScribbleArea::layerChanged()
@@ -602,9 +564,7 @@ void ScribbleArea::wheelEvent(QWheelEvent* event)
         }
     }
 
-    update();
     updateCanvasCursor();
-
     event->accept();
 }
 
@@ -708,6 +668,7 @@ void ScribbleArea::pointerPressEvent(PointerEvent* event)
 void ScribbleArea::pointerMoveEvent(PointerEvent* event)
 {
 
+     updateCanvasCursor();
 //    if (mEditor->view()->transformUpdated()) {
 //        mEditor->view()->transformUpdatedState(false);
 //        update();
@@ -732,7 +693,6 @@ void ScribbleArea::pointerMoveEvent(PointerEvent* event)
         return;
     }
     currentTool()->pointerMoveEvent(event);
-    updateCanvasCursor();
 }
 
 void ScribbleArea::pointerReleaseEvent(PointerEvent* event)
@@ -942,6 +902,9 @@ void ScribbleArea::paintBitmapBuffer(QPainter::CompositionMode composition)
 
     layer->setModified(frameNumber, true);
     emit modification(frameNumber);
+
+    updatePixmapCache();
+    update();
 }
 
 void ScribbleArea::clearBitmapBuffer()
@@ -979,12 +942,19 @@ void ScribbleArea::paintCanvasCursor(QPainter& painter)
 
     mTransformedCursorPos = view.map(mousePos);
 
+    // reset matrix
+    view.reset();
+
+    painter.setTransform(view);
     mCursorCenterPos.setX(centerCal);
     mCursorCenterPos.setY(centerCal);
 
     painter.drawPixmap(QPoint(static_cast<int>(mTransformedCursorPos.x() - mCursorCenterPos.x()),
                               static_cast<int>(mTransformedCursorPos.y() - mCursorCenterPos.y())),
                        mCursorImg);
+
+    // update center of transformed img for rect only
+    mTransCursImg = mCursorImg.transformed(view);
 
     mCursorCenterPos.setX(centerCal);
     mCursorCenterPos.setY(centerCal);
@@ -1013,8 +983,8 @@ void ScribbleArea::updateCanvasCursor()
     QPoint translatedPos = QPoint(static_cast<int>(mTransformedCursorPos.x() - mCursorCenterPos.x()),
                                   static_cast<int>(mTransformedCursorPos.y() - mCursorCenterPos.y()));
 
-    QRect cursorRect = mCursorImg.rect().translated(translatedPos);
-    update(cursorRect);
+    update(mTransCursImg.rect().adjusted(-1, -1, 1, 1)
+           .translated(translatedPos));
 }
 
 void ScribbleArea::handleDrawingOnEmptyFrame()
@@ -1077,7 +1047,6 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 
         QPixmapCache::Key cachedKey = mPixmapCacheKeys[static_cast<ulong>(frameNumber)];
 
-        qDebug() << "current tool not active";
         if (!QPixmapCache::find(cachedKey, &mCanvas))
         {
             drawCanvas(mEditor->currentFrame());
@@ -1333,10 +1302,10 @@ void ScribbleArea::updateTile(MPSurface *surface, MPTile *tile)
 void ScribbleArea::startStroke()
 {
 
-    if (mFrameFirstLoad) {
+    if (mNeedLoadImageToMyPaint) {
         qDebug() << "first frame load";
         prepareForDrawing();
-        mFrameFirstLoad = false;
+        mNeedLoadImageToMyPaint = false;
     }
     mMyPaint->startStroke();
     mIsPainting = true;
