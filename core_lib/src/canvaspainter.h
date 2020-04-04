@@ -79,7 +79,7 @@ public:
     virtual ~CanvasPainter();
 
     void setCanvas(QPixmap* canvas);
-    void setViewTransform(const QTransform view, const QTransform viewInverse);
+    void setViewTransform(const QTransform view);
     void setOptions(const CanvasPainterOptions& p) { mOptions = p; }
     void setTransformedSelection(QRect selection, QRect movingSelection, QTransform transform);
     void ignoreTransformedSelection();
@@ -163,7 +163,6 @@ private:
     const Object* mObject = nullptr;
     QPixmap* mCanvas = nullptr;
     QTransform mViewTransform;
-    QTransform mViewInverse;
 
     QRect mCameraRect;
     QRect mCanvasRect;

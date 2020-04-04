@@ -1208,7 +1208,7 @@ void ScribbleArea::prepCanvas(int frame, QRect rect)
     mCanvasPainter.setCanvas(&mCanvas);
 
     ViewManager* vm = mEditor->view();
-    mCanvasPainter.setViewTransform(vm->getView(), vm->getViewInverse());
+    mCanvasPainter.setViewTransform(vm->getView());
 
     mCanvasPainter.setPaintSettings(object, mEditor->layers()->currentLayerIndex(), frame, rect, mBufferImg);
 }

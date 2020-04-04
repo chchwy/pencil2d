@@ -43,10 +43,9 @@ void CanvasPainter::setCanvas(QPixmap* canvas)
     mCanvasRect = mCanvas->rect();
 }
 
-void CanvasPainter::setViewTransform(const QTransform view, const QTransform viewInverse)
+void CanvasPainter::setViewTransform(const QTransform view)
 {
     mViewTransform = view;
-    mViewInverse = viewInverse;
 }
 
 void CanvasPainter::setTransformedSelection(QRect selection, QRect movingSelection, QTransform transform)
@@ -551,10 +550,11 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
         BitmapImage* bitmapImage = dynamic_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(mFrameNumber, 0);
         BitmapImage transformedImage = bitmapImage->transformed(mSelection, mSelectionTransform, mOptions.bAntiAlias);
 
-        QRect selection = mViewTransform.mapRect(mSelection);
-        QRect movingSelection = mViewTransform.mapRect(mMovingSelection);
+        QRect selection = mSelection;
+        QRect movingSelection = mMovingSelection;
 
         painter.save();
+        painter.setTransform(mViewTransform);
 
         // Fill the region where the selection started with white
         // to make it look like the surface has been modified
