@@ -7,22 +7,37 @@
 
 struct BitmapUtils {
 
-static QRgb constScanLine(QImage& inImage, QRect bounds, QPoint topLeft, int x, int y)
+ /** constScanline
+ * Recommended method to search pixels in an image and return the rgb at the given position.
+ * @param inImage
+ * @param bounds
+ * @param x
+ * @param y
+ * @return the color at the given position
+ */
+static QRgb constScanLine(const QImage& inImage, const QRect& bounds, const QPoint& pos, const int x, const int y)
 {
     QRgb result = qRgba(0, 0, 0, 0);
     if (bounds.contains(QPoint(x,y))) {
-        result = *(reinterpret_cast<const QRgb*>(inImage.constScanLine(y - topLeft.y())) + x - topLeft.x() );
+        result = *(reinterpret_cast<const QRgb*>(inImage.constScanLine(y - pos.y())) + x - pos.x() );
     }
     return result;
 }
 
-static void scanLine(QImage* outImage, QRect bounds, QPoint offset, const int& x, const int& y, const QRgb& colour)
+/** scanLine the image and replace the pixel at the given pos
+ * outImage will contain the modification
+ * @param outImage
+ * @param bounds
+ * @param x
+ * @param y
+ * @param colour
+ */
+static void scanLine(QImage* outImage, const QRect& bounds, const QPoint& pos, const int x, const int y, const QRgb& colour)
 {
-        // Make sure color is premultiplied before calling
-
+    // Make sure color is premultiplied before calling
     if (bounds.contains(QPoint(x,y))) {
         QRgb toColor = qRgba(qRed(colour),qGreen(colour), qBlue(colour), qAlpha(colour));
-        QRgb* sourceColor = (reinterpret_cast<QRgb*>(outImage->scanLine(y - offset.y()))+x-offset.x());
+        QRgb* sourceColor = (reinterpret_cast<QRgb*>(outImage->scanLine(y - pos.y())) + x - pos.x());
         *sourceColor = toColor;
     }
 }
@@ -57,7 +72,7 @@ static void setPixel(QImage& outImage, QPoint offset, const int& x, const int& y
  *  @return Returns true if the colors have a similarity below the tolerance level
  *          (i.e. if Eulcidian distance squared is <= tolerance)
  */
-static bool compareColor(const QRgb& newColor, const QRgb& oldColor, const int& tolerance, QHash<QRgb, bool> *cache)
+static bool compareColor(const QRgb& newColor, const QRgb& oldColor, const int tolerance, QHash<QRgb, bool> *cache)
 {
     // Handle trivial case
     if (newColor == oldColor) return true;
@@ -94,7 +109,6 @@ static void floodFill(QImage& targetImage,
                       int tolerance)
 {
     QPoint offset = bounds.topLeft();
-    point = QPoint(point.x(), point.y());
 
     // Square tolerance for use with compareColor
     tolerance = static_cast<int>(qPow(tolerance, 2));
@@ -161,9 +175,6 @@ static void floodFill(QImage& targetImage,
                 spanRight = false;
             }
 
-//            if (targetImage.rect() != bounds) {
-//                targetImage.extend(QPoint(x, y));
-//            }
             Q_ASSERT(queue.count() < (targetImage.width() * targetImage.height()));
             xTemp++;
         }

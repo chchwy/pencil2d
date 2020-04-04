@@ -65,14 +65,8 @@ public:
     bool contains(QPointF P) { return contains(P.toPoint()); }
     void autoCrop();
 
-    QRgb pixel(int x, int y);
-    QRgb pixel(QPoint p);
-    void setPixel(int x, int y, QRgb colour);
-    void setPixel(QPoint p, QRgb colour);
     void fillNonAlphaPixels(const QRgb color);
 
-    inline QRgb constScanLine(int x, int y) const;
-    inline void scanLine(int x, int y, QRgb colour);
     void clear();
     void clear(QRect rectangle);
     void clear(QRectF rectangle) { clear(rectangle.toRect()); }
