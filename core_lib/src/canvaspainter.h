@@ -113,10 +113,31 @@ private:
     void renderCurLayer(QPixmap *pixmap);
     void renderPreLayers(QPixmap *pixmap);
 
-    void paintCurrentFrame(QPainter& painter, int startLayer, int endLayer);
-    void paintCurrentBitmapFrame(QPainter& painter, BitmapImage* image);
+    void paintCurrentFrameAtLayer(QPainter& painter, int startLayer, int endLayer);
 
-    void paintBitmapFrame(QPainter&, Layer* layer, int nLayer, int nFrame, bool colorize, bool useLastKeyFrame, bool isCurrentFrame);
+    /** paintCurrentBitmapFrame
+     * This should only be used for the current frame at the current layer
+     * @param painter
+     * @param layer
+     */
+    void paintCurrentBitmapFrame(QPainter& painter, Layer* layer);
+
+    /** paintBitmapTilesOnImage
+     * Paints tiled images on top of the given bitmap image and canvas painter if needed.
+     * @param painter
+     * @param image
+     */
+    void paintBitmapTilesOnImage(QPainter& painter, BitmapImage* image);
+
+    /** paintBitmapFrame
+     * Paints bitmap frames to any given layer, do not use on current frame at current layer.
+     * @param layer
+     * @param nFrame
+     * @param colorize
+     * @param isCurrentLayer
+     * @param isCurrentFrame
+     */
+    void paintBitmapFrame(QPainter&, Layer* layer, int nFrame, bool colorize, bool isCurrentLayer, bool isCurrentFrame);
     void paintVectorFrame(QPainter&, Layer* layer, int nFrame, bool colorize, bool useLastKeyFrame, bool isCurrentFrame);
 
     void paintTransformedSelection(QPainter& painter);
@@ -129,9 +150,10 @@ private:
     void paintAxis(QPainter& painter);
     void prescale(BitmapImage* bitmapImage);
 
-    void paintColoredOnionSkin(QPainter& painter, const int frameIndex);
+    void paintColoredOnionSkin(QPainter& painter, const QRect& bitmapRect, const int frameIndex);
 
-    bool isRectInsideCanvas(const QRect& rect) const;
+    /** Check if the given rect lies inside the canvas, assumes that the input rect is mapped correctly **/
+    inline bool isRectInsideCanvas(const QRect& rect) const;
 
     /** Calculate layer opacity based on current layer offset */
     qreal calculateRelativeOpacityForLayer(int layerIndex) const;
