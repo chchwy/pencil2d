@@ -278,7 +278,7 @@ private:
     Editor* mEditor = nullptr;
 
     /// Used to load frame into mypaint. Should only be true when the surface is not valid anymore
-    bool mFrameFirstLoad = false;
+    bool mNeedLoadImageToMyPaint = false;
 
     bool mIsSimplified = false;
     bool mShowThinLines = false;

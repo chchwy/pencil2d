@@ -41,9 +41,9 @@ INCLUDEPATH += \
 
 HEADERS += \
     src/mainwindow2.h \
-    brushsettingitem.h \
-    brushsettingwidget.h \
-    mpbrushutils.h \
+    src/brushsettingitem.h \
+    src/brushsettingwidget.h \
+    src/mpbrushutils.h \
     src/combobox.h \
     src/mapping/mappingconfiguratorwidget.h \
     src/mapping/mappingdistributionwidget.h \
@@ -89,8 +89,8 @@ HEADERS += \
 SOURCES += \
     src/main.cpp \
     src/mainwindow2.cpp \
-    brushsettingitem.cpp \
-    brushsettingwidget.cpp \
+    src/brushsettingitem.cpp \
+    src/brushsettingwidget.cpp \
     src/combobox.cpp \
     src/mapping/mappingconfiguratorwidget.cpp \
     src/mapping/mappingdistributionwidget.cpp \
@@ -134,7 +134,7 @@ SOURCES += \
 
 FORMS += \
     ui/mainwindow2.ui \
-    src/mpbrushpresetswidget.ui \
+    ui/mpbrushpresetswidget.ui \
     ui/importimageseqpreview.ui \
     ui/importlayersdialog.ui \
     ui/importpositiondialog.ui \
