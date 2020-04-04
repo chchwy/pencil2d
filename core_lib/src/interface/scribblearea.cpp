@@ -203,7 +203,9 @@ void ScribbleArea::updateMyPaintCanvas(BitmapImage* bitmapImage)
     }
 
     if (bitmapImage->bounds().isNull()) { return; }
-    mMyPaint->loadImage(*bitmapImage->image(), bitmapImage->topLeft());
+
+    QImage image = *bitmapImage->image();
+    mMyPaint->loadImage(image, bitmapImage->topLeft());
 }
 
 void ScribbleArea::prepareForDrawing()
@@ -238,7 +240,7 @@ void ScribbleArea::updateFrame()
 {
     updatePixmapCache();
     update();
-    qDebug() << "update + clear frame";
+//    qDebug() << "update + clear frame";
 }
 
 void ScribbleArea::updatePixmapCache()
@@ -1013,7 +1015,7 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
             drawCanvas(mEditor->currentFrame());
 
             mPixmapCacheKeys[static_cast<unsigned>(frameNumber)] = QPixmapCache::insert(mCanvas);
-            qDebug() << "Repaint canvas!";
+//            qDebug() << "Repaint canvas!";
         }
     }
     else
