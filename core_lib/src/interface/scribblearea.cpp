@@ -1271,14 +1271,6 @@ void ScribbleArea::startStroke()
     }
     mMyPaint->startStroke();
     mIsPainting = true;
-
-    QRect canvasRect = mEditor->view()->mapScreenToCanvas(rect()).toRect();
-
-    QRect bounds = currentBitmapImage(mEditor->layers()->currentLayer())->bounds();
-
-    if (canvasRect.width() < bounds.width() && canvasRect.height() < bounds.height()) {
-        bounds = canvasRect;
-    }
 }
 
 void ScribbleArea::setBrushWidth(float width)

@@ -186,7 +186,7 @@ void MoveTool::beginInteraction(Qt::KeyboardModifiers keyMod, Layer* layer)
     QRectF selectionRect = selectMan->myTransformedSelectionRect();
     if (!selectionRect.isNull())
     {
-//        mEditor->backup(typeName());
+        mEditor->backup(typeName());
     }
 
     if (keyMod != Qt::ShiftModifier)
