@@ -321,7 +321,7 @@ void CanvasPainter::paintBitmapFrame(QPainter& painter, Layer* layer, int nFrame
     }
 
     if (mRenderTransform) {
-        paintTransformedSelection(painter);
+        paintTransformedBitmap(painter);
     }
 }
 
@@ -347,7 +347,7 @@ void CanvasPainter::paintCurrentBitmapFrame(QPainter& painter, Layer* layer)
     }
 
     if (mRenderTransform) {
-        paintTransformedSelection(painter);
+        paintTransformedBitmap(painter);
     }
 }
 
@@ -536,7 +536,7 @@ void CanvasPainter::paintVectorFrame(QPainter& painter,
     tempBitmapImage.paintImage(painter);
 }
 
-void CanvasPainter::paintTransformedSelection(QPainter& painter)
+void CanvasPainter::paintTransformedBitmap(QPainter& painter)
 {
     // Make sure there is something selected
     if (mSelection.width() == 0 || mSelection.height() == 0)
@@ -544,26 +544,23 @@ void CanvasPainter::paintTransformedSelection(QPainter& painter)
 
     Layer* layer = mObject->getLayer(mCurrentLayerIndex);
 
-    if (layer->type() == Layer::BITMAP)
-    {
-        // Get the transformed image
-        BitmapImage* bitmapImage = dynamic_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(mFrameNumber, 0);
-        BitmapImage transformedImage = bitmapImage->transformed(mSelection, mSelectionTransform, mOptions.bAntiAlias);
+    // Get the transformed image
+    BitmapImage* bitmapImage = dynamic_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(mFrameNumber, 0);
+    BitmapImage transformedImage = bitmapImage->transformed(mSelection, mSelectionTransform, mOptions.bAntiAlias);
 
-        QRect selection = mSelection;
-        QRect movingSelection = mMovingSelection;
+    QRect selection = mSelection;
+    QRect movingSelection = mMovingSelection;
 
-        painter.save();
-        painter.setTransform(mViewTransform);
+    painter.save();
+    painter.setTransform(mViewTransform);
 
-        // Fill the region where the selection started with white
-        // to make it look like the surface has been modified
-        painter.fillRect(selection, QColor(255,255,255,255));
+    // Fill the region where the selection started with white
+    // to make it look like the surface has been modified
+    painter.fillRect(selection, QColor(255,255,255,255));
 
-        // Draw the selection image separately and on top
-        painter.drawImage(movingSelection, *transformedImage.image());
-        painter.restore();
-    }
+    // Draw the selection image separately and on top
+    painter.drawImage(movingSelection, *transformedImage.image());
+    painter.restore();
 }
 
 /** Paints layers within the specified range for the current frame.

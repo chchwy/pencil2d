@@ -1433,6 +1433,9 @@ void ScribbleArea::applySelectionChanges()
 
 void ScribbleArea::applyTransformedSelection()
 {
+
+    // FIXME: if the selection is ignored, then undo won't show the correct transformation until the
+    // transformation is painted again.
     mCanvasPainter.ignoreTransformedSelection();
 
     Layer* layer = mEditor->layers()->currentLayer();
