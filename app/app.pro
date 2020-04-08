@@ -225,8 +225,8 @@ win32-msvc*{
 }
 
 win32-g++{
-  LIBS += -L$$OUT_PWD/../core_lib/ -lcore_lib
-  PRE_TARGETDEPS += $$OUT_PWD/../core_lib/libcore_lib.a
+  LIBS += -L$$OUT_PWD/../core_lib/$$BUILDTYPE/ -lcore_lib
+  PRE_TARGETDEPS += $$OUT_PWD/../core_lib/$$BUILDTYPE/libcore_lib.a
 }
 
 # --- mac os and linux
@@ -246,8 +246,8 @@ win32-msvc* {
 }
 
 win32-g++ {
-  LIBS += -L$$OUT_PWD/../3rdlib/paint_lib/ -lpaint_lib
-  PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/paint_lib/libpaint_lib.a
+  LIBS += -L$$OUT_PWD/../3rdlib/paint_lib/$$BUILDTYPE/ -lpaint_lib
+  PRE_TARGETDEPS += $$OUT_PWD/../3rdlib/paint_lib/$$BUILDTYPE/libpaint_lib.a
 }
 
 unix: {
