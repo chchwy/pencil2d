@@ -7,6 +7,10 @@ DEFINES += HAVE_JSON_C
 
 win32-g++ {
     QMAKE_CXXFLAGS += -std=c++11
+    QMAKE_CFLAGS += -std=c99
+    QMAKE_CFLAGS += -D_XOPEN_SOURCE=600
+    QMAKE_CFLAGS += -Ofast
+    QMAKE_CC = gcc
 }
 
 win32-msvc* {
@@ -14,7 +18,7 @@ win32-msvc* {
 }
 
 macx {
-   QMAKE_CXXFLAGS += -std=c++11 -stdlib=libc++
+    QMAKE_CXXFLAGS += -std=c++11 -stdlib=libc++
 }
 
 unix:!macx {
@@ -22,11 +26,6 @@ unix:!macx {
     QMAKE_LINK = $$QMAKE_CXX
     QMAKE_LINK_SHLIB = $$QMAKE_CXX
 }
-
-QMAKE_CFLAGS += -std=c99
-QMAKE_CFLAGS += -D_XOPEN_SOURCE=600
-QMAKE_CFLAGS += -Ofast
-QMAKE_CC = gcc
 
 # libmypaint
 SOURCES += \
