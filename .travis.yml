@@ -53,7 +53,6 @@ before_install:
   - test "${FORCE_NIGHTLY_UPLOAD}" = "yes" || bash $TRAVIS_BUILD_DIR/util/checkchanges.sh || travis_terminate 0;
   - |
     if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-        brew update;
         brew install python3
         brew install libarchive qt gpg;
         brew link qt --force;
