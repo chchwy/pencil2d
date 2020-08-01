@@ -64,7 +64,7 @@ after_build:
   - ls
 
 test_script:
-  - ./tests/tests
+  - ./tests/bin/tests
 
 deploy_script:
   - echo "Initiate deployment on Google Drive"
