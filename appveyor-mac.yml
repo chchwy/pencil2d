@@ -12,8 +12,9 @@ skip_commits:
 
 install:
   - echo "INSTALL"
-  - brew update
   - brew install wget p7zip
+  - brew link qt
+  - which qmake
 
 before_build:
   - qmake --version 
@@ -30,7 +31,6 @@ build_script:
   - make
 
 after_build:
-  - which qmake
   - echo "cleaning..."
   - make clean
   - mv bin Pencil2D
