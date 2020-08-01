@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 Pencil - Traditional Animation Software
 Copyright (C) 2012-2018 Matthew Chiawen Chang
@@ -45,9 +45,9 @@ void AboutDialog::init()
 #if defined(PENCIL2D_RELEASE_BUILD)
     devText << tr("Version: %1", "Version Number in About Dialog").arg(APP_VERSION);
 #elif defined(PENCIL2D_NIGHTLY_BUILD)
-    devText << "Nightly build";
+    devText << "Nightly Build " __DATE__;
 #else
-    devText << "Development build";
+    devText << "Development Build " __DATE__;
 #endif
 
     devText << ""; // An empty line
@@ -71,10 +71,10 @@ void AboutDialog::init()
     }
     ui->devInfoText->setText(devText.join("<br>"));
 
-	QPushButton* copyToClipboardButton = new QPushButton(tr("Copy to clipboard", "Copy system info from About Dialog"));
-	connect(copyToClipboardButton, &QPushButton::clicked, this, [devText] 
-	{
-		QApplication::clipboard()->setText(devText.join("\n"));
-	});
+    QPushButton* copyToClipboardButton = new QPushButton(tr("Copy to clipboard", "Copy system info from About Dialog"));
+    connect(copyToClipboardButton, &QPushButton::clicked, this, [devText]
+    {
+        QApplication::clipboard()->setText(devText.join("\n"));
+    });
     ui->buttonBox->addButton(copyToClipboardButton, QDialogButtonBox::ActionRole);
 }
