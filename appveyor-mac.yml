@@ -12,7 +12,7 @@ skip_commits:
 
 install:
   - echo "INSTALL"
-  - brew install wget p7zip
+  - brew install qt p7zip
   - brew link qt
   - which qmake
 
