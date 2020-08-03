@@ -2,6 +2,8 @@
 VERSION = 0.6.5
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
+CONFIG += PENCIL2D_RELEASE
+
 PENCIL2D_NIGHTLY {
     DEFINES += PENCIL2D_NIGHTLY_BUILD
 }
@@ -20,9 +22,14 @@ win32-g++ {
 win32-msvc* {
     QMAKE_CXXFLAGS += /MP /utf-8 
     CONFIG(release) {
-        QMAKE_CXXFLAGS += /Gy /GL 
+        QMAKE_CXXFLAGS += /Gy /GL
         CONFIG += ltcg
         CONFIG += force_debug_info
+        
+        QMAKE_LFLAGS += /SUBSYSTEM:CONSOLE,5.01
+        QMAKE_CXX += /D_USING_V110_SDK71_
+        #LIBS *= -L"%ProgramFiles(x86)%/Microsoft SDKs/Windows/v7.1A/Lib"
+        #INCLUDEPATH += "%ProgramFiles(x86)%/Microsoft SDKs/Windows/v7.1A/Include"
     }
 }
 
