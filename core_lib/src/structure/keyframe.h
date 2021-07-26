@@ -23,8 +23,23 @@ GNU General Public License for more details.
 #include <memory>
 #include <QString>
 #include "pencilerror.h"
+
 class KeyFrameEventListener;
 
+
+class KeyFrameId
+{
+public:
+	Q_CONSTEXPR KeyFrameId() = default;
+    Q_CONSTEXPR KeyFrameId(KeyFrameId const&) = default;
+    Q_CONSTEXPR KeyFrameId(KeyFrameId&&) = default;
+    Q_CONSTEXPR explicit KeyFrameId(uint16_t v) : value(v) {}
+    Q_CONSTEXPR KeyFrameId& operator=(KeyFrameId const&) = default;
+    Q_CONSTEXPR KeyFrameId& operator=(KeyFrameId&&) = default;
+    uint16_t toUInt() const { return value; }
+private:
+    uint16_t value = 0;
+};
 
 class KeyFrame
 {
@@ -62,6 +77,7 @@ public:
     virtual quint64 memoryUsage() { return 0; }
 
 private:
+    KeyFrameId mId;
     int mFrame = -1;
     int mLength = 1;
     bool mIsModified = true;
