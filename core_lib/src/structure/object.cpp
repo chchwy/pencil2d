@@ -56,6 +56,26 @@ Object::~Object()
     deleteWorkingDir();
 }
 
+Object& Object::operator=(const Object& o2)
+{
+	if (this == &o2)
+	{
+		return *this; // a self-assignment
+	}
+
+    mFilePath = o2.mFilePath;
+	mWorkingDirPath = o2.mWorkingDirPath;
+	mDataDirPath = o2.mDataDirPath;
+	mMainXMLFile = o2.mMainXMLFile;
+
+	mLayers = o2.mLayers;
+	mPalette = o2.mPalette;
+    mData = o2.mData;
+
+    // Don't copy mActiveFramePool;
+    return *this;
+}
+
 void Object::init()
 {
     createWorkingDir();

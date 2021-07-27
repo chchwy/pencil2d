@@ -39,6 +39,19 @@ Layer::Layer(int id, LAYER_TYPE eType)
     mId = id;
 }
 
+Layer& Layer::operator=(const Layer& l2)
+{
+	meType = l2.meType;
+	mObject = l2.mObject;
+	mId = l2.mId;
+	mVisible = l2.mVisible;
+    mName = l2.mName;
+	mKeyFrames = l2.mKeyFrames;
+    // Intentionally not copying selected frames and dirty frames.
+
+    return *this;
+}
+
 Layer::~Layer()
 {
     for (auto it : mKeyFrames)

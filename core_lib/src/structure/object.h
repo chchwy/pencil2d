@@ -45,10 +45,12 @@ public:
     explicit Object();
     ~Object();
 
-    Object(Object const&) = delete;
-    Object(Object&&) = delete;
-    Object& operator=(Object const&) = delete;
-    Object& operator=(Object&&) = delete;
+    // avoid all unwanted object copying
+	Object(Object const&) = delete;
+	Object(Object&&) = delete;
+	Object& operator=(Object&&) = delete;
+
+    Object& operator=(const Object&);
 
     void init();
     void createWorkingDir();

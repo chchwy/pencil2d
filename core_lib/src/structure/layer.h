@@ -46,6 +46,13 @@ public:
     explicit Layer(int id, LAYER_TYPE eType);
     virtual ~Layer();
 
+	virtual Layer& operator=(const Layer&);
+
+	// avoid all unwanted object copying
+    Layer(Layer const&) = delete;
+    Layer(Layer&&) = delete;
+    Layer& operator=(Layer&&) = delete;
+
     int id() const { return mId; }
     void setId(int layerId) { mId = layerId; }
     LAYER_TYPE type() const { return meType; }

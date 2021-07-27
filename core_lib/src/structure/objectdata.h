@@ -28,6 +28,13 @@ class ObjectData
 public:
     ObjectData();
     ~ObjectData() = default;
+	ObjectData& operator=(const ObjectData&) = default;
+
+    // avoid all unwanted object copying
+    ObjectData(ObjectData const&) = delete;
+    ObjectData(ObjectData&&) = delete;
+    ObjectData& operator=(ObjectData&&) = delete;
+
 
     void setCurrentFrame(int n) { mCurrentFrame = n; }
     int  getCurrentFrame() const { return mCurrentFrame; }
