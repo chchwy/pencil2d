@@ -37,6 +37,7 @@ public:
 
     QDomElement createDomElement(QDomDocument& doc) const override;
     void loadDomElement(const QDomElement& element, QString dataDirPath, ProgressCallback progressStep) override;
+    QString keyFrameFilePath(KeyFrame*, const QString dataPath) override { return QString(); }
 
     bool addKeyFrame(int position, KeyFrame* pKeyFrame) override;
     bool removeKeyFrame(int position) override;

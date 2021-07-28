@@ -30,6 +30,9 @@ public:
     explicit LayerBitmap(int id);
     ~LayerBitmap() override;
 
+	Status saveKeyFrameFile(KeyFrame*, QString strPath) override;
+    QString keyFrameFilePath(KeyFrame*, const QString dataPath) override;
+
     QDomElement createDomElement(QDomDocument& doc) const override;
     void loadDomElement(const QDomElement& element, QString dataDirPath, ProgressCallback progressStep) override;
     Status presave(const QString& sDataFolder) override;
@@ -47,7 +50,6 @@ protected:
 
 private:
     void loadImageAtFrame(QString strFilePath, QPoint topLeft, int frameNumber, qreal opacity);
-    QString filePath(KeyFrame* key, const QDir& dataFolder) const;
     QString fileName(KeyFrame* key) const;
     bool needSaveFrame(KeyFrame* key, const QString& strSavePath);
 };

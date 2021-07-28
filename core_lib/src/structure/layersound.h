@@ -31,6 +31,7 @@ public:
     ~LayerSound();
     QDomElement createDomElement(QDomDocument& doc) const override;
     void loadDomElement(const QDomElement& element, QString dataDirPath, ProgressCallback progressStep) override;
+    QString keyFrameFilePath(KeyFrame*, const QString dataPath) override { return QString(); }
 
     void replaceKeyFrame(const KeyFrame* soundClip) override;
 
