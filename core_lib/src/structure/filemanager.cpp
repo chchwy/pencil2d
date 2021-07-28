@@ -706,26 +706,9 @@ Status FileManager::writeMainXml(const Object* object, const QString& mainXmlPat
         file.close();
     });
 
-    QDomDocument xmlDoc("PencilDocument");
-    QDomElement root = xmlDoc.createElement("document");
-    QDomProcessingInstruction encoding = xmlDoc.createProcessingInstruction("xml", "version=\"1.0\" encoding=\"UTF-8\"");
-    xmlDoc.appendChild(encoding);
-    xmlDoc.appendChild(root);
-
     progressForward();
 
-    // save editor information
-    QDomElement projDataXml = saveProjectData(object->data(), xmlDoc);
-    root.appendChild(projDataXml);
-
-    // save object
-    QDomElement objectElement = object->saveXML(xmlDoc);
-    root.appendChild(objectElement);
-
-    // save Pencil2D version
-    QDomElement versionElem = xmlDoc.createElement("version");
-    versionElem.appendChild(xmlDoc.createTextNode(QString(APP_VERSION)));
-    root.appendChild(versionElem);
+    QDomDocument xmlDoc = generateXMLFromObject(object);
 
     dd << "Writing main xml file...";
 
@@ -739,6 +722,29 @@ Status FileManager::writeMainXml(const Object* object, const QString& mainXmlPat
 
     filesWritten.append(mainXmlPath);
     return Status(Status::OK, dd);
+}
+
+QDomDocument FileManager::generateXMLFromObject(const Object* object)
+{
+	QDomDocument xmlDoc("PencilDocument");
+	QDomElement root = xmlDoc.createElement("document");
+	QDomProcessingInstruction encoding = xmlDoc.createProcessingInstruction("xml", "version=\"1.0\" encoding=\"UTF-8\"");
+	xmlDoc.appendChild(encoding);
+	xmlDoc.appendChild(root);
+
+	// save editor information
+	QDomElement projDataXml = saveProjectData(object->data(), xmlDoc);
+	root.appendChild(projDataXml);
+
+	// save object
+	QDomElement objectElement = object->saveXML(xmlDoc);
+	root.appendChild(objectElement);
+
+	// save Pencil2D version
+	QDomElement versionElem = xmlDoc.createElement("version");
+	versionElem.appendChild(xmlDoc.createTextNode(QString(APP_VERSION)));
+	root.appendChild(versionElem);
+    return xmlDoc;
 }
 
 Status FileManager::writePalette(const Object* object, const QString& dataFolder, QStringList& filesWritten)

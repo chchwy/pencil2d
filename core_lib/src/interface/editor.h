@@ -63,6 +63,7 @@ class TimeLine;
 class UndoRedoCommand;
 class ActiveFramePool;
 class Layer;
+class BackgroundTasks;
 
 enum class SETTING;
 
@@ -111,7 +112,9 @@ public:
     void prepareSave();
 
     void setScribbleArea(ScribbleArea* pScirbbleArea) { mScribbleArea = pScirbbleArea; }
-    ScribbleArea* getScribbleArea() { return mScribbleArea; }
+    ScribbleArea* getScribbleArea() const { return mScribbleArea; }
+
+    BackgroundTasks* backgroundTasks() const { return mBgTasks; }
 
     int currentFrame() const;
     int fps();
@@ -135,7 +138,6 @@ public:
     void clipboardChanged();
 
 signals:
-
     /** This should be emitted after scrubbing */
     void scrubbed(int frameNumber);
 
@@ -225,9 +227,6 @@ public: //slots
     void addTemporaryDir(QTemporaryDir* dir);
 
     void settingUpdated(SETTING);
-
-    void dontAskAutoSave(bool b) { mAutosaveNeverAskAgain = b; }
-    bool autoSaveNeverAskAgain() const { return mAutosaveNeverAskAgain; }
     void resetAutoSaveCounter();
 
 private:
@@ -264,10 +263,11 @@ private:
 
     std::vector< BaseManager* > mAllManagers;
 
+    BackgroundTasks* mBgTasks = nullptr;
+
     bool mIsAutosave = true;
     int mAutosaveNumber = 12;
     int mAutosaveCounter = 0;
-    bool mAutosaveNeverAskAgain = false;
 
     void makeConnections();
 
