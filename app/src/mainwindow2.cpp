@@ -831,9 +831,12 @@ bool MainWindow2::autoSave()
 	if (mSuppressAutoSaveDialog)
 		return false;
 
-    BackgroundTasks* bgTasks = mEditor->backgroundTasks();
-    bgTasks->writeMainXmlToWorkingFolder(mEditor->object());
-    bgTasks->writeCurrentFrameToWorkingFolder(mEditor->object(), mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
+    {
+        Timer t1(__FUNCTION__);
+        BackgroundTasks* bgTasks = mEditor->backgroundTasks();
+        bgTasks->writeMainXmlToWorkingFolder(mEditor->object());
+        bgTasks->writeCurrentFrameToWorkingFolder(mEditor->object(), mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
+    }
     return true;
 }
 
