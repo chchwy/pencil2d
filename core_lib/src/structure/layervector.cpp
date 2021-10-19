@@ -76,7 +76,6 @@ void LayerVector::loadImageAtFrame(QString path, int frameNumber)
 
 Status LayerVector::saveKeyFrameFile(KeyFrame* keyFrame, QString path)
 {
-    QString theFileName = fileName(keyFrame);
     QString strFilePath = keyFrameFilePath(keyFrame, path);
 
     VectorImage* vecImage = static_cast<VectorImage*>(keyFrame);
