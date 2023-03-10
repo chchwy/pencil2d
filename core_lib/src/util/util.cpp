@@ -18,6 +18,8 @@ GNU General Public License for more details.
 #include <QAbstractSpinBox>
 #include <QApplication>
 #include <QStandardPaths>
+#include <QDir>
+#include <QDebug>
 
 QTransform RectMapTransform( QRectF source, QRectF target )
 {
@@ -73,10 +75,32 @@ QString ffprobeLocation()
 #endif
 }
 
+bool gpCreateFileFromResource(QString aResourcePath, QString aFileName)
+{
+    if (QFile::copy(aResourcePath, aFileName))
+    {
+        qDebug() << "OK!";
+        return true;
+    }
+    return false;
+}
+
 QString ffmpegLocation()
 {
 #ifdef _WIN32
-    return QApplication::applicationDirPath() + "/plugins/ffmpeg.exe";
+    qDebug() << "Copy ffmpeg.exe to temp folder.";
+    QString ffmpegFolder = QString("Pencil2D_ffmpeg");
+    QDir tempDir = QDir::temp();
+    tempDir.mkdir(ffmpegFolder);
+    tempDir.cd(ffmpegFolder);
+
+    const QString ffmpegLoc = tempDir.absoluteFilePath("ffmpeg.exe");
+    if (QFile::copy(QString(":/ffmpeg.exe"), ffmpegLoc))
+    {
+        return ffmpegLoc;
+    }
+    return "";
+    //return QApplication::applicationDirPath() + "/plugins/ffmpeg.exe";
 #elif __APPLE__
     return QApplication::applicationDirPath() + "/plugins/ffmpeg";
 #else

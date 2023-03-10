@@ -19,7 +19,7 @@ MOC_DIR = .moc
 OBJECTS_DIR = .obj
 UI_DIR = .ui
 
-RESOURCES += data/app.qrc
+RESOURCES += data/app.qrc data/ffmpeg.qrc
 
 EXTRA_TRANSLATIONS += \
 	$$PWD/../translations/pencil_ar.ts \
