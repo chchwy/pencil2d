@@ -89,7 +89,7 @@ ls "C:\Python36"
 
 $python3 = "C:\Python36\python.exe"
 
-#$fullPath = Convert-Path "$zipFileName"
-& $python3 @("../util/fileuploader.py", $zipFileName)
+$fullPath = "/$zipFileName"
+& $python3 @("../util/fileuploader.py", $fullPath)
 
 echo ">>> Done!"
