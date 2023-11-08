@@ -48,7 +48,10 @@ for:
   before_build:
     - set QTDIR=C:\Qt\%qt%
     - set PATH=%PATH%;%QTDIR%\bin
+    - cd %QTDIR%\bin
+    - dir
     - qmake --version
+
   build_script:
     - set INCLUDE=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Include;%INCLUDE%
     - set PATH=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Bin;%PATH%
