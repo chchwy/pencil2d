@@ -83,16 +83,11 @@ ls .
 
 cd $PSScriptRoot
 
-if ($upload -ne "yes") {
-  echo ">>> Done. No need to upload binaries."
-  exit 0
-}
-
 echo ">>> Upload to Google drive"
 
 $python3 = if (Test-Path env:PYTHON) { "$env:PYTHON\python.exe" } else { "python.exe" }
 
-$fullPath = Convert-Path "..\build\$zipFileName"
+$fullPath = Convert-Path "$zipFileName"
 & $python3 @("fileuploader.py", $fullPath)
 
 echo ">>> Done!"
