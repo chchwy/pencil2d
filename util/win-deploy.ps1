@@ -1,7 +1,7 @@
 Param(
   [string]$platform = "x64",  # x64/x86
   [string]$branch = "master", # branch names: master, release
-  [string]$upload = "no"      # yes/no
+  [string]$upload = "no",     # yes/no
   [string]$compiler = ""      # msvc/mingw  
 )
 
