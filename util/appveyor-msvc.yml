@@ -39,6 +39,6 @@ build_script:
   - nmake
 after_build:
   - windeployqt "%APPVEYOR_BUILD_FOLDER%\build\app\release\pencil2d.exe"
-  - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86 -compiler msvc
+  - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86 -compiler msvc -upload yes
 test_script:
   - echo "No tests for VS2013"
