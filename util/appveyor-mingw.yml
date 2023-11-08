@@ -40,7 +40,6 @@ test_script:
 
 for:
 - matrix:
-- matrix:
     only:
       - image: Visual Studio 2015
   install:

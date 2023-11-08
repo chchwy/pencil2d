@@ -44,6 +44,11 @@ for:
   install:
     - if %PLATFORM%==x86   call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat"
     - if %PLATFORM%==x86   set qt=5.6\msvc2013
+  
+  before_build:
+    - set QTDIR=C:\Qt\%qt%
+    - set PATH=%PATH%;%QTDIR%\bin
+    - qmake --version
   build_script:
     - set INCLUDE=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Include;%INCLUDE%
     - set PATH=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Bin;%PATH%
@@ -55,6 +60,9 @@ for:
     # with an additional flag NO_TESTS
     - qmake "..\pencil2d.pro" CONFIG+=GIT CONFIG+=Release CONFIG+=PENCIL2D_NIGHTLY CONFIG+=NO_TESTS
     - nmake
+  after_build:
+    - windeployqt "%APPVEYOR_BUILD_FOLDER%\build\app\release\pencil2d.exe"
+    - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86
   test_script:
     - echo "No tests for VS2013"
 
