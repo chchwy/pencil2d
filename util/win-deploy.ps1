@@ -32,7 +32,11 @@ $libssl = switch ($platform) {
 
 echo $PSScriptRoot
 cd $PSScriptRoot
-cd ../build
+cd ..
+echo "Find penccil2d.exe"
+Get-ChildItem -Include *.exe -File -Recurse
+
+cd .build
 
 echo ">>> Current working directory:"
 pwd # print the current working directory
