@@ -30,7 +30,7 @@ build_script:
   - echo %APPVEYOR_BUILD_FOLDER%
   - md build
   - cd build
-  - qmake "%APPVEYOR_BUILD_FOLDER%\pencil2d.pro" CONFIG+=GIT CONFIG+=Release CONFIG+=PENCIL2D_NIGHTLY
+  - qmake "%APPVEYOR_BUILD_FOLDER%\pencil2d.pro" CONFIG+=GIT CONFIG+=Release CONFIG+=PENCIL2D_NIGHTLY CONFIG+=NO_TESTS
   - mingw32-make -j2
 
 after_build:

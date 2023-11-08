@@ -35,7 +35,9 @@ cd $PSScriptRoot
 cd ../build
 
 echo ">>> Current working directory:"
-Get-Location # print the current working directory
+pwd # print the current working directory
+
+ls ../app/release
 
 New-Item -ItemType 'directory' -Path './bin/plugins' -ErrorAction Continue
 
@@ -50,6 +52,8 @@ Remove-Item -Path "./$ffmpegFileName"
 
 Remove-Item -Path "./Pencil2D" -Recurse -ErrorAction SilentlyContinue
 Copy-Item -Path "./bin" -Destination "./Pencil2D" -Recurse
+pwd
+ls
 Remove-Item -Path "./Pencil2D/*.pdb"
 Remove-Item -Path "./Pencil2D/*.ilk"
 
