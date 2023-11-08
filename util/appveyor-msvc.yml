@@ -17,60 +17,32 @@ init:
   - ver
   - echo %PLATFORM%
 
+install:
+  - call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat"
+  - set qt=5.6\msvc2013
+
 before_build:
   - set QTDIR=C:\Qt\%qt%
+  - echo 'QTDIR:' %QTDIR%
   - set PATH=%PATH%;%QTDIR%\bin
+  - cd %QTDIR%\bin
+  - dir
   - qmake --version
 
 build_script:
-  - cd
+  - set INCLUDE=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Include;%INCLUDE%
+  - set PATH=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Bin;%PATH%
+  - set LIB=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Lib;%LIB%
+  - set CL=/D_USING_V110_SDK71_;%CL%
+  - set LINK=/SUBSYSTEM:CONSOLE,5.01 %LINK%
   - md build
   - cd build
-  - qmake "..\pencil2d.pro" CONFIG+=GIT CONFIG+=Release CONFIG+=PENCIL2D_NIGHTLY
+  # with an additional flag NO_TESTS
+  - qmake "..\pencil2d.pro" CONFIG+=GIT CONFIG+=Release CONFIG+=PENCIL2D_NIGHTLY CONFIG+=NO_TESTS
   - nmake
-
 after_build:
   - windeployqt "%APPVEYOR_BUILD_FOLDER%\build\app\release\pencil2d.exe"
   - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86
-
 test_script:
-  - echo "Running tests"
-  - tests\release\tests.exe
-
-for:
-- matrix:
-    only:
-      - image: Visual Studio 2013
-  install:
-    - call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat"
-    - set qt=5.6\msvc2013
+  - echo "No tests for VS2013"
   
-  before_build:
-    - set QTDIR=C:\Qt\%qt%
-    - echo 'QTDIR:' %QTDIR%
-    - set PATH=%PATH%;%QTDIR%\bin
-    - cd %QTDIR%\bin
-    - dir
-    - qmake --version
-
-  build_script:
-    - set INCLUDE=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Include;%INCLUDE%
-    - set PATH=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Bin;%PATH%
-    - set LIB=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Lib;%LIB%
-    - set CL=/D_USING_V110_SDK71_;%CL%
-    - set LINK=/SUBSYSTEM:CONSOLE,5.01 %LINK%
-    - md build
-    - cd build
-    # with an additional flag NO_TESTS
-    - qmake "..\pencil2d.pro" CONFIG+=GIT CONFIG+=Release CONFIG+=PENCIL2D_NIGHTLY CONFIG+=NO_TESTS
-    - nmake
-  after_build:
-    - windeployqt "%APPVEYOR_BUILD_FOLDER%\build\app\release\pencil2d.exe"
-    - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86
-  test_script:
-    - echo "No tests for VS2013"
-
-matrix:
-  exclude:
-    - image: Visual Studio 2013
-      platform: x64
