@@ -18,6 +18,7 @@ init:
   - echo %PLATFORM%
 
 before_build:
+  - set qt=5.6.3\mingw49_32
   - set QTDIR=C:\Qt\%qt%
   - set PATH=%QTDIR%\bin;C:\Qt\Tools\%mingw%\bin;%PATH%;
   - cd %QTDIR%\bin
