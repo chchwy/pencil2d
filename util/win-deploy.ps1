@@ -29,51 +29,44 @@ $libssl = switch ($platform) {
 [string]$ffmpegFileName = "ffmpeg-$arch.zip"
 [string]$ffmpegUrl = "https://github.com/pencil2d/pencil2d-deps/releases/download/ffmpge-v4.1.1/$ffmpegFileName"
 
-
 echo $PSScriptRoot
 cd $PSScriptRoot
 cd ..
 echo "Find pencil2d.exe"
 Get-ChildItem -Include *.exe -File -Recurse
 
-mkdir build
-cd ./build
+cd build
 
 echo ">>> Current working directory:"
 pwd # print the current working directory
 
-ls ../app/release
-cp ../app/release/pencil2d.exe ./pencil2d.exe
+mkdir pencil2d
+cp ./app/release/pencil2d.exe ./pencil2d/pencil2d.exe
 
-New-Item -ItemType 'directory' -Path './bin/plugins' -ErrorAction Continue
+New-Item -ItemType 'directory' -Path './pencil2d/plugins' -ErrorAction Continue
 
 echo ">>> Downloading ffmpeg: $ffmpegUrl"
  
 wget -Uri $ffmpegUrl -OutFile "$ffmpegFileName" -ErrorAction Stop
-Expand-Archive -Path "$ffmpegFileName" -DestinationPath "./bin/plugins" -ErrorAction Stop
+Expand-Archive -Path "$ffmpegFileName" -DestinationPath "./pencil2d/plugins" -ErrorAction Stop
 
 echo ">>> Clean up ffmpeg"
 
 Remove-Item -Path "./$ffmpegFileName"
-
-Remove-Item -Path "./Pencil2D" -Recurse -ErrorAction SilentlyContinue
-Copy-Item -Path "./bin" -Destination "./Pencil2D" -Recurse
-pwd
-ls
-Remove-Item -Path "./Pencil2D/*.pdb"
-Remove-Item -Path "./Pencil2D/*.ilk"
+Remove-Item -Path "./pencil2d/*.pdb"
+Remove-Item -Path "./pencil2d/*.ilk"
 
 echo ">>> Deploying Qt libraries"
 
-& "windeployqt" @("Pencil2D/pencil2d.exe")
+& "windeployqt" @("pencil2d/pencil2d.exe")
 
 echo ">>> Copy OpenSSL DLLs"
-Copy-Item $libcrypto -Destination "./Pencil2D"
-Copy-Item $libssl -Destination "./Pencil2D"
+Copy-Item $libcrypto -Destination "./pencil2d"
+Copy-Item $libssl -Destination "./pencil2d"
 
-echo ">>> Zipping bin folder"
+echo ">>> Zipping pencil2d folder"
 
-Compress-Archive -Path "./Pencil2D" -DestinationPath "./Pencil2D.zip"
+Compress-Archive -Path "./pencil2d" -DestinationPath "./Pencil2D.zip"
 
 $today = Get-Date -Format "yyyy-MM-dd"
 $zipFileName = "pencil2d-$arch-$today.zip"
@@ -83,6 +76,9 @@ Rename-Item -Path "./Pencil2D.zip" -NewName $zipFileName
 
 echo ">>> Zip ok?"
 Test-Path $zipFileName
+
+pwd
+ls ./pencil2d
 
 cd $PSScriptRoot
 
