@@ -81,7 +81,7 @@ pwd
 ls ./pencil2d
 ls .
 
-cd $PSScriptRoot
+#cd $PSScriptRoot
 
 echo ">>> Upload to Google drive"
 
@@ -90,6 +90,6 @@ ls "C:\Python36"
 $python3 = "C:\Python36\python.exe"
 
 #$fullPath = Convert-Path "$zipFileName"
-& $python3 @("fileuploader.py", $zipFileName)
+& $python3 @("../util/fileuploader.py", $zipFileName)
 
 echo ">>> Done!"
