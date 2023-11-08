@@ -85,7 +85,9 @@ cd $PSScriptRoot
 
 echo ">>> Upload to Google drive"
 
-$python3 = if (Test-Path env:PYTHON) { "$env:PYTHON\python.exe" } else { "python.exe" }
+ls "C:\Python36"
+
+$python3 = if (Test-Path "C:\Python36\python.exe") { "C:\Python36\python.exe" } else { "python.exe" }
 
 #$fullPath = Convert-Path "$zipFileName"
 & $python3 @("fileuploader.py", $zipFileName)
