@@ -28,7 +28,7 @@ TOKEN = os.getenv('DROPBOX_TOKEN')
 LOCALFILE = sys.argv[1]
 
 #BACKUPPATH = '/Pencil2D.zip' # Keep the forward slash before destination filename
-BACKUPPATH =  ntpath.basename(LOCALFILE)
+BACKUPPATH =  "/" + ntpath.basename(LOCALFILE)
 
 # Uploads contents of LOCALFILE to Dropbox
 def backup():
