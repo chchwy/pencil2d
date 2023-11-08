@@ -22,8 +22,6 @@ before_build:
   - set QTDIR=C:\Qt\%qt%
   - set mingw=mingw492_32
   - set PATH=%QTDIR%\bin;C:\Qt\Tools\%mingw%\bin;%PATH%;
-  - cd %QTDIR%\bin
-  - dir
   - qmake --version
 
 build_script:
