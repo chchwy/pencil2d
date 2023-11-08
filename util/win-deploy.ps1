@@ -1,7 +1,8 @@
 Param(
   [string]$platform = "x64",  # x64/x86
-  [string]$branch = "master",   # branch names: master, release
-  [string]$upload = "no"        # yes/no
+  [string]$branch = "master", # branch names: master, release
+  [string]$upload = "no"      # yes/no
+  [string]$compiler = ""      # msvc/mingw  
 )
 
 echo ">>> Upload?", $upload
@@ -26,50 +27,40 @@ $libssl = switch ($platform) {
   default {""; break}
 }
 
-[string]$ffmpegFileName = "ffmpeg-$arch.zip"
-[string]$ffmpegUrl = "https://github.com/pencil2d/pencil2d-deps/releases/download/ffmpge-v4.1.1/$ffmpegFileName"
-
-echo $PSScriptRoot
 cd $PSScriptRoot
-cd ..
-echo "Find pencil2d.exe"
-Get-ChildItem -Include *.exe -File -Recurse
-
-cd build
+cd ../build
 
 echo ">>> Current working directory:"
 pwd # print the current working directory
 
 mkdir pencil2d
-cp ./app/release/pencil2d.exe ./pencil2d/pencil2d.exe
-
-New-Item -ItemType 'directory' -Path './pencil2d/plugins' -ErrorAction Continue
+cp './app/release/pencil2d.exe' './pencil2d/pencil2d.exe'
+mkdir './pencil2d/plugins'
 
 echo ">>> Downloading ffmpeg: $ffmpegUrl"
- 
-wget -Uri $ffmpegUrl -OutFile "$ffmpegFileName" -ErrorAction Stop
-Expand-Archive -Path "$ffmpegFileName" -DestinationPath "./pencil2d/plugins" -ErrorAction Stop
+[string]$ffmpegZipFile = "ffmpeg-$arch.zip"
+[string]$ffmpegUrl = "https://github.com/pencil2d/pencil2d-deps/releases/download/ffmpge-v4.1.1/$ffmpegZipFile"
+wget -Uri $ffmpegUrl -OutFile "$ffmpegZipFile" -ErrorAction Stop
+Expand-Archive -Path "$ffmpegZipFile" -DestinationPath "./pencil2d/plugins" -ErrorAction Stop
 
 echo ">>> Clean up ffmpeg"
-
-Remove-Item -Path "./$ffmpegFileName"
+Remove-Item -Path "./$ffmpegZipFile"
 Remove-Item -Path "./pencil2d/*.pdb"
 Remove-Item -Path "./pencil2d/*.ilk"
 
 echo ">>> Deploying Qt libraries"
-
-& "windeployqt" @("pencil2d/pencil2d.exe")
+&windeployqt @("pencil2d/pencil2d.exe")
 
 echo ">>> Copy OpenSSL DLLs"
-Copy-Item $libcrypto -Destination "./pencil2d"
-Copy-Item $libssl -Destination "./pencil2d"
+cp $libcrypto "./pencil2d"
+cp $libssl    "./pencil2d"
 
 echo ">>> Zipping pencil2d folder"
-
 Compress-Archive -Path "./pencil2d" -DestinationPath "./Pencil2D.zip"
 
 $today = Get-Date -Format "yyyy-MM-dd"
-$zipFileName = "pencil2d-$arch-$today.zip"
+$buildNumber = $env:APPVEYOR_BUILD_NUMBER
+$zipFileName = "pencil2d-$arch-$buildNumber-$compiler.zip"
 
 echo ">>> Zip filename: $zipFileName"
 Rename-Item -Path "./Pencil2D.zip" -NewName $zipFileName
@@ -77,16 +68,12 @@ Rename-Item -Path "./Pencil2D.zip" -NewName $zipFileName
 echo ">>> Zip ok?"
 Test-Path $zipFileName
 
-pwd
-ls ./pencil2d
-ls .
+if ($upload -ne "yes") {
+  echo ">>> Done. No need to upload."
+  exit 0
+}
 
-#cd $PSScriptRoot
-
-echo ">>> Upload to Google drive"
-
-ls "C:\Python36"
-
+echo ">>> Uploading to Dropbox..."
 $python3 = "C:\Python36\python.exe"
 
 $fullPath = "$zipFileName"

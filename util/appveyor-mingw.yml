@@ -36,7 +36,7 @@ build_script:
 
 after_build:
   - windeployqt "%APPVEYOR_BUILD_FOLDER%\build\app\release\pencil2d.exe"
-  - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86
+  - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86 -compiler mingw
 
 test_script:
   - echo "Don't run tests"

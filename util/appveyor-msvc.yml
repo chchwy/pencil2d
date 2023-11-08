@@ -35,11 +35,10 @@ build_script:
   - set LINK=/SUBSYSTEM:CONSOLE,5.01 %LINK%
   - md build
   - cd build
-  # with an additional flag NO_TESTS
   - qmake "..\pencil2d.pro" CONFIG+=GIT CONFIG+=Release CONFIG+=PENCIL2D_NIGHTLY CONFIG+=NO_TESTS
   - nmake
 after_build:
   - windeployqt "%APPVEYOR_BUILD_FOLDER%\build\app\release\pencil2d.exe"
-  - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86
+  - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86 -compiler msvc
 test_script:
   - echo "No tests for VS2013"
