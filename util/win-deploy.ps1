@@ -33,15 +33,17 @@ $libssl = switch ($platform) {
 echo $PSScriptRoot
 cd $PSScriptRoot
 cd ..
-echo "Find penccil2d.exe"
+echo "Find pencil2d.exe"
 Get-ChildItem -Include *.exe -File -Recurse
 
-cd .build
+mkdir build
+cd ./build
 
 echo ">>> Current working directory:"
 pwd # print the current working directory
 
 ls ../app/release
+cp ../app/release/pencil2d.exe ./pencil2d.exe
 
 New-Item -ItemType 'directory' -Path './bin/plugins' -ErrorAction Continue
 
