@@ -92,13 +92,7 @@ echo ">>> Upload to Google drive"
 
 $python3 = if (Test-Path env:PYTHON) { "$env:PYTHON\python.exe" } else { "python.exe" }
 
-$GDriveFolderId = switch($platform) {
-  "x86" {$env:WIN32_NIGHTLY_PARENT; break}
-  "x64" {$env:WIN64_NIGHTLY_PARENT; break}
-}
-
 $fullPath = Convert-Path "..\build\$zipFileName"
-
-& $python3 @("nightly-build-upload.py", $GDriveFolderId, $fullPath)
+& $python3 @("fileuploader.py", $fullPath)
 
 echo ">>> Done!"
