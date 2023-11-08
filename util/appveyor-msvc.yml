@@ -1,15 +1,11 @@
 
-clone_depth: 3
+clone_depth: 1
 
 image:
-  - Visual Studio 2019
-  - Visual Studio 2017
-  - Visual Studio 2015
   - Visual Studio 2013
 
 platform:
   - x86
-  - x64
 
 skip_commits:
   files:
@@ -35,6 +31,7 @@ build_script:
 
 after_build:
   - windeployqt "%APPVEYOR_BUILD_FOLDER%\build\app\release\pencil2d.exe"
+  - powershell "%APPVEYOR_BUILD_FOLDER%\util\win-deploy.ps1" -platform x86
 
 test_script:
   - echo "Running tests"
@@ -43,39 +40,16 @@ test_script:
 for:
 - matrix:
     only:
-      - image: Visual Studio 2019
-  install:
-    - if %PLATFORM%==x86   call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
-    - if %PLATFORM%==x64   call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
-    - if %PLATFORM%==x86   set qt=5.15\msvc2019
-    - if %PLATFORM%==x64   set qt=5.15\msvc2019_64
-
-- matrix:
-    only:
-      - image: Visual Studio 2017
-  install:
-    - if %PLATFORM%==x86   call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
-    - if %PLATFORM%==x64   call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
-    - if %PLATFORM%==x86   set qt=5.12\msvc2017
-    - if %PLATFORM%==x64   set qt=5.12\msvc2017_64
-
-- matrix:
-    only:
-      - image: Visual Studio 2015
-  install:
-    - if %PLATFORM%==x86   call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
-    - if %PLATFORM%==x64   call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
-    - if %PLATFORM%==x64   call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64
-    - if %PLATFORM%==x86   set qt=5.9\msvc2015
-    - if %PLATFORM%==x64   set qt=5.9\msvc2015_64
-
-- matrix:
-    only:
       - image: Visual Studio 2013
   install:
     - if %PLATFORM%==x86   call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat"
     - if %PLATFORM%==x86   set qt=5.6\msvc2013
   build_script:
+    - set INCLUDE=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Include;%INCLUDE%
+    - set PATH=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Bin;%PATH%
+    - set LIB=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Lib;%LIB%
+    - set CL=/D_USING_V110_SDK71_;%CL%
+    - set LINK=/SUBSYSTEM:CONSOLE,5.01 %LINK%
     - md build
     - cd build
     # with an additional flag NO_TESTS
