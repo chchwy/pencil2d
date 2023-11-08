@@ -79,6 +79,7 @@ Test-Path $zipFileName
 
 pwd
 ls ./pencil2d
+ls .
 
 cd $PSScriptRoot
 
