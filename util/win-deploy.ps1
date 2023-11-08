@@ -87,7 +87,7 @@ echo ">>> Upload to Google drive"
 
 ls "C:\Python36"
 
-$python3 = if (Test-Path "C:\Python36\python.exe") { "C:\Python36\python.exe" } else { "python.exe" }
+$python3 = "C:\Python36\python.exe"
 
 #$fullPath = Convert-Path "$zipFileName"
 & $python3 @("fileuploader.py", $zipFileName)

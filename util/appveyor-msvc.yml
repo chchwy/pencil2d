@@ -18,7 +18,7 @@ init:
   - echo %PLATFORM%
 
 install:
-  - pip install dropbox
+  - C:\Python36\python.exe -m pip install dropbox
 
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat"

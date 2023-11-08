@@ -18,7 +18,7 @@ init:
   - echo %PLATFORM%
 
 install:
-  - pip install dropbox
+  - C:\Python36\python.exe -m pip install dropbox
 
 before_build:
   - set qt=5.6.3\mingw49_32
