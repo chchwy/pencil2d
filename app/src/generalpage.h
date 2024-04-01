@@ -58,6 +58,7 @@ private slots:
     void backgroundChanged(QAbstractButton* button);
     void frameCacheNumberChanged(int value);
     void invertScrollDirectionBoxStateChanged(int b);
+    void newUndoRedoCheckBoxStateChanged(bool b);
 
 private:
 
@@ -65,6 +66,8 @@ private:
 
     Ui::GeneralPage* ui = nullptr;
     PreferenceManager* mManager = nullptr;
+
+    bool mInitialNewUndoSystemStateEnabled = false;
 };
 
 #endif // GENERALPAGE_H

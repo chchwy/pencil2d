@@ -41,9 +41,11 @@ HEADERS +=  \
     src/interface/backupelement.h \
     src/interface/editor.h \
     src/interface/flowlayout.h \
+    src/interface/legacybackupelement.h \
     src/interface/recentfilemenu.h \
     src/interface/scribblearea.h \
     src/interface/backgroundwidget.h \
+    src/managers/backupmanager.h \
     src/managers/basemanager.h \
     src/managers/overlaymanager.h \
     src/managers/clipboardmanager.h \
@@ -129,9 +131,11 @@ SOURCES +=  src/graphics/bitmap/bitmapimage.cpp \
     src/interface/backupelement.cpp \
     src/interface/editor.cpp \
     src/interface/flowlayout.cpp \
+    src/interface/legacybackupelement.cpp \
     src/interface/recentfilemenu.cpp \
     src/interface/scribblearea.cpp \
     src/interface/backgroundwidget.cpp \
+    src/managers/backupmanager.cpp \
     src/managers/basemanager.cpp \
     src/managers/overlaymanager.cpp \
     src/managers/clipboardmanager.cpp \

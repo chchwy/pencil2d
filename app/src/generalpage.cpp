@@ -114,6 +114,7 @@ GeneralPage::GeneralPage() : ui(new Ui::GeneralPage)
     connect(ui->gridCheckBox, &QCheckBox::stateChanged, this, &GeneralPage::gridCheckBoxStateChanged);
     connect(ui->framePoolSizeSpin, spinValueChanged, this, &GeneralPage::frameCacheNumberChanged);
     connect(ui->invertScrollDirectionBox, &QCheckBox::stateChanged, this, &GeneralPage::invertScrollDirectionBoxStateChanged);
+    connect(ui->newUndoRedoCheckBox, &QCheckBox::stateChanged, this, &GeneralPage::newUndoRedoCheckBoxStateChanged);
 }
 
 GeneralPage::~GeneralPage()
@@ -173,6 +174,9 @@ void GeneralPage::updateValues()
     QSignalBlocker b12(ui->framePoolSizeSpin);
     ui->framePoolSizeSpin->setValue(mManager->getInt(SETTING::FRAME_POOL_SIZE));
 
+    QSignalBlocker bNewUndoRedoCheckBox(ui->newUndoRedoCheckBox);
+    ui->newUndoRedoCheckBox->setChecked(mManager->isOn(SETTING::NEW_UNDO_REDO_SYSTEM_ON));
+
     int buttonIdx = 1;
     if (bgName == "checkerboard") buttonIdx = 1;
     else if (bgName == "white")   buttonIdx = 2;
@@ -184,6 +188,7 @@ void GeneralPage::updateValues()
     ui->backgroundButtons->button(buttonIdx)->setChecked(true);
 
     ui->invertScrollDirectionBox->setChecked(mManager->isOn(SETTING::INVERT_SCROLL_ZOOM_DIRECTION));
+    mInitialNewUndoSystemStateEnabled = mManager->isOn(SETTING::NEW_UNDO_REDO_SYSTEM_ON);
 }
 
 void GeneralPage::languageChanged(int i)
@@ -299,4 +304,30 @@ void GeneralPage::frameCacheNumberChanged(int value)
 void GeneralPage::invertScrollDirectionBoxStateChanged(int b)
 {
     mManager->set(SETTING::INVERT_SCROLL_ZOOM_DIRECTION, b != Qt::Unchecked);
+}
+
+void GeneralPage::newUndoRedoCheckBoxStateChanged(bool b)
+{
+    if (b) {
+        QMessageBox messageBox(this);
+        messageBox.setIcon(QMessageBox::Warning);
+        messageBox.setText(tr("Experimental feature!"));
+        messageBox.setInformativeText(tr("This feature is work in progress and may not currently allow for the same features as the current backup system. Once enabled, you'll need to restart the application to start using it. \n\nDo you still want to try?"));
+        messageBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+
+        if (messageBox.exec() == QMessageBox::Yes) {
+            mManager->set(SETTING::NEW_UNDO_REDO_SYSTEM_ON, true);
+        } else {
+            ui->newUndoRedoCheckBox->setCheckState(Qt::Unchecked);
+            mManager->set(SETTING::NEW_UNDO_REDO_SYSTEM_ON, false);
+        }
+    } else {
+        if (mInitialNewUndoSystemStateEnabled) {
+            QMessageBox messageBox(this);
+            messageBox.setIcon(QMessageBox::Information);
+            messageBox.setText(tr("This will first take effect after a restart."));
+            messageBox.exec();
+        }
+        mManager->set(SETTING::NEW_UNDO_REDO_SYSTEM_ON, false);
+    }
 }

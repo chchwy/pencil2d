@@ -2,6 +2,7 @@
 
 Pencil2D - Traditional Animation Software
 Copyright (C) 2005-2007 Patrick Corrieri & Pascal Naidon
+Copyright (C) 2008-2009 Mj Mendoza IV
 Copyright (C) 2012-2020 Matthew Chiawen Chang
 
 This program is free software; you can redistribute it and/or
@@ -15,118 +16,267 @@ GNU General Public License for more details.
 
 */
 
-#include "backupelement.h"
+#include <QCoreApplication>
+#include "QProgressDialog"
+#include <QDebug>
 
-#include "editor.h"
-#include "layer.h"
+#include "layermanager.h"
+#include "backupmanager.h"
+#include "viewmanager.h"
+#include "selectionmanager.h"
+
+#include "layersound.h"
 #include "layerbitmap.h"
 #include "layervector.h"
-#include "object.h"
-#include "selectionmanager.h"
-#include "layermanager.h"
+#include "layercamera.h"
 
-void BackupBitmapElement::restore(Editor* editor)
+#include "editor.h"
+#include "backupelement.h"
+
+#include "vectorimage.h"
+#include "bitmapimage.h"
+#include "soundclip.h"
+#include "camera.h"
+
+BackupElement::BackupElement(Editor* editor, QUndoCommand* parent) : QUndoCommand(parent)
 {
-    Layer* layer = editor->object()->findLayerById(this->layerId);
+    qDebug() << "backupElement created";
+    mEditor = editor;
+}
 
-    if (editor->currentFrame() != this->frame) {
-        editor->scrubTo(this->frame);
-    }
+BackupElement::~BackupElement()
+{
+}
 
-    editor->layers()->setCurrentLayer(layer);
+BitmapElement::BitmapElement(const BitmapImage* backupBitmap,
+                             const int backupLayerId,
+                             Editor *editor,
+                             QString description,
+                             QUndoCommand *parent) : BackupElement(editor, parent)
+{
 
-    if (this->frame > 0 && layer->getKeyFrameAt(this->frame) == nullptr)
-    {
-        editor->restoreKey();
-    }
-    else
-    {
-        if (layer != nullptr)
-        {
-            if (layer->type() == Layer::BITMAP)
-            {
-                auto bitmapLayer = static_cast<LayerBitmap*>(layer);
-                *bitmapLayer->getLastBitmapImageAtFrame(this->frame, 0) = bitmapImage;  // restore the image
-            }
-        }
-    }
+    oldBitmap = backupBitmap->clone();
+    oldFrameIndex = oldBitmap->pos();
+    oldLayerId = backupLayerId;
+
+    Layer* layer = editor->layers()->currentLayer();
+    newLayerId = layer->id();
+    newFrameIndex = editor->currentFrame();
+    newBitmap = static_cast<LayerBitmap*>(layer)->
+            getBitmapImageAtFrame(newFrameIndex)->clone();
+
+    setText(description);
+}
+
+void BitmapElement::undo()
+{
+    QUndoCommand::undo();
+
+    Layer* layer = editor()->layers()->findLayerById(oldLayerId);
+    static_cast<LayerBitmap*>(layer)->replaceLastBitmapAtFrame(oldBitmap);
+
+    editor()->scrubTo(/*oldLayerId, */oldFrameIndex);
+}
+
+void BitmapElement::redo()
+{
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    QUndoCommand::redo();
+
+    Layer* layer = editor()->layers()->findLayerById(newLayerId);
+    static_cast<LayerBitmap*>(layer)->replaceLastBitmapAtFrame(newBitmap);
+
+    editor()->scrubTo(/*newLayerId, */newFrameIndex);
+}
+
+VectorElement::VectorElement(const VectorImage* backupVector,
+                                   const int& backupLayerId,
+                                   QString description,
+                                   Editor* editor,
+                                   QUndoCommand* parent) : BackupElement(editor, parent)
+{
+
+    oldVector = backupVector->clone();
+    oldFrameIndex = oldVector->pos();
+
+    newLayerIndex = editor->layers()->currentLayerIndex();
+    newFrameIndex = editor->currentFrame();
+
+    oldLayerId = backupLayerId;
+    Layer* layer = editor->layers()->currentLayer();
+    newLayerId = layer->id();
+
+    newVector = static_cast<LayerVector*>(layer)->
+            getVectorImageAtFrame(newFrameIndex)->clone();
+
+    setText(description);
+}
+
+void VectorElement::undo()
+{
+    qDebug() << "BackupVectorElement: undo";
+
+    QUndoCommand::undo();
+
+    Layer* layer = editor()->layers()->findLayerById(oldLayerId);
+
+    static_cast<LayerVector*>(layer)->replaceLastVectorImageAtFrame(oldVector);
+
+    editor()->scrubTo(/*oldLayerId, */oldFrameIndex);
+}
+
+void VectorElement::redo()
+{
+    qDebug() << "BackupVectorElement: redo";
+
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    QUndoCommand::redo();
+
+    Layer* layer = editor()->layers()->findLayerById(newLayerId);
+
+    static_cast<LayerVector*>(layer)->replaceLastVectorImageAtFrame(newVector);
+
+    editor()->scrubTo(/*newLayerId, */newFrameIndex);
+}
+
+TransformElement::TransformElement(KeyFrame* backupKeyFrame,
+                                   const int backupLayerId,
+                                   const QRectF& backupSelectionRect,
+                                   const QPointF backupTranslation,
+                                   const qreal backupRotationAngle,
+                                   const qreal backupScaleX,
+                                   const qreal backupScaleY,
+                                   const QPointF backupTransformAnchor,
+                                   const QString& description,
+                                   Editor* editor,
+                                   QUndoCommand *parent) : BackupElement(editor, parent)
+{
+
+
+    oldLayerId = backupLayerId;
+    oldFrameIndex = backupKeyFrame->pos();
+    oldSelectionRect = backupSelectionRect;
+    oldAnchor = backupTransformAnchor;
+    oldTranslation = backupTranslation;
+    oldRotationAngle = backupRotationAngle;
+    oldScaleX = backupScaleX;
+    oldScaleY = backupScaleY;
+
+    Layer* newLayer = editor->layers()->currentLayer();
+    newLayerId = newLayer->id();
+    newFrameIndex = editor->currentFrame();
 
     auto selectMan = editor->select();
-    selectMan->setSelection(mySelection, true);
+    newSelectionRect = selectMan->mySelectionRect();
+    newAnchor = selectMan->currentTransformAnchor();
+    newTranslation = selectMan->myTranslation();
+    newRotationAngle = selectMan->myRotation();
+    newScaleX = selectMan->myScaleX();
+    newScaleY = selectMan->myScaleY();
+
+    Layer* layer = editor->layers()->findLayerById(backupLayerId);
+
+    switch(layer->type())
+    {
+        case Layer::BITMAP:
+        {
+            oldBitmap = static_cast<BitmapImage*>(backupKeyFrame)->clone();
+            newBitmap = static_cast<LayerBitmap*>(layer)->getBitmapImageAtFrame(newFrameIndex)->clone();
+            break;
+        }
+        case Layer::VECTOR:
+        {
+            oldVector = static_cast<VectorImage*>(backupKeyFrame)->clone();
+            newVector = static_cast<LayerVector*>(layer)->
+                    getVectorImageAtFrame(newFrameIndex)->clone();
+            break;
+        }
+        default:
+            break;
+    }
+
+    setText(description);
+}
+
+void TransformElement::undo()
+{
+    apply(oldBitmap,
+          oldVector,
+          oldSelectionRect,
+          oldTranslation,
+          oldRotationAngle,
+          oldScaleX,
+          oldScaleY,
+          oldAnchor,
+          oldLayerId);
+}
+
+void TransformElement::redo()
+{
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    apply(newBitmap,
+          newVector,
+          newSelectionRect,
+          newTranslation,
+          newRotationAngle,
+          newScaleX,
+          newScaleY,
+          newAnchor,
+          newLayerId);
+}
+
+void TransformElement::apply(const BitmapImage* bitmapImage,
+                             const VectorImage* vectorImage,
+                             const QRectF& selectionRect,
+                             const QPointF translation,
+                             const qreal rotationAngle,
+                             const qreal scaleX,
+                             const qreal scaleY,
+                             const QPointF selectionAnchor,
+                             const int layerId)
+{
+
+    Layer* layer = editor()->layers()->findLayerById(layerId);
+    Layer* currentLayer = editor()->layers()->currentLayer();
+
+    if (layer->type() != currentLayer->type())
+    {
+        editor()->layers()->setCurrentLayer(layer);
+    }
+
+    int frameNumber = 0;
+    bool roundPixels = true;
+    switch(layer->type())
+    {
+        case Layer::BITMAP:
+        {
+            static_cast<LayerBitmap*>(layer)->replaceLastBitmapAtFrame(bitmapImage);
+            frameNumber = bitmapImage->pos();
+            break;
+        }
+        case Layer::VECTOR:
+        {
+            LayerVector* vlayer = static_cast<LayerVector*>(layer);
+            vlayer->replaceLastVectorImageAtFrame(vectorImage);
+            frameNumber = vectorImage->pos();
+            roundPixels = false;
+            break;
+        }
+        default:
+            break;
+    }
+
+    auto selectMan = editor()->select();
+    selectMan->setSelection(selectionRect, roundPixels);
     selectMan->setTransformAnchor(selectionAnchor);
+    selectMan->setTranslation(translation);
     selectMan->setRotation(rotationAngle);
     selectMan->setScale(scaleX, scaleY);
-    selectMan->setTranslation(translation);
 
     selectMan->calculateSelectionTransformation();
 
-    editor->frameModified(this->frame);
-}
-
-void BackupVectorElement::restore(Editor* editor)
-{
-    Layer* layer = editor->object()->findLayerById(this->layerId);
-    for (int i = 0; i < editor->object()->getLayerCount(); i++)
-    {
-        Layer* layer = editor->object()->getLayer(i);
-        if (layer->type() == Layer::VECTOR)
-        {
-            VectorImage* vectorImage = static_cast<LayerVector*>(layer)->getVectorImageAtFrame(this->frame);
-            if (vectorImage != nullptr)
-            {
-                vectorImage->modification();
-            }
-        }
-    }
-
-    if (editor->currentFrame() != this->frame) {
-        editor->scrubTo(this->frame);
-    }
-
-    editor->layers()->setCurrentLayer(layer);
-
-    if (this->frame > 0 && layer->getKeyFrameAt(this->frame) == nullptr)
-    {
-        editor->restoreKey();
-    }
-    else
-    {
-        if (layer != nullptr)
-        {
-            if (layer->type() == Layer::VECTOR)
-            {
-                auto pVectorImage = static_cast<LayerVector*>(layer);
-                *pVectorImage->getLastVectorImageAtFrame(this->frame, 0) = this->vectorImage;  // restore the image
-            }
-        }
-    }
-
-    auto selectMan = editor->select();
-    selectMan->setSelection(mySelection, false);
-    selectMan->setTransformAnchor(selectionAnchor);
-    selectMan->setRotation(rotationAngle);
-    selectMan->setScale(scaleX, scaleY);
-    selectMan->setTranslation(translation);
-    selectMan->calculateSelectionTransformation();
-
-    editor->frameModified(this->frame);
-
-}
-
-void BackupSoundElement::restore(Editor* editor)
-{
-    Layer* layer = editor->object()->findLayerById(this->layerId);
-
-    editor->layers()->setCurrentLayer(layer);
-
-    if (editor->currentFrame() != this->frame) {
-        editor->scrubTo(this->frame);
-    }
-    editor->frameModified(this->frame);
-
-    // TODO: soundclip won't restore if overlapping on first frame
-    if (this->frame > 0 && layer->getKeyFrameAt(this->frame) == nullptr)
-    {
-        editor->restoreKey();
-    }
+    emit editor()->frameModified(frameNumber);
 }

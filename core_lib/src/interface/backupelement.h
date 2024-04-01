@@ -2,6 +2,7 @@
 
 Pencil2D - Traditional Animation Software
 Copyright (C) 2005-2007 Patrick Corrieri & Pascal Naidon
+Copyright (C) 2008-2009 Mj Mendoza IV
 Copyright (C) 2012-2020 Matthew Chiawen Chang
 
 This program is free software; you can redistribute it and/or
@@ -19,75 +20,162 @@ GNU General Public License for more details.
 #define BACKUPELEMENT_H
 
 #include <QObject>
-#include "vectorimage.h"
-#include "bitmapimage.h"
-#include "soundclip.h"
+#include <QUndoCommand>
+#include <QRectF>
+#include <QTransform>
+
+#include "movemode.h"
+#include "pencildef.h"
+#include "layer.h"
+#include "vectorselection.h"
+#include "preferencemanager.h"
 
 class Editor;
+class BackupManager;
+class PreferenceManager;
+class BitmapImage;
+class VectorImage;
+class SoundClip;
+class Camera;
+class Layer;
+class KeyFrame;
+class TransformElement;
 
-class BackupElement : public QObject
+enum types { UNDEFINED,
+             ADD_KEY_MODIF,
+             REMOVE_KEY_MODIF
+           };
+
+class BackupElement : public QUndoCommand
 {
-    Q_OBJECT
 public:
-    enum types { UNDEFINED, BITMAP_MODIF, VECTOR_MODIF, SOUND_MODIF };
+    explicit BackupElement(Editor* editor, QUndoCommand* parent = nullptr);
+    virtual ~BackupElement();
 
-    QString undoText;
-    bool somethingSelected = false;
-    qreal rotationAngle = 0.0;
-    qreal scaleX = 1.0;
-    qreal scaleY = 1.0;
-    QPointF translation;
-    QRectF mySelection;
-    QPointF selectionAnchor;
+    Editor* editor() { return mEditor; }
 
-    virtual int type() { return UNDEFINED; }
-    virtual void restore(Editor*) { Q_ASSERT(false); }
+    bool isFirstRedo() const { return mIsFirstRedo; }
+    void setFirstRedo(bool state) { mIsFirstRedo = state; }
+
+    virtual int type() const { return UNDEFINED; }
+    virtual void undo() { Q_ASSUME(true); } // should never end here
+    virtual void redo() { Q_ASSUME(true); } // should never end here
+private:
+    Editor* mEditor = nullptr;
+    bool mIsFirstRedo = true;
 };
 
-class BackupBitmapElement : public BackupElement
+class BitmapElement : public BackupElement
 {
-    Q_OBJECT
+
 public:
-    explicit BackupBitmapElement(BitmapImage* bi) { bitmapImage = *bi; }
+    BitmapElement(const BitmapImage* backupBitmap,
+                  const int backupLayerId,
+                  Editor* editor,
+                  QString description,
+                  QUndoCommand* parent = nullptr);
 
-    int layerId = 0;
+    void undo() override;
+    void redo() override;
 
-    int layer = 0;
-    int frame = 0;
-    BitmapImage bitmapImage;
-    int type() override { return BackupElement::BITMAP_MODIF; }
-    void restore(Editor*) override;
+private:
+    int oldFrameIndex = 0;
+    int newFrameIndex = 0;
+
+    int oldLayerId = 0;
+    int newLayerId = 0;
+
+    BitmapImage* oldBitmap = nullptr;
+    BitmapImage* newBitmap = nullptr;
 };
 
-class BackupVectorElement : public BackupElement
+class VectorElement : public BackupElement
 {
-    Q_OBJECT
 public:
-    explicit BackupVectorElement(VectorImage* vi) { vectorImage = *vi; }
-    int layerId = 0;
+    VectorElement(const VectorImage* backupVector,
+                     const int& backupLayerId,
+                     QString description,
+                     Editor* editor,
+                     QUndoCommand* parent = nullptr);
 
-    int layer = 0;
-    int frame = 0;
-    VectorImage vectorImage;
+    int newLayerIndex = 0;
+    int oldFrameIndex = 0;
+    int newFrameIndex = 0;
 
-    int type() override { return BackupElement::VECTOR_MODIF; }
-    void restore(Editor*) override;
+    int newLayerId = 0;
+    int oldLayerId = 0;
+    int emptyFrameSettingVal = -1;
+
+    VectorImage* oldVector = nullptr;
+    VectorImage* newVector = nullptr;
+
+    void undo() override;
+    void redo() override;
+
 };
 
-class BackupSoundElement : public BackupElement
+class TransformElement : public BackupElement
+
 {
-    Q_OBJECT
 public:
-    explicit BackupSoundElement(SoundClip* sound) { clip = *sound; }
-    int layerId = 0;
 
-    int layer = 0;
-    int frame = 0;
-    SoundClip clip;
-    QString fileName, originalName;
+    enum { Id = 2 };
+    TransformElement(KeyFrame* backupKeyFrame,
+                     const int backupLayerId,
+                     const QRectF& backupSelectionRect,
+                     const QPointF backupTranslation,
+                     const qreal backupRotationAngle,
+                     const qreal backupScaleX,
+                     const qreal backupScaleY,
+                     const QPointF backupTransformAnchor,
+                     const QString& description,
+                     Editor* editor,
+                     QUndoCommand* parent = nullptr);
 
-    int type() override { return BackupElement::SOUND_MODIF; }
-    void restore( Editor* ) override;
+    void undo() override;
+    void redo() override;
+    void apply(const BitmapImage* bitmapImage,
+               const VectorImage* vectorImage,
+               const QRectF& selectionRect,
+               const QPointF translation,
+               const qreal rotationAngle,
+               const qreal scaleX,
+               const qreal scaleY,
+               const QPointF selectionAnchor,
+               const int layerId);
+
+    int id() const override { return Id; }
+
+    int oldFrameIndex = 0;
+    int newFrameIndex = 0;
+
+    QRectF oldSelectionRect;
+    QRectF newSelectionRect;
+
+    QPointF oldAnchor;
+    QPointF newAnchor;
+
+    QPointF oldTranslation;
+    QPointF newTranslation;
+
+    qreal oldScaleX;
+    qreal oldScaleY;
+
+    qreal newScaleX;
+    qreal newScaleY;
+
+    qreal oldRotationAngle;
+    qreal newRotationAngle;
+
+
+    BitmapImage* oldBitmap = nullptr;
+    BitmapImage* newBitmap = nullptr;
+
+    VectorImage* oldVector = nullptr;
+    VectorImage* newVector = nullptr;
+
+    int oldLayerId = 0;
+    int newLayerId = 0;
 };
 
 #endif // BACKUPELEMENT_H

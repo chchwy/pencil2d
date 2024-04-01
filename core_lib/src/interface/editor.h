@@ -35,6 +35,7 @@ Q_MOC_INCLUDE("selectionmanager.h")
 Q_MOC_INCLUDE("soundmanager.h")
 Q_MOC_INCLUDE("overlaymanager.h")
 Q_MOC_INCLUDE("clipboardmanager.h")
+Q_MOC_INCLUDE("backupmanager.h")
 #endif
 
 class QClipboard;
@@ -56,6 +57,7 @@ class SelectionManager;
 class SoundManager;
 class OverlayManager;
 class ClipboardManager;
+class BackupManager;
 class ScribbleArea;
 class TimeLine;
 class BackupElement;
@@ -78,6 +80,8 @@ class Editor : public QObject
         Q_PROPERTY(SelectionManager* select  READ select)
         Q_PROPERTY(OverlayManager*  overlays READ overlays)
         Q_PROPERTY(ClipboardManager* clipboards READ clipboards)
+        Q_PROPERTY(BackupManager* backups READ backups)
+
 
 public:
     explicit Editor(QObject* parent = nullptr);
@@ -98,6 +102,7 @@ public:
     SelectionManager*  select() const { return mSelectionManager; }
     OverlayManager*    overlays() const { return mOverlayManager; }
     ClipboardManager*  clipboards() const { return mClipboardManager; }
+    BackupManager*     backups() const { return mBackupManager; }
 
     Object* object() const { return mObject.get(); }
     Status openObject(const QString& strFilePath, const std::function<void(int)>& progressChanged, const std::function<void(int)>& progressRangeChanged);
@@ -129,11 +134,6 @@ public:
 
     void clipboardChanged();
 
-    // backup
-    int mBackupIndex;
-    BackupElement* currentBackup();
-    QList<BackupElement*> mBackupList;
-
 signals:
 
     /** This should be emitted after scrubbing */
@@ -149,7 +149,6 @@ signals:
     void updateTimeLine() const;
     void updateTimeLineCached();
     void updateLayerCount();
-    void updateBackup();
 
     void objectLoaded();
 
@@ -175,7 +174,6 @@ public: //slots
 
     Status importImage(const QString& filePath);
     Status importAnimatedImage(const QString& filePath, int frameSpacing, const std::function<void (int)>& progressChanged, const std::function<bool ()>& wasCanceled);
-    void restoreKey();
 
     void scrubNextKeyFrame();
     void scrubPreviousKeyFrame();
@@ -189,6 +187,7 @@ public: //slots
      * @return The newly created keyframe or `nullptr` if the layer is not visible
      */
     KeyFrame* addNewKey();
+    KeyFrame* addKeyFrame(int layerNumber, int frameNumber);
     void removeKey();
 
     void switchVisibilityOfLayer(int layerNumber);
@@ -210,8 +209,6 @@ public: //slots
     void sanitizeBackupElementsAfterLayerDeletion(int layerIndex);
 
     void onCurrentLayerWillChange(int index);
-    void undo();
-    void redo();
 
     void copy();
     void copyAndCut();
@@ -265,6 +262,7 @@ private:
     SelectionManager*  mSelectionManager = nullptr;
     OverlayManager*    mOverlayManager = nullptr;
     ClipboardManager*  mClipboardManager = nullptr;
+    BackupManager*     mBackupManager = nullptr;
 
     std::vector< BaseManager* > mAllManagers;
 
@@ -274,24 +272,10 @@ private:
     bool mAutosaveNeverAskAgain = false;
 
     void makeConnections();
-    /**
-     * Attempts to create a new keyframe at the given position and layer. If a keyframe already exists at the position,
-     * the new one will instead be created on the first empty frame that follows. If the layer is not visible, a warning
-     * dialog will be shown to the user and no new keyframe is created.
-     * @param layerNumber The number of an existing layer on which the keyframe is to be created
-     * @param frameIndex The desired position of the new keyframe
-     * @return The newly created keyframe or `nullptr` if the layer is not visible
-     * @see Editor::addNewKey()
-     */
-    KeyFrame* addKeyFrame(int layerNumber, int frameIndex);
 
     QList<QTemporaryDir*> mTemporaryDirs;
 
-    // backup
-    void clearUndoStack();
     void updateAutoSaveCounter();
-    int mLastModifiedFrame = -1;
-    int mLastModifiedLayer = -1;
 };
 
 #endif
