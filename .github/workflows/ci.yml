@@ -23,7 +23,7 @@ jobs:
           - name: Qt 5 / Linux x86_64
             os: ubuntu-latest
             container:
-              image: 'ubuntu:16.04'
+              image: ubuntu-20.04
               options: '--privileged'
             qt: 5
             env:
@@ -81,16 +81,10 @@ jobs:
           apt-get install -yq --no-install-suggests --no-install-recommends git
           apt-get install -yq --no-install-suggests --no-install-recommends curl
           apt-get install -yq --no-install-suggests --no-install-recommends tree
+          ldd --version
       - name: Check out repository
         if: runner.os != 'Linux' || matrix.qt != 5
         uses: actions/checkout@v4
-      - name: Check out repository (alternative)
-        if: runner.os == 'Linux' && matrix.qt == 5
-        run: | 
-          echo "Downloading library snapshot: https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
-          curl -L --retry 3 -o "${LIBRARY}-${GITHUB_SHA}.tar.gz" "https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
-          tar --strip-components=1 -xf "${LIBRARY}-${GITHUB_SHA}.tar.gz"
-          tree
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
         with:
