@@ -89,7 +89,7 @@ jobs:
         run: | 
           echo "Downloading library snapshot: https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
           curl -L --retry 3 -o "${LIBRARY}-${GITHUB_SHA}.tar.gz" "https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
-          tar -xf "${LIBRARY}-${GITHUB_SHA}.tar.gz"
+          tar --strip-components=1 -xf "${LIBRARY}-${GITHUB_SHA}.tar.gz"
           tree
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
