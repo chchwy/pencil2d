@@ -80,7 +80,17 @@ jobs:
           apt-get update -yq
           apt-get install -yq --no-install-suggests --no-install-recommends git
       - name: Check out repository
-        uses: actions/checkout@v3
+      #  uses: actions/checkout@v3
+        run: | 
+          echo "Downloading library snapshot: https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
+          curl -L --retry "$NET_RETRY_COUNT" -o "${LIBRARY}-${GITHUB_SHA}.tar.gz" "https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
+          tar -xf "${LIBRARY}-${GITHUB_SHA}.tar.gz"
+          if [ ! -d "${LIBRARY}-${GITHUB_SHA}" ]
+          then
+              echo "Library snapshot does not contain the library directory ${LIBRARY}-${GITHUB_SHA}:"
+              ls -la
+              exit 1
+          fi
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
         with:
