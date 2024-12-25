@@ -12,7 +12,7 @@ setup_linux() {
     apt-add-repository -y "${ppa}"
   done
   if [ "${INPUT_QT}" -eq 5 ]; then
-    apt-add-repository -y ppa:beineri/opt-qt-5.15.2-bionic
+    apt-add-repository -y ppa:beineri/opt-qt-5.15.2-focal
   fi
   echo "::endgroup::"
 

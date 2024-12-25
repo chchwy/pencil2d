@@ -32,7 +32,7 @@ jobs:
             os: macos-13
             container: null
             qt: 5
-          #- name: Qt 5 / macOS arm64
+          #- name: Qt 5 / macOS arm64 damn
           #  os: macos-14
           #  container: null
           #  qt: 5
