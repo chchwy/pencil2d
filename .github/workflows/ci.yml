@@ -80,6 +80,7 @@ jobs:
           apt-get update -yq
           apt-get install -yq --no-install-suggests --no-install-recommends git
           apt-get install -yq --no-install-suggests --no-install-recommends curl
+          apt-get install -yq --no-install-suggests --no-install-recommends tree
       - name: Check out repository
         if: runner.os != 'Linux' || matrix.qt != 5
         uses: actions/checkout@v3
@@ -89,6 +90,7 @@ jobs:
           echo "Downloading library snapshot: https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
           curl -L --retry 3 -o "${LIBRARY}-${GITHUB_SHA}.tar.gz" "https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
           tar -xf "${LIBRARY}-${GITHUB_SHA}.tar.gz"
+          tree
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
         with:
