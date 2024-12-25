@@ -83,7 +83,6 @@ jobs:
           apt-get install -yq --no-install-suggests --no-install-recommends tree
           ldd --version
       - name: Check out repository
-        if: runner.os != 'Linux' || matrix.qt != 5
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
