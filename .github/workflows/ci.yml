@@ -46,12 +46,12 @@ jobs:
             arch: win64_msvc2019_64
             container: null
             qt: 5
-          #- name: Qt 6 / Linux x86_64
-          #  os: ubuntu-22.04
-          #  container:
-          #    image: 'ubuntu:22.04'
-          #    options: '--privileged'
-          #  qt: 6
+          - name: Qt 6 / Linux x86_64
+            os: ubuntu-22.04
+            container:
+              image: 'ubuntu:22.04'
+              options: '--privileged'
+            qt: 6
           #- name: Qt 6 / macOS x86_64
           #  os: macos-13
           #  container: null
