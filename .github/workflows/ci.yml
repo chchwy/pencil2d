@@ -21,9 +21,9 @@ jobs:
       matrix:
         include:
           - name: Qt 5 / Linux x86_64
-            os: ubuntu-latest
+            os: ubuntu-20.04
             container:
-              image: ubuntu-20.04
+              image: 'ubuntu:20.04'
               options: '--privileged'
             qt: 5
             env:
@@ -33,7 +33,7 @@ jobs:
             container: null
             qt: 5
           #- name: Qt 5 / macOS arm64
-          #  os: macos-latest
+          #  os: macos-14
           #  container: null
           #  qt: 5
           - name: Qt 5 / Windows x86
@@ -47,7 +47,7 @@ jobs:
             container: null
             qt: 5
           #- name: Qt 6 / Linux x86_64
-          #  os: ubuntu-latest
+          #  os: ubuntu-22.04
           #  container:
           #    image: 'ubuntu:22.04'
           #    options: '--privileged'
