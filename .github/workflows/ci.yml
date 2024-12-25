@@ -83,7 +83,7 @@ jobs:
           apt-get install -yq --no-install-suggests --no-install-recommends tree
       - name: Check out repository
         if: runner.os != 'Linux' || matrix.qt != 5
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check out repository (alternative)
         if: runner.os == 'Linux' && matrix.qt == 5
         run: | 
@@ -123,7 +123,7 @@ jobs:
           qt: '${{matrix.qt}}'
       - name: Upload package
         if: runner.os != 'Linux' || matrix.qt == 5
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: '${{steps.package.outputs.output-basename}}'
           path: 'build/${{steps.package.outputs.output-basename}}*'
