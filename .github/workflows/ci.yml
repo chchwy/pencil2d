@@ -91,7 +91,7 @@ jobs:
       - name: debug
         run: |
           echo "QT: ${{matrix.qt}}"
-          find /usr -name libgstpulse.so
+          find /usr -name '*libgstpulse*'
           ldd --version
       - name: Set up environment
         uses: ./.github/actions/setup-environment
