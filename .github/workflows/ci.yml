@@ -81,7 +81,6 @@ jobs:
           apt-get install -yq --no-install-suggests --no-install-recommends git
           apt-get install -yq --no-install-suggests --no-install-recommends curl
           apt-get install -yq --no-install-suggests --no-install-recommends tree
-          ldd --version
       - name: Check out repository
         uses: actions/checkout@v4
       - name: Install dependencies
@@ -89,6 +88,11 @@ jobs:
         with:
           arch: ${{matrix.arch}}
           qt: ${{matrix.qt}}
+      - name: debug
+        run: |
+          echo "QT: ${{matrix.qt}}"
+          find /usr -name libgstpulse.so
+          ldd --version
       - name: Set up environment
         uses: ./.github/actions/setup-environment
         with:
