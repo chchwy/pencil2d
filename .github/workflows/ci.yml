@@ -95,21 +95,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build in Ubuntu 16.04
-        uses: docker://ubuntu:16.04
-        # GitHub runners come with git pre-installed, but our "custom" Linux
-        # container image does not
+        uses: ./.github/actions/build
+        id: build-linux-ubuntu-16.04
         with:
-          args: |
-            bash -c "apt-get update -yq && \
-            apt-get -yq install software-properties-common && \
-            apt-add-repository -y ppa:git-core/ppa && \
-            apt-get update -yq && \
-            apt-get install -yq --no-install-suggests --no-install-recommends git tree curl && \
-            tree && \
-            git --version && \
-            mkdir build && \
-            qmake -o build PREFIX=/usr CONFIG-=debug_and_release CONFIG+=release CONFIG+=GIT CONFIG+=PENCIL2D_${{startsWith(github.ref, 'refs/heads/release/') && 'RELEASE' || 'NIGHTLY' }} VERSION=${{ env.VERSION_NUMBER }} && \
-            make"
+          who-to-greet: 'Matt the Octocat'
+            
       - name: Check the artifact
         run: |
           ls -la
