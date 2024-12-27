@@ -104,7 +104,7 @@ jobs:
             apt-get -yq install software-properties-common && \
             apt-add-repository -y ppa:git-core/ppa && \
             apt-get update -yq && \
-            apt-get install -yq --no-install-suggests --no-install-recommends git && \
+            apt-get install -yq --no-install-suggests --no-install-recommends git tree curl && \
             tree && \
             git --version"
       - name: Upload artifact
