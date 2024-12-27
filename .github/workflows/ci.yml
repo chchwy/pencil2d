@@ -88,7 +88,7 @@ jobs:
   #         [here](https://get.pencil2d.org/@${{github.repository_owner}}/${{github.run_id}}/${{steps.package.outputs.output-basename}})
   #         once the run is finished." > "${GITHUB_STEP_SUMMARY}"
   
-  job-linux-checkout:
+  job-linux-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -108,6 +108,6 @@ jobs:
             tree
             git --version
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-${{ matrix.qt }}
+          name: pencil2d.zip
