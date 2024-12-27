@@ -100,13 +100,13 @@ jobs:
         # container image does not
         with:
           args: |
-            apt-get update -yq
-            apt-get -yq install software-properties-common
-            apt-add-repository -y ppa:git-core/ppa
-            apt-get update -yq
-            apt-get install -yq --no-install-suggests --no-install-recommends git
-            tree
-            git --version
+            bash -c "apt-get update -yq && \
+            apt-get -yq install software-properties-common && \
+            apt-add-repository -y ppa:git-core/ppa && \
+            apt-get update -yq && \
+            apt-get install -yq --no-install-suggests --no-install-recommends git && \
+            tree && \
+            git --version && \
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
