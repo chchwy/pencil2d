@@ -106,7 +106,10 @@ jobs:
             apt-get update -yq && \
             apt-get install -yq --no-install-suggests --no-install-recommends git tree curl && \
             tree && \
-            git --version"
+            git --version && \
+            mkdir build && \
+            qmake -o build PREFIX=/usr CONFIG-=debug_and_release CONFIG+=release CONFIG+=GIT CONFIG+=PENCIL2D_${{startsWith(github.ref, 'refs/heads/release/') && 'RELEASE' || 'NIGHTLY' }} VERSION=${{ env.VERSION_NUMBER }} && \
+            make"
       - name: Check the artifact
         run: |
           ls -la
