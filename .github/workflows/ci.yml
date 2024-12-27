@@ -107,6 +107,10 @@ jobs:
             apt-get install -yq --no-install-suggests --no-install-recommends git tree curl && \
             tree && \
             git --version"
+      - name: Check the artifact
+        run: |
+          ls -la
+          tree
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
