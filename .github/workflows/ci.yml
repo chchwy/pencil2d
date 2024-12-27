@@ -96,7 +96,7 @@ jobs:
 
       - name: Build in Ubuntu 16.04
         uses: ./.github/actions/build
-        id: build-linux-ubuntu-16.04
+        id: build_linux
         with:
           who-to-greet: 'Matt the Octocat'
             
