@@ -106,7 +106,7 @@ jobs:
             apt-get update -yq && \
             apt-get install -yq --no-install-suggests --no-install-recommends git && \
             tree && \
-            git --version && \
+            git --version"
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
