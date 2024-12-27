@@ -88,37 +88,25 @@ jobs:
   #         [here](https://get.pencil2d.org/@${{github.repository_owner}}/${{github.run_id}}/${{steps.package.outputs.output-basename}})
   #         once the run is finished." > "${GITHUB_STEP_SUMMARY}"
   
-  checkout-linux-job:
+  job-linux-checkout:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-  build-linux-job:
-    needs: checkout-linux-job
-    runs-on: ubuntu-latest
-    container: { image: "ubuntu:16.04", options: --privileged }
-    steps:
-      - name: Install git (Linux)
-      # GitHub runners come with git pre-installed, but our "custom" Linux
-      # container image does not
-        if: runner.os == 'Linux'
-        run: |
-          apt-get update -yq
-          apt-get -yq install software-properties-common
-          apt-add-repository -y ppa:git-core/ppa
-          apt-get update -yq
-          apt-get install -yq --no-install-suggests --no-install-recommends git
-      - name: Check out repository
-        run: | 
-          echo "Downloading library snapshot: https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
-          git clone https://github.com/${GITHUB_REPOSITORY}
-          curl -L --retry 3 -o "${LIBRARY}-${GITHUB_SHA}.tar.gz" "https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
-          tar -xf "${LIBRARY}-${GITHUB_SHA}.tar.gz"
-          tar --strip-components=1 -xf "${LIBRARY}-${GITHUB_SHA}.tar.gz"
-  upload-linux-job:
-    needs: build-linux-job
-    runs-on: ubuntu-latest
-    steps:
+
+      - name: Build in Ubuntu 16.04
+        uses: docker://ubuntu:16.04
+        # GitHub runners come with git pre-installed, but our "custom" Linux
+        # container image does not
+        with:
+          args: |
+            apt-get update -yq
+            apt-get -yq install software-properties-common
+            apt-add-repository -y ppa:git-core/ppa
+            apt-get update -yq
+            apt-get install -yq --no-install-suggests --no-install-recommends git
+            tree
+            git --version
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
