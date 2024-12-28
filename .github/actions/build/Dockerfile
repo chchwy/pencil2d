@@ -10,7 +10,7 @@ RUN apt-get install -yq software-properties-common
 RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test && \
     apt-add-repository -y ppa:ubuntu-sdk-team/ppa && \
     apt-add-repository -y ppa:git-core/ppa && \
-    apt-add-repository -y ppa:beineri/opt-qt-5.15.2-xenial
+    apt-add-repository -y ppa:beineri/opt-qt-5.15.2-bionic
 
 RUN apt-get update -yq
 
