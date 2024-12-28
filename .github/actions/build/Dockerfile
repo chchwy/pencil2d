@@ -1,34 +1,15 @@
 FROM ubuntu:18.04
 
 # Install dependencies
-RUN apt-get update -yq && \
-    apt-get install -y \
+RUN apt-get update -yq
+RUN apt-get install -yq --no-install-suggests --no-install-recommends \
     software-properties-common \
     build-essential \
-    git \
-    tree \
-    curl \
-    python3.8 \
-    python3.8-distutils \
-    python3-pip \
-    libgl1-mesa-dev \
-    libfontconfig1 \
-    libxkbcommon-x11-0 \
-    libdbus-1-3
-
-RUN python3.8 --version 
-
-# Install aqtinstall and Qt
-RUN python3.8 -m pip install pip
-RUN python3.8 -m pip install --upgrade pip
-RUN python3.8 -m pip install aqtinstall 
-RUN python3.8 -m aqt install-qt linux desktop 5.15.2 gcc_64 \
-    --outputdir /opt/Qt
-
-ENV PATH="/opt/Qt/5.15.2/gcc_64/bin:${PATH}"
-ENV QT_PLUGIN_PATH="/opt/Qt/5.15.2/gcc_64/plugins"
-ENV QML_IMPORT_PATH="/opt/Qt/5.15.2/gcc_64/qml"
-ENV QML2_IMPORT_PATH="/opt/Qt/5.15.2/gcc_64/qml"
+    git curl libfuse2 tree \
+    qt515tools qt515base qt515multimedia qt515svg qt515wayland \
+    bsdtar ffmpeg libgl1-mesa-dev \
+    gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly gstreamer1.0-alsa gstreamer1.0-pulseaudio git
 
 # Copy any scripts you need
 COPY entrypoint.sh /entrypoint.sh
