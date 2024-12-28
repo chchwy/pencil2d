@@ -94,7 +94,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build in Ubuntu 16.04
+      - name: Build in Ubuntu 18.04
         uses: ./.github/actions/build
         id: build_linux
         with:
