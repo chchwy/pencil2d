@@ -1,12 +1,11 @@
 #!/bin/sh -l
 
 set -e
-tree
 ldd --version
 git --version
 curl --version
 
-export MAKEFLAGS=-j2
+
 export LANG=C.UTF-8
 
 QT_BASE_DIR=/opt/qt515
@@ -21,10 +20,6 @@ fi
 export PKG_CONFIG_PATH=$QT_BASE_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 
 qmake --version
-
-echo "Hello $1"
-time=$(date)
-echo "time=$time" >> $GITHUB_OUTPUT
-
-qmake 
-make
+qmake -o build PREFIX=/usr CONFIG-=debug_and_release CONFIG+=release CONFIG+=GIT CONFIG+=PENCIL2D_NIGHTLY VERSION=1.0.0
+make -j2
+tree
