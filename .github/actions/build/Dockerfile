@@ -8,8 +8,7 @@ RUN apt-get update -yq && \
     git \
     tree \
     curl \
-    python3 \
-    python3-pip \
+    python3.8 \
     libgl1-mesa-dev \
     libfontconfig1 \
     libxkbcommon-x11-0 \
