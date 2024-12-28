@@ -15,7 +15,10 @@ RUN apt-get update -yq && \
     libxkbcommon-x11-0 \
     libdbus-1-3
 
-    # Install aqtinstall and Qt
+RUN python3 --version && \
+    pip3 --version
+
+# Install aqtinstall and Qt
 RUN pip3 install aqtinstall && \
     python3 -m aqt install-qt linux desktop 5.15.2 gcc_64 \
     --outputdir /opt/Qt
@@ -30,3 +33,4 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
+ 
