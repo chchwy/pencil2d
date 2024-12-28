@@ -2,8 +2,8 @@ FROM ubuntu:18.04
 
 # Install dependencies
 
-RUN apt-get update -yq
-RUN apt-get install -yq software-properties-common
+RUN apt-get update -yq && apt-get clean
+RUN apt-get install -yq build-essential software-properties-common
 
 RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test \
     apt-add-repository -y ppa:ubuntu-sdk-team/ppa \
@@ -13,7 +13,6 @@ RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test \
 RUN apt-get update -yq
 
 RUN apt-get install -yq --no-install-suggests --no-install-recommends \
-    build-essential \
     git curl libfuse2 tree \
     qt515tools qt515base qt515multimedia qt515svg qt515wayland \
     bsdtar ffmpeg libgl1-mesa-dev \
