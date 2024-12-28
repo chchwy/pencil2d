@@ -10,7 +10,7 @@ RUN apt-get update -yq && \
     curl \
     python3.8 \
     python3.8-distutils \
-    python3.8-pip \
+    python3-pip \
     libgl1-mesa-dev \
     libfontconfig1 \
     libxkbcommon-x11-0 \
@@ -19,6 +19,7 @@ RUN apt-get update -yq && \
 RUN python3.8 --version 
 
 # Install aqtinstall and Qt
+RUN python3.8 -m pip install pip
 RUN python3.8 -m pip install --upgrade pip
 RUN python3.8 -m pip install aqtinstall 
 RUN python3.8 -m aqt install-qt linux desktop 5.15.2 gcc_64 \
