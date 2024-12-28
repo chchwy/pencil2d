@@ -2,19 +2,19 @@ FROM ubuntu:16.04
 
 # Install dependencies
 
-RUN apt-get update -yq && apt-get clean
-RUN apt-get install -yqq build-essential
-RUN apt-get update -yqq
-RUN apt-get install -yqq software-properties-common
+RUN apt-get -yq update  && apt-get clean
+RUN apt-get -yqq install build-essential
+RUN apt-get -yqq update
+RUN apt-get -yqq install software-properties-common
 
 RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test && \
     #apt-add-repository -y ppa:ubuntu-sdk-team/ppa && \
     apt-add-repository -y ppa:git-core/ppa && \
     apt-add-repository -y ppa:beineri/opt-qt-5.15.2-xenial
 
-RUN apt-get update -yqq
+RUN apt-get -yqq update
 
-RUN apt-get install -yqq --no-install-suggests --no-install-recommends \
+RUN apt-get install-yqq --no-install-suggests --no-install-recommends \
     git curl libfuse2 tree \
     qt515tools qt515base qt515multimedia qt515svg qt515wayland \
     bsdtar ffmpeg libgl1-mesa-dev \
