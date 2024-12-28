@@ -2,7 +2,7 @@ FROM ubuntu:16.04
 
 # Install dependencies
 
-RUN apt-get -yq update  && apt-get clean
+RUN apt-get -yq update
 RUN apt-get -yqq install build-essential
 RUN apt-get -yqq update
 RUN apt-get -yqq install software-properties-common
@@ -14,7 +14,7 @@ RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test && \
 
 RUN apt-get -yqq update
 
-RUN apt-get install-yqq --no-install-suggests --no-install-recommends \
+RUN apt-get -yqq --no-install-suggests --no-install-recommends install \
     git curl libfuse2 tree \
     qt515tools qt515base qt515multimedia qt515svg qt515wayland \
     bsdtar ffmpeg libgl1-mesa-dev \
