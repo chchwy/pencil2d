@@ -7,10 +7,10 @@ RUN apt-get install -y build-essential
 RUN apt-get update -yq 
 RUN apt-get install -y software-properties-common
 
-RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test \
-    apt-add-repository -y ppa:ubuntu-sdk-team/ppa \
-    apt-add-repository -y ppa:git-core/ppa \
-    apt-add-repository -y ppa:beineri/opt-qt-5.15.2-xenial
+RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test 
+RUN apt-add-repository -y ppa:ubuntu-sdk-team/ppa 
+RUN apt-add-repository -y ppa:git-core/ppa 
+RUN apt-add-repository -y ppa:beineri/opt-qt-5.15.2-xenial
 
 RUN apt-get update -yq
 
