@@ -14,12 +14,11 @@ RUN apt-get update -yq && \
     libxkbcommon-x11-0 \
     libdbus-1-3
 
-RUN python3 --version && \
-    pip3 --version
+RUN python3.8 --version 
 
 # Install aqtinstall and Qt
-RUN pip3 install aqtinstall && \
-    python3 -m aqt install-qt linux desktop 5.15.2 gcc_64 \
+RUN python3.8 -m pip3 install aqtinstall 
+RUN python3.8 -m aqt install-qt linux desktop 5.15.2 gcc_64 \
     --outputdir /opt/Qt
 
 ENV PATH="/opt/Qt/5.15.2/gcc_64/bin:${PATH}"
