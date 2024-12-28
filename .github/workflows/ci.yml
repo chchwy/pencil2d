@@ -4,7 +4,7 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**.md'
-      - '**.sh'
+      #- '**.sh'
       - '**.py'
       - '**.ps1'
   pull_request:
