@@ -8,3 +8,4 @@ echo "time=$time" >> $GITHUB_OUTPUT
 tree
 git --version
 curl --version
+qmake --version

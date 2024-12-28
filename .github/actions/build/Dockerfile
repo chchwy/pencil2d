@@ -3,10 +3,27 @@ FROM ubuntu:16.04
 # Install dependencies
 RUN apt-get update -yq && \
     apt-get install -y \
-    software-properties-common && \
-    apt-add-repository -y ppa:git-core/ppa && \
-    apt-get update -yq && \
-    apt-get install -yq --no-install-suggests --no-install-recommends git tree curl 
+    software-properties-common \
+    build-essential \
+    git \
+    tree \
+    curl \
+    python3 \
+    python3-pip \
+    libgl1-mesa-dev \
+    libfontconfig1 \
+    libxkbcommon-x11-0 \
+    libdbus-1-3
+
+    # Install aqtinstall and Qt
+RUN pip3 install aqtinstall && \
+    python3 -m aqt install-qt linux desktop 5.15.2 gcc_64 \
+    --outputdir /opt/Qt
+
+ENV PATH="/opt/Qt/5.15.2/gcc_64/bin:${PATH}"
+ENV QT_PLUGIN_PATH="/opt/Qt/5.15.2/gcc_64/plugins"
+ENV QML_IMPORT_PATH="/opt/Qt/5.15.2/gcc_64/qml"
+ENV QML2_IMPORT_PATH="/opt/Qt/5.15.2/gcc_64/qml"
 
 # Copy any scripts you need
 COPY entrypoint.sh /entrypoint.sh

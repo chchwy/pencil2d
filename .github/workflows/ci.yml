@@ -108,3 +108,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pencil2d.zip
+          path: path/to/your/build/output
