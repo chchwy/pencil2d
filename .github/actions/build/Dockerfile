@@ -17,7 +17,7 @@ RUN apt-get update -yq && \
 RUN python3.8 --version 
 
 # Install aqtinstall and Qt
-RUN python3.8 -m pip3 install aqtinstall 
+RUN python3.8 -m pip install aqtinstall 
 RUN python3.8 -m aqt install-qt linux desktop 5.15.2 gcc_64 \
     --outputdir /opt/Qt
 
