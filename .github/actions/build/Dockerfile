@@ -3,7 +3,9 @@ FROM ubuntu:18.04
 # Install dependencies
 
 RUN apt-get update -yq && apt-get clean
-RUN apt-get install -yq build-essential software-properties-common
+RUN apt-get install -yq build-essential
+RUN apt-get update -yq && apt-get clean
+RUN apt-get install -yq software-properties-common
 
 RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test \
     apt-add-repository -y ppa:ubuntu-sdk-team/ppa \
