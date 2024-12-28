@@ -20,6 +20,10 @@ fi
 export PKG_CONFIG_PATH=$QT_BASE_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 
 qmake --version
+
+mkdir build
 qmake -o build PREFIX=/usr CONFIG-=debug_and_release CONFIG+=release CONFIG+=GIT CONFIG+=PENCIL2D_NIGHTLY VERSION=1.0.0
+cd build
 make -j2
+
 tree
