@@ -2,7 +2,9 @@ FROM ubuntu:18.04
 
 # Install dependencies
 
+RUN apt-get update -yq
 RUN apt-get install -yq software-properties-common
+
 RUN apt-add-repository -y ppa:ubuntu-toolchain-r/test \
     apt-add-repository -y ppa:ubuntu-sdk-team/ppa \
     apt-add-repository -y ppa:git-core/ppa \
