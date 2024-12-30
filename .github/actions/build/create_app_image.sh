@@ -40,12 +40,12 @@ wayland-decoration-client,wayland-graphics-integration-client,wayland-shell-inte
     -appimage
   ls
   local qtsuffix="-qt${INPUT_QT}"
-  local output_name="pencil2d${qtsuffix/-qt5/}-linux-$3"
+  local output_name="pencil2d${qtsuffix/-qt5/}-linux"
   mv Pencil2D*.AppImage "$output_name.AppImage"
   mv Pencil2D*.AppImage.zsync "$output_name.AppImage.zsync" \
     && sed -i '1,/^$/s/^\(Filename\|URL\): .*$/\1: '"$output_name.AppImage/" "$output_name.AppImage.zsync" \
     || true
-  echo "output-basename=$output_name" >> "${GITHUB_OUTPUT}"
+  echo "output-basename=$output_name"
   echo "::endgroup::"
 }
 
