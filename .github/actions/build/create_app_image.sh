@@ -1,4 +1,7 @@
 
+$IS_RELEASE = ${{ startsWith(github.ref, 'refs/heads/release/') }}
+
+
 create_package_linux() {
   echo "::group::Set up AppImage contents"
   make install INSTALL_ROOT="${PWD}/Pencil2D"
