@@ -1,5 +1,5 @@
 
-$IS_RELEASE = ${{ startsWith(github.ref, 'refs/heads/release/') }}
+$IS_RELEASE = "false"
 
 
 create_package_linux() {
