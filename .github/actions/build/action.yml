@@ -12,5 +12,6 @@ outputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
+  options: '--privileged'
   args:
     - ${{ inputs.who-to-greet }}
