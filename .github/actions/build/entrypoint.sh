@@ -28,4 +28,6 @@ make -j2
 
 tree
 
+echo 'Building AppImage'
 sh ../.github/actions/build/create_app_image.sh
+echo 'AppImage built'
