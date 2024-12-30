@@ -14,3 +14,5 @@ runs:
   image: 'Dockerfile'
   args:
     - ${{ inputs.who-to-greet }}
+  env:
+    IS_RELEASE: ${{ startsWith(github.ref, 'refs/heads/release/') }}

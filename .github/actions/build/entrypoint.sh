@@ -5,6 +5,7 @@ ldd --version
 git --version
 curl --version
 
+echo 'IS_RELEASE=' $IS_RELEASE
 
 export LANG=C.UTF-8
 
