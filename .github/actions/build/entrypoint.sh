@@ -27,3 +27,5 @@ cd build
 make -j2
 
 tree
+
+sh ../.github/actions/build/create_app_image.sh
