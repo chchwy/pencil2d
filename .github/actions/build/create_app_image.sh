@@ -38,6 +38,7 @@ platforms/libqwayland-xcomposite-egl.so,platforms/libqwayland-xcomposite-glx.so,
 wayland-decoration-client,wayland-graphics-integration-client,wayland-shell-integration \
     ${update_info} \
     -appimage
+  ls
   local qtsuffix="-qt${INPUT_QT}"
   local output_name="pencil2d${qtsuffix/-qt5/}-linux-$3"
   mv Pencil2D*.AppImage "$output_name.AppImage"

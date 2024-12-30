@@ -1,7 +1,8 @@
 FROM ubuntu:16.04
 
-# Install dependencies
+ENV APPIMAGE_EXTRACT_AND_RUN=1
 
+# Install dependencies
 RUN apt-get -yq update
 RUN apt-get -yqq install build-essential
 RUN apt-get -yqq update

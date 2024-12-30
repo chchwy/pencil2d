@@ -97,8 +97,6 @@ jobs:
       - name: Build in Ubuntu 18.04
         uses: ./.github/actions/build
         id: build_linux
-        with:
-          who-to-greet: 'Matt the Octocat'
             
       - name: Check the artifact
         run: |
