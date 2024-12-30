@@ -25,9 +25,9 @@ create_package_linux() {
   curl -fsSLO https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
   chmod 755 linuxdeployqt-continuous-x86_64.AppImage
   local update_info="" # Currently no appimageupdate support for nightly builds
-  if [ $IS_RELEASE = "true" ]; then
-    update_info="-updateinformation=gh-releases-zsync|${GITHUB_REPOSITORY/\//|}|latest|pencil2d-linux-amd64-*.AppImage.zsync"
-  fi
+  #if [ $IS_RELEASE = "true" ]; then
+  #  update_info="-updateinformation=gh-releases-zsync|${GITHUB_REPOSITORY/\//|}|latest|pencil2d-linux-amd64-*.AppImage.zsync"
+  #fi
   LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu/pulseaudio" \
     ./linuxdeployqt-continuous-x86_64.AppImage \
     Pencil2D/usr/share/applications/org.pencil2d.Pencil2D.desktop \
