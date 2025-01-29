@@ -80,6 +80,6 @@ ipch
 .vscode
 
 # Build directory
-build
+/build
 .qtc_clangd
 app/resources.pri
