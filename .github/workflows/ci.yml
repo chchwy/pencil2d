@@ -107,7 +107,30 @@ jobs:
 
       - name: Run tests
         run: ${{runner.os == 'Linux' && '${BUILD_CMD}' || ''}} env QT_QPA_PLATFORM=minimal build/tests/tests
+      
+      - name: Notarize macOS app bundle
+        if: runner.os == 'macOS'
+        run: > 
+          echo "Notarization!!"
+          # Create temporary keychain
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
 
+          # Import the P12 certificate
+          echo $P12_BASE64 | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P $P12_PASSWORD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+
+          #Clean up
+          rm certificate.p12
+        #uses: ./.github/actions/notarize-macos-app
+        #with:
+        #  app_path: build/Pencil2D.app
+        #  apple_id: ${{ secrets.APPLE_ID }}
+        # apple_id_password: ${{ secrets.APPLE_ID_PASSWORD }}
+        #  team_id: ${{ secrets.APPLE_TEAM_ID }}
+  
       - name: Create package
         id: package
         if: runner.os != 'Linux' || matrix.qt == 5
