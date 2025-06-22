@@ -72,6 +72,20 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
+
+      - name: Notarize macOS app bundle
+        if: runner.os == 'macOS'
+        run: |
+          echo "Notarization!!"
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          
+          echo ${{secrets.P12_BASE64}} | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P ${{secrets.P12_PASSWORD}} -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          rm certificate.p12
+
       - name: Set up container (Linux)
         if: runner.os == 'Linux'
         # XXX: --privileged is sort of a brute-force solution to get FUSE
@@ -107,20 +121,6 @@ jobs:
 
       - name: Run tests
         run: ${{runner.os == 'Linux' && '${BUILD_CMD}' || ''}} env QT_QPA_PLATFORM=minimal build/tests/tests
-      
-      - name: Notarize macOS app bundle
-        if: runner.os == 'macOS'
-        run: | 
-          echo "Notarization!!"
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          
-
-          echo ${{secrets.P12_BASE64}} | base64 --decode > certificate.p12
-          security import certificate.p12 -k build.keychain -P ${{secrets.P12_PASSWORD}} -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-          rm certificate.p12
 
       - name: Sign App Bundle
         run: |
@@ -129,15 +129,15 @@ jobs:
           echo "Using certificate: $CERT_IDENTITY"
         
           # Sign all binaries and frameworks first
-          find YourApp.app -name "*.dylib" -exec codesign --force --verify --verbose --sign "$CERT_IDENTITY" {} \;
-          find YourApp.app -name "*.framework" -exec codesign --force --verify --verbose --sign "$CERT_IDENTITY" {} \;
+          find app/Pencil2D.app -name "*.dylib" -exec codesign --force --verify --verbose --sign "$CERT_IDENTITY" {} \;
+          find app/Pencil2D.app -name "*.framework" -exec codesign --force --verify --verbose --sign "$CERT_IDENTITY" {} \;
           
           # Sign the main app bundle
-          codesign --force --options runtime --sign "$CERT_IDENTITY" YourApp.app
+          codesign --force --options runtime --sign "$CERT_IDENTITY" app/Pencil2D.app
           
           # Verify signing
-          codesign --verify --verbose YourApp.app
-          spctl -a -v YourApp.app
+          codesign --verify --verbose app/Pencil2D.app
+          spctl -a -v app/Pencil2D.app
         
         #uses: ./.github/actions/notarize-macos-app
         #with:
