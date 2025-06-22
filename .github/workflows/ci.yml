@@ -110,7 +110,7 @@ jobs:
       
       - name: Notarize macOS app bundle
         if: runner.os == 'macOS'
-        run: > 
+        run: | 
           echo "Notarization!!"
           # Create temporary keychain
           security create-keychain -p "" build.keychain
