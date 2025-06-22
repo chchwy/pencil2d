@@ -95,17 +95,18 @@ jobs:
         run: |
           set -eux
           security find-identity -v -p codesigning build.keychain
+          
           echo "Using certificate: $CERT_IDENTITY"
 
           cd pencil2d
-          # Sign all binaries and frameworks first
+          echo "Sign all binaries and frameworks first"
           find ./Pencil2D.app -name "*.dylib" -exec codesign --force --verify --verbose --sign "$CERT_IDENTITY" {} \;
           find ./Pencil2D.app -name "*.framework" -exec codesign --force --verify --verbose --sign "$CERT_IDENTITY" {} \;
           
-          # Sign the main app bundle
+          echo "Sign the main app bundle"
           codesign --force --options runtime --sign "$CERT_IDENTITY" ./Pencil2D.app
           
-          # Verify signing
+          echo "Verify signing"
           codesign --verify --verbose ./Pencil2D.app
           spctl -a -v ./Pencil2D.app
 
