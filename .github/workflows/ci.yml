@@ -112,18 +112,33 @@ jobs:
         if: runner.os == 'macOS'
         run: | 
           echo "Notarization!!"
-          # Create temporary keychain
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
+          
 
-          # Import the P12 certificate
-          echo $P12_BASE64 | base64 --decode > certificate.p12
-          security import certificate.p12 -k build.keychain -P $P12_PASSWORD -T /usr/bin/codesign
+          echo ${{secrets.P12_BASE64}} | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P ${{secrets.P12_PASSWORD}} -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-
-          #Clean up
           rm certificate.p12
+
+      - name: Sign App Bundle
+        run: |
+          # Find your certificate identity
+          CERT_IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -1 | grep -o '"[^"]*"' | tr -d '"')
+          echo "Using certificate: $CERT_IDENTITY"
+        
+          # Sign all binaries and frameworks first
+          find YourApp.app -name "*.dylib" -exec codesign --force --verify --verbose --sign "$CERT_IDENTITY" {} \;
+          find YourApp.app -name "*.framework" -exec codesign --force --verify --verbose --sign "$CERT_IDENTITY" {} \;
+          
+          # Sign the main app bundle
+          codesign --force --options runtime --sign "$CERT_IDENTITY" YourApp.app
+          
+          # Verify signing
+          codesign --verify --verbose YourApp.app
+          spctl -a -v YourApp.app
+        
         #uses: ./.github/actions/notarize-macos-app
         #with:
         #  app_path: build/Pencil2D.app
