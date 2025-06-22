@@ -76,7 +76,7 @@ jobs:
       - name: Notarize macOS app bundle
         if: runner.os == 'macOS'
         run: |
-          set -e
+          set -eux
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
@@ -93,6 +93,7 @@ jobs:
 
       - name: Sign App Bundle
         run: |
+          set -eux
           security find-identity -v -p codesigning build.keychain
           echo "Using certificate: $CERT_IDENTITY"
 
