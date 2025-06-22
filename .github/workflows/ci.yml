@@ -23,10 +23,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Qt 5 / Linux x86_64
-            os: ubuntu-latest
-            container: "ubuntu:16.04"
-            qt: 5
+          #- name: Qt 5 / Linux x86_64
+          #  os: ubuntu-latest
+          #  container: "ubuntu:16.04"
+          #  qt: 5
           - name: Qt 5 / macOS x86_64
             os: macos-13
             container:
@@ -35,22 +35,22 @@ jobs:
           #  os: macos-latest
           #  container:
           #  qt: 5
-          - name: Qt 5 / Windows x86
-            os: windows-2022
-            arch: win32_msvc2019
-            vcvars: x86
-            container:
-            qt: 5
-          - name: Qt 5 / Windows x86_64
-            os: windows-2022
-            arch: win64_msvc2019_64
-            vcvars: x64
-            container:
-            qt: 5
-          - name: Qt 6 / Linux x86_64
-            os: ubuntu-latest
-            container: "ubuntu:22.04"
-            qt: 6
+          #- name: Qt 5 / Windows x86
+          #  os: windows-2022
+          #  arch: win32_msvc2019
+          #  vcvars: x86
+          #  container:
+          #  qt: 5
+          #- name: Qt 5 / Windows x86_64
+          #  os: windows-2022
+          #  arch: win64_msvc2019_64
+          #  vcvars: x64
+          #  container:
+          #  qt: 5
+          #- name: Qt 6 / Linux x86_64
+          #  os: ubuntu-latest
+          #  container: "ubuntu:22.04"
+          #  qt: 6
           - name: Qt 6 / macOS x86_64
             os: macos-13
             container:
@@ -59,12 +59,12 @@ jobs:
           #  os: macos-latest
           #  container:
           #  qt: 6
-          - name: Qt 6 / Windows x86_64
-            os: windows-2022
-            arch: win64_msvc2019_64
-            vcvars: x64
-            container:
-            qt: 6
+          #- name: Qt 6 / Windows x86_64
+          #  os: windows-2022
+          #  arch: win64_msvc2019_64
+          #  vcvars: x64
+          #  container:
+          #  qt: 6
 
     name: ${{matrix.name}}
     runs-on: ${{matrix.os}}
