@@ -88,7 +88,8 @@ jobs:
           echo "$P12_BASE64" | base64 --decode > certificate.p12
           ls -l certificate.p12
           security import certificate.p12 -k build.keychain -P $P12_PASSWORD -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          security set-key-partition-list -S apple-tool:,apple: -s -k cactus build.keychain
+          security list-keychains -s "build.keychain"
           rm certificate.p12
 
           echo "download an zip and unzip it"
