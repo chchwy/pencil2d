@@ -1,0 +1,97 @@
+name: 'Notarize macOS App'
+description: 'Complete macOS app code signing and notarization with certificate setup'
+inputs:
+  app_path:
+    description: 'Path to the .app bundle to notarize'
+    required: true
+  p12_base64:
+    description: 'Base64 encoded P12 certificate file'
+    required: true
+  p12_password:
+    description: 'Password for the P12 certificate'
+    required: true
+  apple_id:
+    description: 'Apple ID for notarization'
+    required: true
+  apple_id_password:
+    description: 'App-specific password for Apple ID'
+    required: true
+  team_id:
+    description: 'Apple Developer Team ID'
+    required: true
+  certificate_identity:
+    description: 'Code signing certificate identity'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Code Signing Certificate
+      shell: bash
+      run: |
+        echo "Create temporary keychain"
+        security create-keychain -p temp_password build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p temp_password build.keychain
+        
+        echo "Import certificate"
+        echo "${{ inputs.p12_base64 }}" | base64 --decode > certificate.p12
+        security import certificate.p12 -k build.keychain -P "${{ inputs.p12_password }}" -A
+        rm certificate.p12
+
+        echo "Set keychain settings"
+        security set-key-partition-list -S apple-tool:,apple: -s -k temp_password build.keychain
+        
+        echo "Available signing identities:"
+        security find-identity -v -p codesigning build.keychain
+
+    - name: Code Sign App
+      shell: bash
+      run: |
+        echo "Code signing app with deep signing..."
+        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "${{ inputs.app_path }}"
+        
+        echo "Verifying code signature..."
+        codesign --verify --verbose "${{ inputs.app_path }}"
+        
+    - name: Create Notarization Package
+      shell: bash
+      run: |
+        echo "Creating zip file for notarization..."
+        APP_DIR=$(dirname "${{ inputs.app_path }}")
+        APP_NAME=$(basename "${{ inputs.app_path }}")
+        
+        cd "$APP_DIR"
+        ditto -c -k --keepParent "$APP_NAME" "${APP_NAME%.app}-notarization.zip"
+
+    - name: Submit for Notarization
+      shell: bash
+      run: |
+        echo "Submitting to Apple for notarization..."
+        APP_DIR=$(dirname "${{ inputs.app_path }}")
+        APP_NAME=$(basename "${{ inputs.app_path }}")
+        
+        cd "$APP_DIR"
+        xcrun notarytool submit "${APP_NAME%.app}-notarization.zip" \
+          --apple-id "${{ inputs.apple_id }}" \
+          --password "${{ inputs.apple_id_password }}" \
+          --team-id "${{ inputs.team_id }}" \
+          --wait \
+          --timeout 15m
+          
+    - name: Staple Notarization
+      shell: bash
+      run: |
+        echo "Stapling notarization ticket to app..."
+        xcrun stapler staple "${{ inputs.app_path }}"
+        
+    - name: Verify Notarization
+      shell: bash
+      run: |
+        set -e
+        brew install tree
+        pwd
+        tree .
+        echo "Verifying notarization..."
+        spctl -a -v "${{ inputs.app_path }}"
+        echo "App is properly notarized and ready for distribution!"

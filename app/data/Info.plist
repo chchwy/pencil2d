@@ -56,7 +56,7 @@
 	<key>CFBundleName</key>
 	<string>Pencil2D</string>
 	<key>CFBundlePackageType</key>
-	<string>BNDL</string>
+	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>${QMAKE_FULL_VERSION}</string>
 	<key>CFBundleSignature</key>
