@@ -76,7 +76,7 @@ jobs:
       - name: Notarize macOS app bundle
         if: runner.os == 'macOS'
         run: |
-          echo "Notarization!!"
+          set -e
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
@@ -86,19 +86,14 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
           rm certificate.p12
 
-          #download an zip and unzip it
+          echo "download an zip and unzip it"
           curl -L https://github.com/pencil2d/pencil/releases/download/v0.7.1-rc1/pencil2d-mac-x86_64-0.7.1-rc1.zip -o mac.zip
           unzip -o mac.zip -d pencil2d
           rm mac.zip
 
       - name: Sign App Bundle
         run: |
-          # Find your certificate identity
-          # Get certificate identity in multiple steps to avoid complex piping
-          FIND_RESULT=$(security find-identity -v -p codesigning build.keychain)
-          DEV_ID_LINE=$(echo "$FIND_RESULT" | grep "Developer ID Application")
-          QUOTED_CERT=$(echo "$DEV_ID_LINE" | grep -o '"[^"]*"')
-          CERT_IDENTITY=$(echo "$QUOTED_CERT" | tr -d '"')
+          security find-identity -v -p codesigning build.keychain
           echo "Using certificate: $CERT_IDENTITY"
 
           cd pencil2d
