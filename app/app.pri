@@ -4,15 +4,8 @@
 #
 #-------------------------------------------------
 
-! include( ../util/common.pri ) { error( Could not find the common.pri file! ) }
 
-TEMPLATE = app
-CONFIG += precompile_header lrelease embed_translations
-QT += core widgets gui xml multimedia svg network
-
-TARGET = pencil2d
-
-RESOURCES += data/app.qrc
+RESOURCES += $$PWD/data/app.qrc
 
 MUI_TRANSLATIONS += \
         translations/mui_cs.po \
@@ -58,163 +51,153 @@ EXTRA_TRANSLATIONS += \
 	$$PWD/../translations/pencil_zh_TW.ts
 
 INCLUDEPATH += \
-    src \
-    ../core_lib/src/graphics \
-    ../core_lib/src/graphics/bitmap \
-    ../core_lib/src/graphics/vector \
-    ../core_lib/src/interface \
-    ../core_lib/src/structure \
-    ../core_lib/src/tool \
-    ../core_lib/src/util \
-    ../core_lib/src/managers \
-    ../core_lib/src/external \
-    ../core_lib/src \
-    ../core_lib/ui
+    $$PWD/src \
+    $$PWD/../core_lib/src/graphics \
+    $$PWD/../core_lib/src/graphics/bitmap \
+    $$PWD/../core_lib/src/graphics/vector \
+    $$PWD/../core_lib/src/interface \
+    $$PWD/../core_lib/src/structure \
+    $$PWD/../core_lib/src/tool \
+    $$PWD/../core_lib/src/util \
+    $$PWD/../core_lib/src/managers \
+    $$PWD/../core_lib/src/external \
+    $$PWD/../core_lib/src \
+    $$PWD/../core_lib/ui
 
-PRECOMPILED_HEADER = src/app-pch.h
+PRECOMPILED_HEADER = $$PWD/src/app-pch.h
 
 HEADERS += \
-    src/addtransparencytopaperdialog.h \
-    src/app-pch.h \
-    src/appearance.h \
-    src/buttonappearancewatcher.h \
-    src/importlayersdialog.h \
-    src/importpositiondialog.h \
-    src/layeropacitydialog.h \
-    src/mainwindow2.h \
-    src/onionskinwidget.h \
-    src/predefinedsetmodel.h \
-    src/pegbaralignmentdialog.h \
-    src/shortcutfilter.h \
-    src/actioncommands.h \
-    src/preferencesdialog.h \
-    src/filespage.h \
-    src/generalpage.h \
-    src/shortcutspage.h \
-    src/timelinepage.h \
-    src/toolboxwidget.h \
-    src/toolspage.h \
-    src/titlebarwidget.h \
-    src/basedockwidget.h \
-    src/colorbox.h \
-    src/colorinspector.h \
-    src/colorpalettewidget.h \
-    src/colorwheel.h \
-    src/timeline.h \
-    src/timelinecells.h \
-    src/timecontrols.h \
-    src/cameracontextmenu.h \
-    src/camerapropertiesdialog.h \
-    src/filedialog.h \
-    src/pencil2d.h \
-    src/exportmoviedialog.h \
-    src/app_util.h \
-    src/errordialog.h \
-    src/aboutdialog.h \
-    src/toolbox.h \
-    src/tooloptionwidget.h \
-    src/bucketoptionswidget.h \
-    src/importexportdialog.h \
-    src/exportimagedialog.h \
-    src/importimageseqdialog.h \
-    src/spinslider.h \
-    src/doubleprogressdialog.h \
-    src/colorslider.h \
-    src/checkupdatesdialog.h \
-    src/presetdialog.h \
-    src/repositionframesdialog.h \
-    src/commandlineparser.h \
-    src/commandlineexporter.h \
-    src/statusbar.h \
-    src/elidedlabel.h \
-    src/cameraoptionswidget.h
+    $$PWD/src/app-pch.h \
+    $$PWD/src/importlayersdialog.h \
+    $$PWD/src/importpositiondialog.h \
+    $$PWD/src/layeropacitydialog.h \
+    $$PWD/src/mainwindow2.h \
+    $$PWD/src/onionskinwidget.h \
+    $$PWD/src/predefinedsetmodel.h \
+    $$PWD/src/pegbaralignmentdialog.h \
+    $$PWD/src/shortcutfilter.h \
+    $$PWD/src/actioncommands.h \
+    $$PWD/src/preferencesdialog.h \
+    $$PWD/src/filespage.h \
+    $$PWD/src/generalpage.h \
+    $$PWD/src/shortcutspage.h \
+    $$PWD/src/timelinepage.h \
+    $$PWD/src/toolspage.h \
+    $$PWD/src/basedockwidget.h \
+    $$PWD/src/colorbox.h \
+    $$PWD/src/colorinspector.h \
+    $$PWD/src/colorpalettewidget.h \
+    $$PWD/src/colorwheel.h \
+    $$PWD/src/timeline.h \
+    $$PWD/src/timelinecells.h \
+    $$PWD/src/timecontrols.h \
+    $$PWD/src/cameracontextmenu.h \
+    $$PWD/src/camerapropertiesdialog.h \
+    $$PWD/src/filedialog.h \
+    $$PWD/src/pencil2d.h \
+    $$PWD/src/exportmoviedialog.h \
+    $$PWD/src/app_util.h \
+    $$PWD/src/errordialog.h \
+    $$PWD/src/aboutdialog.h \
+    $$PWD/src/toolbox.h \
+    $$PWD/src/tooloptionwidget.h \
+    $$PWD/src/bucketoptionswidget.h \
+    $$PWD/src/importexportdialog.h \
+    $$PWD/src/exportimagedialog.h \
+    $$PWD/src/importimageseqdialog.h \
+    $$PWD/src/spinslider.h \
+    $$PWD/src/doubleprogressdialog.h \
+    $$PWD/src/colorslider.h \
+    $$PWD/src/checkupdatesdialog.h \
+    $$PWD/src/presetdialog.h     \
+    $$PWD/src/repositionframesdialog.h \
+    $$PWD/src/commandlineparser.h \
+    $$PWD/src/commandlineexporter.h \
+    $$PWD/src/statusbar.h \
+    $$PWD/src/elidedlabel.h \
+    $$PWD/src/cameraoptionswidget.h
 
 SOURCES += \
-    src/addtransparencytopaperdialog.cpp \
-    src/buttonappearancewatcher.cpp \
-    src/importlayersdialog.cpp \
-    src/importpositiondialog.cpp \
-    src/layeropacitydialog.cpp \
-    src/main.cpp \
-    src/mainwindow2.cpp \
-    src/onionskinwidget.cpp \
-    src/predefinedsetmodel.cpp \
-    src/pegbaralignmentdialog.cpp \
-    src/shortcutfilter.cpp \
-    src/actioncommands.cpp \
-    src/preferencesdialog.cpp \
-    src/filespage.cpp \
-    src/generalpage.cpp \
-    src/shortcutspage.cpp \
-    src/timelinepage.cpp \
-    src/toolboxwidget.cpp \
-    src/toolspage.cpp \
-    src/titlebarwidget.cpp \
-    src/basedockwidget.cpp \
-    src/colorbox.cpp \
-    src/colorinspector.cpp \
-    src/colorpalettewidget.cpp \
-    src/colorwheel.cpp \
-    src/timeline.cpp \
-    src/timelinecells.cpp \
-    src/timecontrols.cpp \
-    src/cameracontextmenu.cpp \
-    src/camerapropertiesdialog.cpp \
-    src/filedialog.cpp \
-    src/pencil2d.cpp \
-    src/exportmoviedialog.cpp \
-    src/errordialog.cpp \
-    src/aboutdialog.cpp \
-    src/toolbox.cpp \
-    src/tooloptionwidget.cpp \
-    src/bucketoptionswidget.cpp \
-    src/importexportdialog.cpp \
-    src/exportimagedialog.cpp \
-    src/importimageseqdialog.cpp \
-    src/spinslider.cpp \
-    src/doubleprogressdialog.cpp \
-    src/colorslider.cpp \
-    src/checkupdatesdialog.cpp \
-    src/presetdialog.cpp \
-    src/repositionframesdialog.cpp \
-    src/app_util.cpp \
-    src/commandlineparser.cpp \
-    src/commandlineexporter.cpp \
-    src/statusbar.cpp \
-    src/elidedlabel.cpp \
-    src/cameraoptionswidget.cpp
+    $$PWD/src/importlayersdialog.cpp \
+    $$PWD/src/importpositiondialog.cpp \
+    $$PWD/src/layeropacitydialog.cpp \
+    $$PWD/src/main.cpp \
+    $$PWD/src/mainwindow2.cpp \
+    $$PWD/src/onionskinwidget.cpp \
+    $$PWD/src/predefinedsetmodel.cpp \
+    $$PWD/src/pegbaralignmentdialog.cpp \
+    $$PWD/src/shortcutfilter.cpp \
+    $$PWD/src/actioncommands.cpp \
+    $$PWD/src/preferencesdialog.cpp \
+    $$PWD/src/filespage.cpp \
+    $$PWD/src/generalpage.cpp \
+    $$PWD/src/shortcutspage.cpp \
+    $$PWD/src/timelinepage.cpp \
+    $$PWD/src/toolspage.cpp \
+    $$PWD/src/basedockwidget.cpp \
+    $$PWD/src/colorbox.cpp \
+    $$PWD/src/colorinspector.cpp \
+    $$PWD/src/colorpalettewidget.cpp \
+    $$PWD/src/colorwheel.cpp \
+    $$PWD/src/timeline.cpp \
+    $$PWD/src/timelinecells.cpp \
+    $$PWD/src/timecontrols.cpp \
+    $$PWD/src/cameracontextmenu.cpp \
+    $$PWD/src/camerapropertiesdialog.cpp \
+    $$PWD/src/filedialog.cpp \
+    $$PWD/src/pencil2d.cpp \
+    $$PWD/src/exportmoviedialog.cpp \
+    $$PWD/src/errordialog.cpp \
+    $$PWD/src/aboutdialog.cpp \
+    $$PWD/src/toolbox.cpp \
+    $$PWD/src/tooloptionwidget.cpp \
+    $$PWD/src/bucketoptionswidget.cpp \
+    $$PWD/src/importexportdialog.cpp \
+    $$PWD/src/exportimagedialog.cpp \
+    $$PWD/src/importimageseqdialog.cpp \
+    $$PWD/src/spinslider.cpp \
+    $$PWD/src/doubleprogressdialog.cpp \
+    $$PWD/src/colorslider.cpp \
+    $$PWD/src/checkupdatesdialog.cpp \
+    $$PWD/src/presetdialog.cpp \
+    $$PWD/src/repositionframesdialog.cpp \
+    $$PWD/src/app_util.cpp \
+    $$PWD/src/commandlineparser.cpp \
+    $$PWD/src/commandlineexporter.cpp \
+    $$PWD/src/statusbar.cpp \
+    $$PWD/src/elidedlabel.cpp \
+    $$PWD/src/cameraoptionswidget.cpp
 
 FORMS += \
-    ui/addtransparencytopaperdialog.ui \
-    ui/cameraoptionswidget.ui \
-    ui/camerapropertiesdialog.ui \
-    ui/importimageseqpreview.ui \
-    ui/importlayersdialog.ui \
-    ui/importpositiondialog.ui \
-    ui/layeropacitydialog.ui \
-    ui/mainwindow2.ui \
-    ui/onionskin.ui \
-    ui/pegbaralignmentdialog.ui \
-    ui/repositionframesdialog.ui \
-    ui/shortcutspage.ui \
-    ui/colorinspector.ui \
-    ui/colorpalette.ui \
-    ui/errordialog.ui \
-    ui/importexportdialog.ui \
-    ui/exportmovieoptions.ui \
-    ui/exportimageoptions.ui \
-    ui/importimageseqoptions.ui \
-    ui/tooloptions.ui \
-    ui/bucketoptionswidget.ui \
-    ui/aboutdialog.ui \
-    ui/doubleprogressdialog.ui \
-    ui/preferencesdialog.ui \
-    ui/generalpage.ui \
-    ui/timelinepage.ui \
-    ui/filespage.ui \
-    ui/toolspage.ui \
-    ui/toolboxwidget.ui \
-    ui/presetdialog.ui
+    $$PWD/ui/cameraoptionswidget.ui \
+    $$PWD/ui/camerapropertiesdialog.ui \
+    $$PWD/ui/importimageseqpreview.ui \
+    $$PWD/ui/importlayersdialog.ui \
+    $$PWD/ui/importpositiondialog.ui \
+    $$PWD/ui/layeropacitydialog.ui \
+    $$PWD/ui/mainwindow2.ui \
+    $$PWD/ui/onionskin.ui \
+    $$PWD/ui/pegbaralignmentdialog.ui \
+    $$PWD/ui/repositionframesdialog.ui \
+    $$PWD/ui/shortcutspage.ui \
+    $$PWD/ui/colorinspector.ui \
+    $$PWD/ui/colorpalette.ui \
+    $$PWD/ui/errordialog.ui \
+    $$PWD/ui/importexportdialog.ui \
+    $$PWD/ui/exportmovieoptions.ui \
+    $$PWD/ui/exportimageoptions.ui \
+    $$PWD/ui/importimageseqoptions.ui \
+    $$PWD/ui/tooloptions.ui \
+    $$PWD/ui/bucketoptionswidget.ui \
+    $$PWD/ui/aboutdialog.ui \
+    $$PWD/ui/doubleprogressdialog.ui \
+    $$PWD/ui/preferencesdialog.ui \
+    $$PWD/ui/generalpage.ui \
+    $$PWD/ui/timelinepage.ui \
+    $$PWD/ui/filespage.ui \
+    $$PWD/ui/toolspage.ui \
+    $$PWD/ui/toolboxwidget.ui \
+    $$PWD/ui/presetdialog.ui
 
 GIT {
     DEFINES += GIT_EXISTS \
@@ -223,14 +206,14 @@ GIT {
 }
 
 macx {
-    RC_FILE = data/pencil2d.icns
+    RC_FILE = $$PWD/data/pencil2d.icns
 
     # Use custom Info.plist
-    QMAKE_INFO_PLIST = data/Info.plist
+    QMAKE_INFO_PLIST = $$PWD/data/Info.plist
 
     # Add file icons into the application bundle resources
-    FILE_ICONS.files = data/icons/mac_pcl_icon.icns data/icons/mac_pclx_icon.icns
-    FILE_ICONS.path = Contents/Resources
+    FILE_ICONS.files = $$PWD/data/icons/mac_pcl_icon.icns $$PWD/data/icons/mac_pclx_icon.icns
+    FILE_ICONS.path = $$PWD/Contents/Resources
     QMAKE_BUNDLE_DATA += FILE_ICONS
 
     QMAKE_TARGET_BUNDLE_PREFIX += org.pencil2d
@@ -322,22 +305,4 @@ unix:!macx {
 
 INCLUDEPATH += ../../core_lib/src
 
-BUILDTYPE =
-debug_and_release:CONFIG(debug,debug|release) BUILDTYPE = debug
-debug_and_release:CONFIG(release,debug|release) BUILDTYPE = release
 
-win32-msvc* {
-    LIBS += -L$$OUT_PWD/../core_lib/$$BUILDTYPE/ -lcore_lib
-    PRE_TARGETDEPS += $$OUT_PWD/../core_lib/$$BUILDTYPE/core_lib.lib
-}
-
-win32-g++{
-    LIBS += -L$$OUT_PWD/../core_lib/$$BUILDTYPE/ -lcore_lib
-    PRE_TARGETDEPS += $$OUT_PWD/../core_lib/$$BUILDTYPE/libcore_lib.a
-}
-
-# --- mac os and linux
-unix {
-  LIBS += -L$$OUT_PWD/../core_lib/ -lcore_lib
-  PRE_TARGETDEPS += $$OUT_PWD/../core_lib/libcore_lib.a
-}
