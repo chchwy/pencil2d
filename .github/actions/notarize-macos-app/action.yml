@@ -59,6 +59,8 @@ runs:
         echo "Code signing app with deep signing..."
         ditto -x -k ${{ inputs.app_path }} ./app_notarization
         codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
+        codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app/Contents/MacOS/plugins/ffmpeg"
+        
         echo "Verifying code signature..."
         codesign --verify --verbose "./app_notarization/Pencil2D.app"
         ditto -c -k --rsrc --keepParent "./app_notarization/Pencil2D.app" "./app_notarization.zip"
@@ -96,4 +98,4 @@ runs:
         echo "Replacing the notarized app bundle with the original app bundle"
         rm -rf "${{ inputs.app_path }}"
         mv "./app_notarization/Pencil2D.app" "${{ inputs.app_path }}"
-        echo "Notarized app bundle is now at ${inputs.app_path}"
+        echo "Notarized app bundle is now at ${{ inputs.app_path }}"
