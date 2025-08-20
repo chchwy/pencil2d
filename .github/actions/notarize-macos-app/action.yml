@@ -32,7 +32,6 @@ runs:
         echo "Debugging information:"
         echo "App Path: ${{ inputs.app_path }}"
         brew install tree
-        tree .
 
     - name: Setup Code Signing Certificate
       shell: bash
@@ -69,10 +68,8 @@ runs:
       shell: bash
       run: |
         echo "Submitting to Apple for notarization..."
-        APP_DIR=$(dirname "${{ inputs.app_path }}")
-        
-        cd "$APP_DIR"
-        xcrun notarytool submit "app_notarization.zip" \
+        tree .
+        xcrun notarytool submit "./app_notarization.zip" \
           --apple-id "${{ inputs.apple_id }}" \
           --password "${{ inputs.apple_id_password }}" \
           --team-id "${{ inputs.team_id }}" \
