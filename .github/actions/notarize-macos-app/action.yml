@@ -79,8 +79,9 @@ runs:
         fi
         
         echo "Code signing app..."
-        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
         codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app/Contents/MacOS/plugins/ffmpeg"
+        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app/Content/MacOS/pencil2d"
+        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
         
         echo "Verifying code signature with detailed output..."
         echo "Basic verification:"
