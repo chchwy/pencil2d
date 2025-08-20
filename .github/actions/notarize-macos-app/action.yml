@@ -58,8 +58,7 @@ runs:
       run: |
         echo "Code signing app with deep signing..."
         ditto -x -k ${{ inputs.app_path }} ./app_notarization
-        tree ./app_notarization
-        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization"
+        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
         echo "Verifying code signature..."
         codesign --verify --verbose "./app_notarization/Pencil2D.app"
         ditto -c -k --rsrc --keepParent "./app_notarization/Pencil2D.app" "./app_notarization.zip"
