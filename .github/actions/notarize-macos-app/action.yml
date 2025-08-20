@@ -26,6 +26,14 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Debug
+      shell: bash
+      run: |
+        echo "Debugging information:"
+        echo "App Path: ${{ inputs.app_path }}"
+        brew install tree
+        tree .
+
     - name: Setup Code Signing Certificate
       shell: bash
       run: |
