@@ -2,7 +2,7 @@ name: 'Notarize macOS App'
 description: 'Complete macOS app code signing and notarization with certificate setup'
 inputs:
   app_path:
-    description: 'Path to the .app bundle to notarize'
+    description: 'The app bundle zip file path'
     required: true
   p12_base64:
     description: 'Base64 encoded P12 certificate file'
@@ -49,30 +49,20 @@ runs:
       shell: bash
       run: |
         echo "Code signing app with deep signing..."
-        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "${{ inputs.app_path }}"
-        
+        ditto -x -k ${{ inputs.app_path }} ./app_notarization
+        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization"
         echo "Verifying code signature..."
-        codesign --verify --verbose "${{ inputs.app_path }}"
-        
-    - name: Create Notarization Package
-      shell: bash
-      run: |
-        echo "Creating zip file for notarization..."
-        APP_DIR=$(dirname "${{ inputs.app_path }}")
-        APP_NAME=$(basename "${{ inputs.app_path }}")
-        
-        cd "$APP_DIR"
-        ditto -c -k --keepParent "$APP_NAME" "${APP_NAME%.app}-notarization.zip"
+        codesign --verify --verbose "./app_notarization/Pencil2D.app"
+        ditto -c -k --rsrc --keepParent "./app_notarization/Pencil2D.app" "./app_notarization.zip"
 
     - name: Submit for Notarization
       shell: bash
       run: |
         echo "Submitting to Apple for notarization..."
         APP_DIR=$(dirname "${{ inputs.app_path }}")
-        APP_NAME=$(basename "${{ inputs.app_path }}")
         
         cd "$APP_DIR"
-        xcrun notarytool submit "${APP_NAME%.app}-notarization.zip" \
+        xcrun notarytool submit "app_notarization.zip" \
           --apple-id "${{ inputs.apple_id }}" \
           --password "${{ inputs.apple_id_password }}" \
           --team-id "${{ inputs.team_id }}" \
@@ -83,15 +73,19 @@ runs:
       shell: bash
       run: |
         echo "Stapling notarization ticket to app..."
-        xcrun stapler staple "${{ inputs.app_path }}"
-        
+        xcrun stapler staple "./app_notarization/Pencil2D.app"
+
     - name: Verify Notarization
       shell: bash
       run: |
-        set -e
-        brew install tree
-        pwd
-        tree .
         echo "Verifying notarization..."
-        spctl -a -v "${{ inputs.app_path }}"
+        spctl -a -v "./app_notarization/Pencil2D.app"
         echo "App is properly notarized and ready for distribution!"
+
+    - name: Replace the notarized App Bundle
+      shell: bash
+      run: |
+        echo "Replacing the notarized app bundle with the original app bundle"
+        rm -rf "${{ inputs.app_path }}"
+        mv "./app_notarization/Pencil2D.app" "${{ inputs.app_path }}"
+        echo "Notarized app bundle is now at ${inputs.app_path}"

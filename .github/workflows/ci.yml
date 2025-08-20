@@ -73,29 +73,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
 
-      - name: Download and Extract App
-        if: runner.os == 'macOS'
-        run: |
-          # Download your app (replace with your actual app source)
-          set -e
-          curl -L https://github.com/pencil2d/pencil/releases/download/v0.7.1-rc1/pencil2d-mac-x86_64-0.7.1-rc1.zip -o app.zip
-          ls
-          unzip app.zip
-          unzip pencil2d-mac-x86_64-0.7.1.1154.zip -d ./
-          ls
-          
-      - name: Code Sign and Notarize App
-        if: runner.os == 'macOS'
-        uses: ./.github/actions/notarize-macos-app
-        with:
-          app_path: pencil2d-mac-x86_64-0.7.1.1154/Pencil2D.app
-          p12_base64: ${{ secrets.P12_BASE64 }}
-          p12_password: ${{ secrets.P12_PASSWORD }}
-          apple_id: ${{ secrets.APPLE_ID }}
-          apple_id_password: ${{ secrets.APPLE_ID_PASSWORD }}
-          team_id: ${{ secrets.APPLE_TEAM_ID }}
-          certificate_identity: ${{ secrets.CODESIGN_CERT_IDENTITY }}
-
       - name: Set up container (Linux)
         if: runner.os == 'Linux'
         # XXX: --privileged is sort of a brute-force solution to get FUSE
@@ -131,13 +108,6 @@ jobs:
 
       - name: Run tests
         run: ${{runner.os == 'Linux' && '${BUILD_CMD}' || ''}} env QT_QPA_PLATFORM=minimal build/tests/tests
-        
-        #uses: ./.github/actions/notarize-macos-app
-        #with:
-        #  app_path: build/Pencil2D.app
-        #  apple_id: ${{ secrets.APPLE_ID }}
-        # apple_id_password: ${{ secrets.APPLE_ID_PASSWORD }}
-        #  team_id: ${{ secrets.APPLE_TEAM_ID }}
   
       - name: Create package
         id: package
@@ -146,6 +116,18 @@ jobs:
         with:
           arch: ${{matrix.arch}}
           qt: ${{matrix.qt}}
+
+      - name: Code Sign and Notarize App
+        if: runner.os == 'macOS'
+        uses: ./.github/actions/notarize-macos-app
+        with:
+          app_path: ${{steps.package.outputs.output-basename}}
+          p12_base64: ${{ secrets.P12_BASE64 }}
+          p12_password: ${{ secrets.P12_PASSWORD }}
+          apple_id: ${{ secrets.APPLE_ID }}
+          apple_id_password: ${{ secrets.APPLE_ID_PASSWORD }}
+          team_id: ${{ secrets.APPLE_TEAM_ID }}
+          certificate_identity: ${{ secrets.CODESIGN_CERT_IDENTITY }}
 
       - name: Upload package
         if: runner.os != 'Linux' || matrix.qt == 5
