@@ -72,6 +72,7 @@ wayland-decoration-client,wayland-graphics-integration-client,wayland-shell-inte
 }
 
 create_package_macos() {
+  pwd
   echo "::group::Clean"
   make clean
   mkdir Pencil2D
