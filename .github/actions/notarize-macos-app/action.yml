@@ -78,10 +78,20 @@ runs:
           find "./app_notarization/Pencil2D.app" -name "*.plist" -o -name "Info.plist"
         fi
         
-        echo "Code signing app..."
+        echo "Code signing app (inside-out method, no --deep)..."
+        
+        echo "Step 1: Sign all dylibs and frameworks..."
+        find "./app_notarization/Pencil2D.app" -name "*.dylib" -exec codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" {} \; || echo "No .dylib files found"
+        find "./app_notarization/Pencil2D.app" -name "*.framework" -exec codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" {} \; || echo "No .framework files found"
+        
+        echo "Step 2: Sign plugins and executables..."
         codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app/Contents/MacOS/plugins/ffmpeg"
-        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app/Contents/MacOS/pencil2d"
-        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
+        
+        echo "Step 3: Sign main executable..."
+        codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app/Contents/MacOS/pencil2d"
+                  
+        echo "Step 4: Sign the app bundle itself..."
+        codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
         
         echo "Verifying code signature with detailed output..."
         echo "Basic verification:"
