@@ -82,8 +82,32 @@ runs:
         codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
         codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app/Contents/MacOS/plugins/ffmpeg"
         
-        echo "Verifying code signature..."
-        codesign --verify --verbose "./app_notarization/Pencil2D.app"
+        echo "Verifying code signature with detailed output..."
+        echo "Basic verification:"
+        codesign --verify --verbose "./app_notarization/Pencil2D.app" || {
+          echo "❌ Code signature verification failed!"
+          echo "Detailed error information:"
+          codesign --verify --verbose=4 "./app_notarization/Pencil2D.app" 2>&1 || true
+          echo ""
+          echo "Checking app bundle structure:"
+          ls -la "./app_notarization/Pencil2D.app/Contents/"
+          echo ""
+          echo "Checking executable:"
+          ls -la "./app_notarization/Pencil2D.app/Contents/MacOS/"
+          echo ""
+          echo "Checking if executable exists and is executable:"
+          EXECUTABLE="./app_notarization/Pencil2D.app/Contents/MacOS/Pencil2D"
+          if [ -f "$EXECUTABLE" ]; then
+            echo "✅ Executable exists"
+            file "$EXECUTABLE"
+            echo "Permissions: $(ls -l "$EXECUTABLE")"
+          else
+            echo "❌ Executable not found!"
+          fi
+          exit 1
+        }
+        
+        echo "✅ Code signature verification successful!"
         ditto -c -k --rsrc --keepParent "./app_notarization/Pencil2D.app" "./app_notarization.zip"
 
     - name: Submit for Notarization
