@@ -55,8 +55,30 @@ runs:
     - name: Code Sign App
       shell: bash
       run: |
-        echo "Code signing app with deep signing..."
+        echo "Extracting and debugging app bundle..."
         ditto -x -k ${{ inputs.app_path }} ./app_notarization
+        
+        echo "Checking Info.plist..."
+        INFO_PLIST="./app_notarization/Pencil2D.app/Contents/Info.plist"
+        
+        if [ -f "$INFO_PLIST" ]; then
+          echo "✅ Info.plist exists"
+          echo "Info.plist content:"
+          cat "$INFO_PLIST"
+          echo ""
+          echo "Validating Info.plist format..."
+          plutil -lint "$INFO_PLIST" || {
+            echo "❌ Info.plist format error detected!"
+            echo "Attempting to fix..."
+            plutil -convert xml1 "$INFO_PLIST"
+          }
+        else
+          echo "❌ Info.plist not found at expected location!"
+          echo "App bundle structure:"
+          find "./app_notarization/Pencil2D.app" -name "*.plist" -o -name "Info.plist"
+        fi
+        
+        echo "Code signing app..."
         codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
         codesign --force --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app/Contents/MacOS/plugins/ffmpeg"
         
