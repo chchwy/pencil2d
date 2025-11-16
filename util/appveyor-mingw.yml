@@ -5,7 +5,6 @@ image:
   - Visual Studio 2019
 
 platform:
-  - x86
   - x64
 
 skip_commits:
@@ -17,13 +16,22 @@ skip_commits:
 
 init:
   - ver
-  - echo %PLATFORM%
+  - set qt=6.8.3\mingw_64
+  - set mingw=mingw1120_64
 
 before_build:
   - set QTDIR=C:\Qt\%qt%
-  - set PATH=%QTDIR%\bin;C:\Qt\Tools\%mingw%\bin;%PATH%;
-  - qmake --version
+  - dir %QTDIR%\bin
+  - set MINGW_DIR=C:\Qt\mingw_64\Tools\%mingw%
+  - set PATH=%QTDIR%\bin;%PATH%
+  - echo %PATH%
+  - dir %QTDIR%\bin\qmake.exe
+  - where qmake
+  - C:\Qt\6.8.3\mingw_64\bin\qmake.exe --version
+  - mingw32-make.exe --version
 
+
+  
 build_script:
   - echo %APPVEYOR_BUILD_FOLDER%
   - md build
@@ -39,12 +47,3 @@ test_script:
   - cd "%APPVEYOR_BUILD_FOLDER%\build\tests\release"
   - tests.exe
 
-for:
-- matrix:
-    only:
-      - image: Visual Studio 2019
-  install:
-    - if %PLATFORM%==x86   set qt=5.15\mingw81_32
-    - if %PLATFORM%==x64   set qt=5.15\mingw81_64
-    - if %PLATFORM%==x86   set mingw=mingw810_32
-    - if %PLATFORM%==x64   set mingw=mingw810_64
