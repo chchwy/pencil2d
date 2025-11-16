@@ -80,6 +80,22 @@ ipch
 .vscode
 
 # Build directory
-build
+build/
+build-*/
+!build-cmake.sh
+!build-cmake.bat
 .qtc_clangd
 app/resources.pri
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake
+!CMakeLists.txt
+!sources.cmake
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+cmake-build-*/
+app/.qm/*.qm
