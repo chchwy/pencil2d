@@ -40,6 +40,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Multimedia
     Svg
     Network
+    LinguistTools
 )
 
 # Platform-specific settings
