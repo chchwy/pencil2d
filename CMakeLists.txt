@@ -89,9 +89,9 @@ if(MSVC)
 endif()
 
 # Include subdirectories to build as single executable
-include(core_lib/sources.cmake)
-include(app/sources.cmake)
+include(core_lib/core_lib.cmake)
+include(app/app.cmake)
 
 if(BUILD_TESTS)
-    include(tests/sources.cmake)
+    include(tests/tests.cmake)
 endif()
