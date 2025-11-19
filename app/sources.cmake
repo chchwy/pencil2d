@@ -192,29 +192,6 @@ set(APP_TRANSLATIONS
     ${CMAKE_CURRENT_SOURCE_DIR}/translations/pencil_zh_TW.ts
 )
 
-# Git version info
-if(GIT_FOUND)
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_CURRENT_SHA1
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} log -n 1 --pretty=format:%cd --date=format:%Y-%m-%d_%H:%M:%S
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_TIMESTAMP
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(GIT_CURRENT_SHA1)
-        add_compile_definitions(
-            GIT_EXISTS
-            GIT_CURRENT_SHA1="${GIT_CURRENT_SHA1}"
-            GIT_TIMESTAMP="${GIT_TIMESTAMP}"
-        )
-    endif()
-endif()
-
 # Qt translation support
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_add_translation(QM_FILES ${APP_TRANSLATIONS})
@@ -286,6 +263,11 @@ target_include_directories(pencil2d PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src
     ${CORE_LIB_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/ui
+)
+
+# Set AUTOUIC search paths for UI files
+set_target_properties(pencil2d PROPERTIES
+    AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/app/ui
 )
 
 # Link libraries
