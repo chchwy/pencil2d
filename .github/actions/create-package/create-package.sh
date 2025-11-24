@@ -96,13 +96,17 @@ create_package_macos() {
   echo "::endgroup::"
   
   popd >/dev/null
+  
+  echo "::group::Package App"
   local qtsuffix="-qt${INPUT_QT}"
   local arch="${INPUT_ARCH}"
   local fileinfo="${qtsuffix/-qt5/}-mac-${arch}-$3"
-  echo "Create ZIP: pencil2d${fileinfo}.zip"
+  
+  # Create ZIP for notarization process (DMG will be created after notarization)
   ditto -c -k --sequesterRsrc "Pencil2D" "pencil2d${fileinfo}.zip"
   rm -r "Pencil2D"
   echo "output-basename=pencil2d${fileinfo}" > "${GITHUB_OUTPUT}"
+  echo "::endgroup::"
 }
 
 create_package_windows() {

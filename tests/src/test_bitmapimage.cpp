@@ -363,4 +363,27 @@ TEST_CASE("BitmapImage autoCrop")
         REQUIRE(b->left() == 50);
         REQUIRE(b->top() == 20);
     }
+
+    SECTION("Test with potential padding consideration (width not multiple of 4)")
+    {
+        // This test ensures autoCrop works correctly even when QImage scanlines have padding.
+        // Although BitmapImage uses Format_ARGB32_Premultiplied (which typically doesn't pad),
+        // the fix addresses cases where padding exists (e.g., after loading images with different formats).
+        auto b = std::make_shared<BitmapImage>(QRect(0, 0, 3, 3), Qt::transparent);
+
+        // Place pixels at corners to test column and row scanning
+        b->setPixel(0, 0, qRgba(255, 0, 0, 255)); // Red at top-left
+        b->setPixel(2, 0, qRgba(0, 255, 0, 255)); // Green at top-right
+        b->setPixel(0, 2, qRgba(0, 0, 255, 255)); // Blue at bottom-left
+        b->setPixel(2, 2, qRgba(255, 255, 0, 255)); // Yellow at bottom-right
+
+        b->enableAutoCrop(true);
+        b->autoCrop();
+
+        // Should crop to the full 3x3 since all corners have content
+        REQUIRE(b->width() == 3);
+        REQUIRE(b->height() == 3);
+        REQUIRE(b->left() == 0);
+        REQUIRE(b->top() == 0);
+    }
 }

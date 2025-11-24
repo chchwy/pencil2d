@@ -2,7 +2,7 @@ name: 'Notarize macOS App'
 description: 'Complete macOS app code signing and notarization with certificate setup'
 inputs:
   app_path:
-    description: 'The app bundle zip file path'
+    description: 'The app bundle ZIP file path'
     required: true
   p12_base64:
     description: 'Base64 encoded P12 certificate file'
@@ -64,17 +64,18 @@ runs:
       if: env.SKIP_NOTARIZATION != 'true'
       shell: bash
       run: |
-        echo "Extracting and debugging app bundle..."
-        ditto -x -k ${{ inputs.app_path }} ./app_notarization
+        echo "Extracting app bundle from ZIP..."
+        ditto -x -k "${{ inputs.app_path }}" ./app_extracted
               
         echo "Code signing app..."
-        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_notarization/Pencil2D.app"
+        codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_extracted/Pencil2D.app"
         
         echo "Verifying code signature"
-        codesign --verify --verbose=4 "./app_notarization/Pencil2D.app"
+        codesign --verify --verbose=4 "./app_extracted/Pencil2D.app"
         echo "Code signature verification successful!"
 
-        ditto -c -k --rsrc --keepParent "./app_notarization/Pencil2D.app" "./app_notarization.zip"
+        echo "Creating zip for notarization submission..."
+        ditto -c -k --rsrc --keepParent "./app_extracted/Pencil2D.app" "./app_notarization.zip"
 
     - name: Submit for Notarization
       if: env.SKIP_NOTARIZATION != 'true'
@@ -93,17 +94,27 @@ runs:
       shell: bash
       run: |
         echo "Stapling notarization ticket to app..."
-        xcrun stapler staple "./app_notarization/Pencil2D.app"
+        xcrun stapler staple "./app_extracted/Pencil2D.app"
 
         echo "Verifying notarization..."
-        spctl -a -v "./app_notarization/Pencil2D.app"
+        spctl -a -v "./app_extracted/Pencil2D.app"
         echo "App is properly notarized and ready for distribution!"
 
     - name: Finalize
       if: env.SKIP_NOTARIZATION != 'true'
       shell: bash
       run: |
-        echo "Replacing the original app bundle with notarized app bundle"
-        rm -rf "${{ inputs.app_path }}"
-        ditto -c -k --rsrc --keepParent "./app_notarization/Pencil2D.app" "${{ inputs.app_path }}"
-        echo "Notarized app bundle is now at ${{ inputs.app_path }}"
+        echo "Creating DMG with notarized app and Applications symlink..."
+        mkdir -p ./dmg_contents
+        mv "./app_extracted/Pencil2D.app" ./dmg_contents/
+        ln -s /Applications ./dmg_contents/Applications
+        
+        # Get base name without extension
+        base_path="${{ inputs.app_path }}"
+        base_name="${base_path%.zip}"
+        
+        echo "Creating final DMG..."
+        hdiutil create -volname "Pencil2D" -srcfolder ./dmg_contents -ov -format UDZO "${base_name}.dmg"
+        
+        echo "Notarized DMG created at ${base_name}.dmg"
+        echo "Original ZIP file: ${{ inputs.app_path }}"
