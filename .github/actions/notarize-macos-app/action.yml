@@ -113,8 +113,8 @@ runs:
         base_path="${{ inputs.app_path }}"
         base_name="${base_path%.zip}"
         
-        echo "Creating final DMG..."
-        hdiutil create -volname "Pencil2D" -srcfolder ./dmg_contents -ov -format UDZO "${base_name}.dmg"
+        echo "Creating final DMG with ULFO compression..."
+        hdiutil create -volname "Pencil2D" -srcfolder ./dmg_contents -ov -format ULFO "${base_name}.dmg"
         
         echo "Notarized DMG created at ${base_name}.dmg"
         echo "Original ZIP file: ${{ inputs.app_path }}"
