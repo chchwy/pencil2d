@@ -113,8 +113,17 @@ runs:
         base_path="${{ inputs.app_path }}"
         base_name="${base_path%.zip}"
         
-        echo "Creating final DMG with ULFO compression..."
-        hdiutil create -volname "Pencil2D" -srcfolder ./dmg_contents -ov -format ULFO "${base_name}.dmg"
-        
-        echo "Notarized DMG created at ${base_name}.dmg"
+        echo "Creating DMG..."
+        # Create temporary RW DMG, then convert to compressed read-only
+        hdiutil create -volname "Pencil2D" -srcfolder ./dmg_contents -ov -format UDRW "${base_name}-temp.dmg"
+        hdiutil convert "${base_name}-temp.dmg" -format ULFO -o "${base_name}.dmg"
+        rm "${base_name}-temp.dmg"
+
+        echo "Code signing DMG..."
+        codesign --force --sign "${{ inputs.certificate_identity }}" "${base_name}.dmg"
+
+        echo "Verifying DMG signature..."
+        codesign --verify --verbose=4 "${base_name}.dmg"
+
+        echo "Notarized and signed DMG created at ${base_name}.dmg"
         echo "Original ZIP file: ${{ inputs.app_path }}"
