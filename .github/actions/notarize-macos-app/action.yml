@@ -60,60 +60,30 @@ runs:
         echo "Available signing identities:"
         security find-identity -v -p codesigning build.keychain
 
-    - name: Code Sign App
+    - name: Code Sign App and Create DMG
       if: env.SKIP_NOTARIZATION != 'true'
       shell: bash
       run: |
         echo "Extracting app bundle from ZIP..."
         ditto -x -k "${{ inputs.app_path }}" ./app_extracted
-              
+
         echo "Code signing app..."
         codesign --force --deep --options runtime --sign "${{ inputs.certificate_identity }}" "./app_extracted/Pencil2D.app"
-        
-        echo "Verifying code signature"
+
+        echo "Verifying code signature..."
         codesign --verify --verbose=4 "./app_extracted/Pencil2D.app"
         echo "Code signature verification successful!"
 
-        echo "Creating zip for notarization submission..."
-        ditto -c -k --rsrc --keepParent "./app_extracted/Pencil2D.app" "./app_notarization.zip"
-
-    - name: Submit for Notarization
-      if: env.SKIP_NOTARIZATION != 'true'
-      shell: bash
-      run: |
-        echo "Submitting to Apple for notarization..."
-        xcrun notarytool submit "./app_notarization.zip" \
-          --apple-id "${{ inputs.apple_id }}" \
-          --password "${{ inputs.apple_id_password }}" \
-          --team-id "${{ inputs.team_id }}" \
-          --wait \
-          --timeout 15m
-          
-    - name: Staple & Verify Notarization
-      if: env.SKIP_NOTARIZATION != 'true'
-      shell: bash
-      run: |
-        echo "Stapling notarization ticket to app..."
-        xcrun stapler staple "./app_extracted/Pencil2D.app"
-
-        echo "Verifying notarization..."
-        spctl -a -v "./app_extracted/Pencil2D.app"
-        echo "App is properly notarized and ready for distribution!"
-
-    - name: Finalize
-      if: env.SKIP_NOTARIZATION != 'true'
-      shell: bash
-      run: |
-        echo "Creating DMG with notarized app and Applications symlink..."
+        echo "Creating DMG with app and Applications symlink..."
         mkdir -p ./dmg_contents
         mv "./app_extracted/Pencil2D.app" ./dmg_contents/
         ln -s /Applications ./dmg_contents/Applications
-        
+
         # Get base name without extension
         base_path="${{ inputs.app_path }}"
         base_name="${base_path%.zip}"
-        
-        echo "Creating DMG..."
+
+        echo "Creating compressed DMG..."
         # Create temporary RW DMG, then convert to compressed read-only
         hdiutil create -volname "Pencil2D" -srcfolder ./dmg_contents -ov -format UDRW "${base_name}-temp.dmg"
         hdiutil convert "${base_name}-temp.dmg" -format ULFO -o "${base_name}.dmg"
@@ -124,6 +94,33 @@ runs:
 
         echo "Verifying DMG signature..."
         codesign --verify --verbose=4 "${base_name}.dmg"
+        echo "DMG created and signed successfully!"
 
-        echo "Notarized and signed DMG created at ${base_name}.dmg"
-        echo "Original ZIP file: ${{ inputs.app_path }}"
+    - name: Submit DMG for Notarization
+      if: env.SKIP_NOTARIZATION != 'true'
+      shell: bash
+      run: |
+        base_path="${{ inputs.app_path }}"
+        base_name="${base_path%.zip}"
+
+        echo "Submitting DMG to Apple for notarization..."
+        xcrun notarytool submit "${base_name}.dmg" \
+          --apple-id "${{ inputs.apple_id }}" \
+          --password "${{ inputs.apple_id_password }}" \
+          --team-id "${{ inputs.team_id }}" \
+          --wait \
+          --timeout 15m
+
+    - name: Staple & Verify Notarization
+      if: env.SKIP_NOTARIZATION != 'true'
+      shell: bash
+      run: |
+        base_path="${{ inputs.app_path }}"
+        base_name="${base_path%.zip}"
+
+        echo "Stapling notarization ticket to DMG..."
+        xcrun stapler staple "${base_name}.dmg"
+
+        echo "Verifying DMG notarization..."
+        spctl -a -t open --context context:primary-signature -v "${base_name}.dmg"
+        echo "DMG is properly notarized and ready for distribution!"
