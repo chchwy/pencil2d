@@ -34,6 +34,7 @@ build_script:
   - cmake --build build --config Release --parallel --target pencil2d_tests
 
 after_build:
+  - lipo -archs "$APPVEYOR_BUILD_FOLDER/build/Release/pencil2d.app/Contents/MacOS/pencil2d"
   - macdeployqt "$APPVEYOR_BUILD_FOLDER/build/Release/pencil2d.app" -dmg
   - find "$APPVEYOR_BUILD_FOLDER" -name "*.dmg" -type f
 
