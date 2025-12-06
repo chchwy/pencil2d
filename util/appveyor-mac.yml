@@ -35,11 +35,12 @@ build_script:
 
 after_build:
   - macdeployqt "$APPVEYOR_BUILD_FOLDER/build/Release/pencil2d.app" -dmg
+  - find "$APPVEYOR_BUILD_FOLDER" -name "*.dmg" -type f
 
 test_script:
   - echo "Running tests"
-  - ctest -C Release --output-on-failure
+  - ctest --test-dir build -C Release --output-on-failure
 
 artifacts:
-  - path: build/pencil2d.dmg
+  - path: build/**/*.dmg
     name: Pencil2D-macOS
