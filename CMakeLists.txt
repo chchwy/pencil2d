@@ -49,9 +49,8 @@ if(WIN32)
 endif()
 
 if(APPLE)
-    find_library(CARBON_FRAMEWORK Carbon)
     find_library(APPKIT_FRAMEWORK AppKit)
-    set(PLATFORM_LIBS ${CARBON_FRAMEWORK} ${APPKIT_FRAMEWORK} "-lobjc")
+    set(PLATFORM_LIBS ${APPKIT_FRAMEWORK} "-lobjc")
 endif()
 
 # Global definitions
