@@ -1,0 +1,47 @@
+
+clone_depth: 1
+
+image:
+  - macos-ventura
+
+platform:
+  - x64
+
+skip_commits:
+  files:
+    - '*.md'
+    - docs/*
+    - util/appveyor-msvc.yml
+    - /.github/*
+
+install:
+  - export QTDIR=$HOME/Qt/6.5.3/macos
+
+init:
+  - uname -a
+  - echo $PLATFORM
+
+before_build:
+  - export PATH=$QTDIR/bin:$PATH
+  - cmake --version
+  - qmake --version
+
+build_script:
+  - pwd
+  - mkdir build
+  - cmake -S . -B build -G Xcode -DCMAKE_PREFIX_PATH=$QTDIR -DPENCIL2D_NIGHTLY=ON -DAPP_VERSION=$APPVEYOR_BUILD_VERSION
+  - cmake --build build --config Release --parallel --target pencil2d
+  - cmake --build build --config Release --parallel --target pencil2d_tests
+
+after_build:
+  - lipo -archs "$APPVEYOR_BUILD_FOLDER/build/Release/pencil2d.app/Contents/MacOS/pencil2d"
+  - macdeployqt "$APPVEYOR_BUILD_FOLDER/build/Release/pencil2d.app" -dmg
+  - find "$APPVEYOR_BUILD_FOLDER" -name "*.dmg" -type f
+
+test_script:
+  - echo "Running tests"
+  - ctest --test-dir build -C Release --output-on-failure
+
+artifacts:
+  - path: build/**/*.dmg
+    name: Pencil2D-macOS
