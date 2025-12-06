@@ -2,7 +2,7 @@
 clone_depth: 1
 
 image:
-  - macos-monterey
+  - macos-ventura
 
 platform:
   - x64
