@@ -29,10 +29,9 @@ before_build:
 build_script:
   - pwd
   - mkdir build
-  - cd build
-  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$QTDIR -DPENCIL2D_NIGHTLY=ON -DAPP_VERSION=$APPVEYOR_BUILD_VERSION
-  - cmake --build . --config Release --parallel --target pencil2d
-  - cmake --build . --config Release --parallel --target pencil2d_tests
+  - cmake -S . -B build -G Xcode -DCMAKE_PREFIX_PATH=$QTDIR -DPENCIL2D_NIGHTLY=ON -DAPP_VERSION=$APPVEYOR_BUILD_VERSION
+  - cmake --build build --config Release --parallel --target pencil2d
+  - cmake --build build --config Release --parallel --target pencil2d_tests
 
 after_build:
   - macdeployqt "$APPVEYOR_BUILD_FOLDER/build/Release/pencil2d.app" -dmg
