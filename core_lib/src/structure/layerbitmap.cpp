@@ -169,6 +169,8 @@ bool LayerBitmap::needSaveFrame(KeyFrame* key, const QString& savePath)
         return true;
     if (key->fileName().isEmpty())
         return true;
+    if (savePath != key->fileName()) // keyframe moved to different location
+        return true;
     return false;
 }
 
