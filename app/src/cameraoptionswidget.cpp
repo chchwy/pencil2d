@@ -50,21 +50,14 @@ void CameraOptionsWidget::updateUI()
 {
     Q_ASSERT(mCameraTool->type() == CAMERA);
 
-    const CameraSettings* p = static_cast<const CameraSettings*>(mCameraTool->settings());
-
-    setShowCameraPath(p->showPathEnabled());
-    setPathDotColorType(p->dotColorType());
+    setShowCameraPath(mCameraTool->showPathEnabled());
+    setPathDotColorType(mCameraTool->dotColorType());
 }
 
 void CameraOptionsWidget::makeConnectionsFromModelToUI()
 {
-    connect(mCameraTool, &CameraTool::cameraPathEnabledChanged, this, [=](bool enabled) {
-       setShowCameraPath(enabled);
-    });
-
-    connect(mCameraTool, &CameraTool::pathColorChanged, this, [=](DotColorType type) {
-       setPathDotColorType(type);
-    });
+    connect(mCameraTool, &CameraTool::cameraPathEnabledChanged, this, &CameraOptionsWidget::setShowCameraPath);
+    connect(mCameraTool, &CameraTool::pathColorChanged, this, &CameraOptionsWidget::setPathDotColorType);
 }
 
 void CameraOptionsWidget::makeConnectionsFromUIToModel()

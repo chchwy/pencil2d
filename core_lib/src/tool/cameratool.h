@@ -79,12 +79,14 @@ public:
 
     void performAction(ActionType actionType);
 
+    bool showPathEnabled() const;
+    DotColorType dotColorType() const;
+
 signals:
     void pathColorChanged(DotColorType colorType);
     void cameraPathEnabledChanged(bool enabled);
 
 private:
-
     QPointF localRotationHandlePoint(const QPoint& origin, const QTransform& localT, const qreal objectScale, float worldScale) const;
     QPointF worldRotationHandlePoint(const QPoint& origin, const QTransform& localT, const qreal objectScale, const QTransform& worldT, float worldScale) const;
 
@@ -127,7 +129,7 @@ private:
     QColor mHandleDisabledColor;
     QColor mHandleTextColor;
 
-    CameraSettings* mSettings = nullptr;
+    //ToolSettings* mSettings = nullptr;
 };
 
 #endif // CAMERATOOL_H

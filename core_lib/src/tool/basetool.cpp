@@ -66,6 +66,8 @@ void BaseTool::initialize(Editor* editor)
     mEditor = editor;
     mScribbleArea = editor->getScribbleArea();
     Q_ASSERT(mScribbleArea);
+
+    mSettings = new ToolSettings;
     createSettings(nullptr);
 
     loadSettings();
@@ -73,11 +75,11 @@ void BaseTool::initialize(Editor* editor)
 
 void BaseTool::createSettings(ToolSettings* settings)
 {
-    if (settings == nullptr) {
-        mSettings = new ToolSettings();
-    } else {
-        mSettings = settings;
-    }
+    //if (settings == nullptr) {
+    //mSettings = new ToolSettings;
+    //} else {
+    //  mSettings = settings;
+    //}
 }
 
 void BaseTool::saveSettings()

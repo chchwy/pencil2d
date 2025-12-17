@@ -58,7 +58,6 @@ public:
     virtual ToolType type() const = 0;
     virtual ToolCategory category() const { return ToolCategory::BASETOOL; }
 
-    virtual void createSettings(ToolSettings* settings = nullptr);
     virtual void loadSettings() = 0;
     void saveSettings();
     void resetSettings();
@@ -88,7 +87,7 @@ public:
      */
     virtual bool isActive() const;
 
-    ToolSettings* settings() { Q_ASSERT(mSettings); return mSettings; }
+    ToolSettings* settings() const { Q_ASSERT(mSettings); return mSettings; }
 
     virtual void paint(QPainter& painter, const QRect& blitRect) { Q_UNUSED(painter) Q_UNUSED(blitRect) }
 
@@ -106,6 +105,7 @@ signals:
     bool isActiveChanged(ToolType, bool);
 
 protected:
+    virtual void createSettings(ToolSettings* settings);
 
     Editor* editor() { return mEditor; }
     QHash<int, QSet<Layer::LAYER_TYPE>> mPropertyUsed;

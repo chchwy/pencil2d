@@ -176,9 +176,9 @@ struct PropertyInfo
     }
 
     ValueType type() const { return mValueType; }
+	QString stringID() const { return mStringID; }
 
 private:
-
     // This union is only meant ot store simple values.
     // Do not attempt to store complicated objects in here.
     union ValueUnion {
@@ -192,10 +192,58 @@ private:
     ValueUnion mMinValue;
     ValueUnion mMaxValue;
     ValueUnion mDefaultValue;
+
+    QString mStringID;
 };
 
-struct ToolSettings
+
+enum ToolSettingType {
+    // StrokeSettings
+    STROKE_START = 100,
+    STROKE_WIDTH_VALUE = STROKE_START,
+    STROKE_FEATHER_VALUE = 101,
+    STROKE_STABILIZATION_VALUE = 102,
+    STROKE_PRESSURE_ENABLED = 103,
+    STROKE_INVISIBILITY_ENABLED = 104,
+    STROKE_FEATHER_ENABLED = 105,
+    STROKE_ANTI_ALIASING_ENABLED = 106,
+    STROKE_FILLCONTOUR_ENABLED = 107,
+    STROKE_END = 199,
+
+    // PolylineSettings
+    POLYLINE_START = 200,
+    POLYLINE_CLOSEDPATH_ENABLED = POLYLINE_START,
+    POLYLINE_BEZIERPATH_ENABLED = 201,
+    POLYLINE_END = 299,
+
+    // BucketSettings
+    BUCKET_START = 300,
+    BUCKET_FILLTHICKNESS_VALUE = BUCKET_START,
+    BUCKET_COLORTOLERANCE_VALUE = 301,
+    BUCKET_FILLEXPAND_VALUE = 302,
+    BUCKET_FILLLAYERREFERENCEMODE_VALUE = 303,
+    BUCKET_FILLMODE_VALUE = 304,
+    BUCKET_COLORTOLERANCE_ENABLED = 305,
+    BUCKET_FILLEXPAND_ENABLED = 306,
+    BUCKET_END = 399,
+
+    // CameraSettings
+    CAMERA_START = 400,
+    CAMERA_SHOWPATH_ENABLED = CAMERA_START,
+    CAMERA_PATH_DOTCOLOR_TYPE = 401,
+    CAMERA_END = 499,
+
+    // TransformSettings
+    TRANSFORM_START = 500,
+    TRANSFORM_SHOWSELECTIONINFO_ENABLED = TRANSFORM_START,
+    TRANSFORM_ANTI_ALIASING_ENABLED = 501,
+    TRANSFORM_END = 599,
+};
+
+
+class ToolSettings
 {
+public:
     enum Version {
         NOT_SET = 0,
         VERSION_1 = 1,
@@ -345,12 +393,26 @@ struct ToolSettings
 
 protected:
 
-    virtual QString identifier(int) const {
-        return "Invalid";
+    virtual QString identifier(int i) const {
+
+		return mPropKeyStrings.at(static_cast<ToolSettingType>(i));
+        /*
+        switch (type)
+        {
+        case SHOWPATH_ENABLED:
+            propertyID = "ShowPathEnabled";
+            break;
+        case PATH_DOTCOLOR_TYPE:
+            propertyID = "PathDotColorType";
+            break;
+        case END:
+            break;
+        }*/
     }
 
     QString mIdentifier = "unidentified";
     QHash<int, PropertyInfo> mProps;
+    std::map<ToolSettingType, QString> mPropKeyStrings;
 
     // The list of ranges that are valid for the given tool. ToolSettings can inherit its parents cases as well
     // eg. PolyLineTool uses both StrokeSettings range as well as it's own
@@ -562,40 +624,9 @@ struct BucketSettings: public ToolSettings
 
 struct CameraSettings: public ToolSettings
 {
-    enum Type {
-        START               = 400,
-        SHOWPATH_ENABLED    = START,
-
-        PATH_DOTCOLOR_TYPE  = 401,
-
-        END                 = 499,
-    };
-
     CameraSettings() {
-        mTypeRanges = { { START, END } };
+        mTypeRanges = { { CAMERA_START, CAMERA_END } };
     }
-
-    QString identifier(int typeRaw) const override {
-        auto type = static_cast<CameraSettings::Type>(typeRaw);
-        QString propertyID = ToolSettings::identifier(typeRaw);
-
-        switch (type)
-        {
-        case SHOWPATH_ENABLED:
-            propertyID = "ShowPathEnabled";
-            break;
-        case PATH_DOTCOLOR_TYPE:
-            propertyID = "PathDotColorType";
-            break;
-        case END:
-            break;
-        }
-
-        return propertyID;
-    }
-
-    bool showPathEnabled() const { return mProps[SHOWPATH_ENABLED].boolValue(); }
-    DotColorType dotColorType() const { return static_cast<DotColorType>(mProps[PATH_DOTCOLOR_TYPE].intValue()); }
 };
 
 // Used by both select and move tool
