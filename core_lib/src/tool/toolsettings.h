@@ -449,43 +449,8 @@ private:
 /// The same could be done for PencilTool, BrushTool, Eraser etc...
 struct PolylineSettings: public ToolSettings
 {
-    enum Type {
-        START               = 200,
-
-        CLOSEDPATH_ENABLED  = START,
-        BEZIERPATH_ENABLED  = 201,
-
-        END                 = 299,
-    };
-
     PolylineSettings() {
-        //mTypeRanges.append(StrokeSettings::mTypeRanges);
-        mTypeRanges = { { START, END } };
     }
-
-    QString identifier(int typeRaw) const override {
-        auto type = static_cast<PolylineSettings::Type>(typeRaw);
-        QString propertyID = ToolSettings::identifier(typeRaw);
-        switch (type)
-        {
-        case CLOSEDPATH_ENABLED:
-            propertyID = "ClosedPathEnabled";
-            break;
-        case BEZIERPATH_ENABLED:
-            propertyID = "BezierPathEnabled";
-            break;
-        default:
-            //propertyID = StrokeSettings::identifier(typeRaw);
-            break;
-        }
-
-        return propertyID;
-    }
-
-    qreal width() const { return mProps[STROKE_WIDTH_VALUE].realValue(); }
-    bool closedPathEnabled() const { return mProps[CLOSEDPATH_ENABLED].boolValue(); }
-    bool bezierPathEnabled() const { return mProps[BEZIERPATH_ENABLED].boolValue(); }
-    bool AntiAliasingEnabled() const { return mProps[STROKE_ANTI_ALIASING_ENABLED].boolValue(); }
 };
 
 struct BucketSettings: public ToolSettings

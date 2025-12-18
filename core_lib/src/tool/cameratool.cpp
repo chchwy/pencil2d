@@ -63,9 +63,15 @@ void CameraTool::loadSettings()
                                         static_cast<int>(DotColorType::BLACK) };
     info[CAMERA_SHOWPATH_ENABLED] = false;
 
-    auto mSettings = BaseTool::settings();
-    mSettings->setDefaults(info);
-    mSettings->load(typeName(), settings);
+    QHash<int, QString> stringKeys{
+        {CAMERA_SHOWPATH_ENABLED, "ShowPathEnabled" },
+        {CAMERA_SHOWPATH_ENABLED, "PathDotColorType"},
+    };
+
+    auto toolSettings = BaseTool::settings();
+    toolSettings->setDefaults(info);
+    toolSettings->setStringKeys(stringKeys);
+    toolSettings->load(typeName(), settings);
 
     connect(mEditor->preference(), &PreferenceManager::optionChanged, this, &CameraTool::updateSettings);
 

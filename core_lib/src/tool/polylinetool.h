@@ -52,6 +52,12 @@ public:
 
     bool isActive() const override;
 
+
+    qreal width() const { return settings()->getInfo(STROKE_WIDTH_VALUE).realValue(); }
+    bool closedPathEnabled() const { return settings()->getInfo(POLYLINE_CLOSEDPATH_ENABLED).boolValue(); }
+    bool bezierPathEnabled() const { return settings()->getInfo(POLYLINE_BEZIERPATH_ENABLED).boolValue(); }
+    bool AntiAliasingEnabled() const { return settings()->getInfo(STROKE_ANTI_ALIASING_ENABLED).boolValue(); }
+
 signals:
     void bezierPathEnabledChanged(bool useBezier);
     void closePathChanged(bool closePath);

@@ -51,18 +51,23 @@ void PolylineTool::loadSettings()
     StrokeTool::loadSettings();
 
     mPropertyUsed[STROKE_WIDTH_VALUE] = { Layer::BITMAP, Layer::VECTOR };
-    mPropertyUsed[PolylineSettings::CLOSEDPATH_ENABLED] = { Layer::BITMAP, Layer::VECTOR };
-    mPropertyUsed[PolylineSettings::BEZIERPATH_ENABLED] = { Layer::BITMAP };
+    mPropertyUsed[POLYLINE_CLOSEDPATH_ENABLED] = { Layer::BITMAP, Layer::VECTOR };
+    mPropertyUsed[POLYLINE_BEZIERPATH_ENABLED] = { Layer::BITMAP };
     mPropertyUsed[STROKE_ANTI_ALIASING_ENABLED] = { Layer::BITMAP };
 
     QSettings settings(PENCIL2D, PENCIL2D);
 
     QHash<int, PropertyInfo> info;
-
     info[STROKE_WIDTH_VALUE] = { WIDTH_MIN, WIDTH_MAX, 8.0 };
-    info[PolylineSettings::CLOSEDPATH_ENABLED] = false;
-    info[PolylineSettings::BEZIERPATH_ENABLED] = false;
+    info[POLYLINE_CLOSEDPATH_ENABLED] = false;
+    info[POLYLINE_BEZIERPATH_ENABLED] = false;
     info[STROKE_ANTI_ALIASING_ENABLED] = true;
+
+    QHash<int, QString> stringKeys{
+        {POLYLINE_CLOSEDPATH_ENABLED, "ClosedPolylinePath"},
+        {POLYLINE_BEZIERPATH_ENABLED, "BezierPolylinePath"},
+	};
+    // TODO: add string keys
 
     mSettings->updateDefaults(info);
     mSettings->load(typeName(), settings);
@@ -70,7 +75,7 @@ void PolylineTool::loadSettings()
     if (mSettings->requireMigration(settings, ToolSettings::VERSION_1)) {
         mSettings->setBaseValue(STROKE_WIDTH_VALUE, settings.value("polylineWidth", 8.0).toReal());
         mSettings->setBaseValue(STROKE_ANTI_ALIASING_ENABLED, settings.value("brushAA", true).toBool());
-        mSettings->setBaseValue(PolylineSettings::CLOSEDPATH_ENABLED, settings.value("closedPolylinePath", false).toBool());
+        mSettings->setBaseValue(POLYLINE_CLOSEDPATH_ENABLED, settings.value("closedPolylinePath", false).toBool());
 
         settings.remove("polylineWidth");
         settings.remove("brushAA");
@@ -262,7 +267,7 @@ void PolylineTool::drawPolyline(QList<QPointF> points, QPointF endPoint)
     if (points.size() > 0)
     {
         QPen pen(mEditor->color()->frontColor(),
-                 mSettings->width(),
+                 width(),
                  Qt::SolidLine,
                  Qt::RoundCap,
                  Qt::RoundJoin);
@@ -270,7 +275,7 @@ void PolylineTool::drawPolyline(QList<QPointF> points, QPointF endPoint)
 
         // Bitmap by default
         QPainterPath tempPath;
-        if (mSettings->bezierPathEnabled())
+        if (bezierPathEnabled())
         {
             tempPath = BezierCurve(points).getSimplePath();
         }
@@ -281,7 +286,7 @@ void PolylineTool::drawPolyline(QList<QPointF> points, QPointF endPoint)
         tempPath.lineTo(endPoint);
 
         // Ctrl key inverts closed behavior while held (XOR)
-        if ((mSettings->closedPathEnabled() == !mClosedPathOverrideEnabled) && points.size() > 1)
+        if ((closedPathEnabled() == !mClosedPathOverrideEnabled) && points.size() > 1)
         {
             tempPath.closeSubpath();
         }
@@ -298,12 +303,12 @@ void PolylineTool::drawPolyline(QList<QPointF> points, QPointF endPoint)
                 }
                 else
                 {
-                    pen.setWidth(mSettings->width());
+                    pen.setWidth(width());
                 }
             }
         }
 
-        mScribbleArea->drawPolyline(tempPath, pen, mSettings->AntiAliasingEnabled());
+        mScribbleArea->drawPolyline(tempPath, pen, AntiAliasingEnabled());
     }
 }
 
@@ -319,14 +324,14 @@ void PolylineTool::endPolyline(QList<QPointF> points)
 
     if (layer->type() == Layer::VECTOR)
     {
-        BezierCurve curve = BezierCurve(points, mSettings->bezierPathEnabled());
+        BezierCurve curve = BezierCurve(points, bezierPathEnabled());
         if (mScribbleArea->makeInvisible() == true)
         {
             curve.setWidth(0);
         }
         else
         {
-            curve.setWidth(mSettings->width());
+            curve.setWidth(width());
         }
         curve.setColorNumber(mEditor->color()->frontColorNumber());
         curve.setVariableWidth(false);
@@ -349,12 +354,12 @@ void PolylineTool::endPolyline(QList<QPointF> points)
 
 void PolylineTool::setUseBezier(bool useBezier)
 {
-    mSettings->setBaseValue(PolylineSettings::BEZIERPATH_ENABLED, useBezier);
+    mSettings->setBaseValue(POLYLINE_BEZIERPATH_ENABLED, useBezier);
     emit bezierPathEnabledChanged(useBezier);
 }
 
 void PolylineTool::setClosePath(bool closePath)
 {
-    mSettings->setBaseValue(PolylineSettings::CLOSEDPATH_ENABLED, closePath);
+    mSettings->setBaseValue(POLYLINE_CLOSEDPATH_ENABLED, closePath);
     emit closePathChanged(closePath);
 }
