@@ -40,12 +40,6 @@ ToolType PolylineTool::type() const
     return POLYLINE;
 }
 
-void PolylineTool::createSettings(ToolSettings *)
-{
-    mSettings = new PolylineSettings();
-    StrokeTool::createSettings(mSettings);
-}
-
 void PolylineTool::loadSettings()
 {
     StrokeTool::loadSettings();
@@ -69,13 +63,14 @@ void PolylineTool::loadSettings()
 	};
     // TODO: add string keys
 
-    mSettings->updateDefaults(info);
-    mSettings->load(typeName(), settings);
+	auto toolProperties = BaseTool::settings();
+    toolProperties->updateDefaults(info);
+    toolProperties->load(typeName(), settings);
 
-    if (mSettings->requireMigration(settings, ToolSettings::VERSION_1)) {
-        mSettings->setBaseValue(STROKE_WIDTH_VALUE, settings.value("polylineWidth", 8.0).toReal());
-        mSettings->setBaseValue(STROKE_ANTI_ALIASING_ENABLED, settings.value("brushAA", true).toBool());
-        mSettings->setBaseValue(POLYLINE_CLOSEDPATH_ENABLED, settings.value("closedPolylinePath", false).toBool());
+    if (toolProperties->requireMigration(settings, ToolSettings::VERSION_1)) {
+        toolProperties->setBaseValue(STROKE_WIDTH_VALUE, settings.value("polylineWidth", 8.0).toReal());
+        toolProperties->setBaseValue(STROKE_ANTI_ALIASING_ENABLED, settings.value("brushAA", true).toBool());
+        toolProperties->setBaseValue(POLYLINE_CLOSEDPATH_ENABLED, settings.value("closedPolylinePath", false).toBool());
 
         settings.remove("polylineWidth");
         settings.remove("brushAA");
@@ -354,12 +349,12 @@ void PolylineTool::endPolyline(QList<QPointF> points)
 
 void PolylineTool::setUseBezier(bool useBezier)
 {
-    mSettings->setBaseValue(POLYLINE_BEZIERPATH_ENABLED, useBezier);
+    settings()->setBaseValue(POLYLINE_BEZIERPATH_ENABLED, useBezier);
     emit bezierPathEnabledChanged(useBezier);
 }
 
 void PolylineTool::setClosePath(bool closePath)
 {
-    mSettings->setBaseValue(POLYLINE_CLOSEDPATH_ENABLED, closePath);
+    settings()->setBaseValue(POLYLINE_CLOSEDPATH_ENABLED, closePath);
     emit closePathChanged(closePath);
 }

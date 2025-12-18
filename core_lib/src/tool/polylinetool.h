@@ -31,7 +31,6 @@ public:
     ToolType type() const override;
     ToolCategory category() const override { return STROKETOOL; }
 
-    void createSettings(ToolSettings *) override;
     void loadSettings() override;
     QCursor cursor() override;
 
@@ -64,7 +63,6 @@ signals:
 
 
 private:
-    PolylineSettings* mSettings = nullptr;
     QList<QPointF> mPoints;
     bool mClosedPathOverrideEnabled = false;
 

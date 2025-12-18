@@ -444,15 +444,6 @@ private:
     QString mVersionKey = "ToolSettings_Version";
 };
 
-/// This struct is an example of how we can
-/// share settings among tools rather than duplicating logic, eg. polyline uses settings from StrokeSettings.
-/// The same could be done for PencilTool, BrushTool, Eraser etc...
-struct PolylineSettings: public ToolSettings
-{
-    PolylineSettings() {
-    }
-};
-
 struct BucketSettings: public ToolSettings
 {
     enum Type {
@@ -513,13 +504,6 @@ struct BucketSettings: public ToolSettings
     int fillMode() const { return mProps[FILLMODE_VALUE].intValue(); }
     bool colorToleranceEnabled() const { return mProps[COLORTOLERANCE_ENABLED].boolValue(); }
     bool fillExpandEnabled() const { return mProps[FILLEXPAND_ENABLED].boolValue(); }
-};
-
-struct CameraSettings: public ToolSettings
-{
-    CameraSettings() {
-        mTypeRanges = { { CAMERA_START, CAMERA_END } };
-    }
 };
 
 // Used by both select and move tool
