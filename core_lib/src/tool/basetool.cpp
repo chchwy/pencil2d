@@ -52,12 +52,6 @@ BaseTool::BaseTool(QObject* parent) : QObject(parent)
 }
 
 BaseTool::~BaseTool() {
-    if (mSettings) {
-        // Technically this is probably not neccesary since a tool exists for the entire
-        // lifetime of the program.
-        delete(mSettings);
-        mSettings = nullptr;
-    }
 }
 
 void BaseTool::initialize(Editor* editor)
@@ -67,19 +61,11 @@ void BaseTool::initialize(Editor* editor)
     mScribbleArea = editor->getScribbleArea();
     Q_ASSERT(mScribbleArea);
 
-    mSettings = new ToolSettings;
-    createSettings(nullptr);
-
     loadSettings();
 }
 
 void BaseTool::createSettings(ToolSettings* settings)
 {
-    //if (settings == nullptr) {
-    //mSettings = new ToolSettings;
-    //} else {
-    //  mSettings = settings;
-    //}
 }
 
 void BaseTool::saveSettings()

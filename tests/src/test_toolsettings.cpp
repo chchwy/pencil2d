@@ -146,6 +146,6 @@ TEST_CASE("ToolSettings behavior", "[ToolSettings]") {
 
     SECTION("ToolSetting can only use settings from valid range") {
         toolSettings.setDefaults(defaultProps);
-        REQUIRE(toolSettings.isValidType(StrokeSettings::FEATHER_ENABLED) == false);
+        REQUIRE(toolSettings.isValidType(STROKE_FEATHER_ENABLED) == false);
     }
 }

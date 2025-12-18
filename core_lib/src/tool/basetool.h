@@ -87,7 +87,7 @@ public:
      */
     virtual bool isActive() const;
 
-    ToolSettings* settings() const { Q_ASSERT(mSettings); return mSettings; }
+    ToolSettings* settings() const { return const_cast<ToolSettings*>(&mSettings); }
 
     virtual void paint(QPainter& painter, const QRect& blitRect) { Q_UNUSED(painter) Q_UNUSED(blitRect) }
 
@@ -115,7 +115,7 @@ protected:
     QList<QMetaObject::Connection> mActiveConnections;
 
 private:
-    ToolSettings* mSettings = nullptr;
+    ToolSettings mSettings;
 };
 
 #endif // BASETOOL_H

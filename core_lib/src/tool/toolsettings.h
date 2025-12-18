@@ -18,6 +18,8 @@ GNU General Public License for more details.
 #ifndef TOOLSETTINGS_H
 #define TOOLSETTINGS_H
 
+#include <array>
+#include <QString>
 #include <QHash>
 #include <QSettings>
 #include <QDebug>
@@ -36,8 +38,8 @@ struct PropertyInfo
     };
 
     PropertyInfo() {
-        mValueType = INVALID;
-        mBaseValue.intValue = -1;
+		mValueType = INVALID;
+		mBaseValue.intValue = 0;
     }
     PropertyInfo(int min, int max, int defaultValue)
         : mValueType(INTEGER) {
@@ -176,7 +178,6 @@ struct PropertyInfo
     }
 
     ValueType type() const { return mValueType; }
-	QString stringID() const { return mStringID; }
 
 private:
     // This union is only meant ot store simple values.
@@ -187,57 +188,57 @@ private:
         bool boolValue;
     };
 
-    ValueType mValueType;
+    ValueType mValueType = INVALID;
     ValueUnion mBaseValue;
     ValueUnion mMinValue;
     ValueUnion mMaxValue;
     ValueUnion mDefaultValue;
-
-    QString mStringID;
 };
 
 
 enum ToolSettingType {
     // StrokeSettings
-    STROKE_START = 100,
+    STROKE_START = 0,
     STROKE_WIDTH_VALUE = STROKE_START,
-    STROKE_FEATHER_VALUE = 101,
-    STROKE_STABILIZATION_VALUE = 102,
-    STROKE_PRESSURE_ENABLED = 103,
-    STROKE_INVISIBILITY_ENABLED = 104,
-    STROKE_FEATHER_ENABLED = 105,
-    STROKE_ANTI_ALIASING_ENABLED = 106,
-    STROKE_FILLCONTOUR_ENABLED = 107,
-    STROKE_END = 199,
+    STROKE_FEATHER_VALUE,
+    STROKE_STABILIZATION_VALUE,
+    STROKE_PRESSURE_ENABLED,
+    STROKE_INVISIBILITY_ENABLED,
+    STROKE_FEATHER_ENABLED,
+    STROKE_ANTI_ALIASING_ENABLED,
+    STROKE_FILLCONTOUR_ENABLED,
+    STROKE_END,
 
     // PolylineSettings
-    POLYLINE_START = 200,
+    POLYLINE_START = STROKE_END + 1,
     POLYLINE_CLOSEDPATH_ENABLED = POLYLINE_START,
-    POLYLINE_BEZIERPATH_ENABLED = 201,
-    POLYLINE_END = 299,
+    POLYLINE_BEZIERPATH_ENABLED,
+    POLYLINE_END,
 
     // BucketSettings
-    BUCKET_START = 300,
+    BUCKET_START = POLYLINE_END + 1,
     BUCKET_FILLTHICKNESS_VALUE = BUCKET_START,
-    BUCKET_COLORTOLERANCE_VALUE = 301,
-    BUCKET_FILLEXPAND_VALUE = 302,
-    BUCKET_FILLLAYERREFERENCEMODE_VALUE = 303,
-    BUCKET_FILLMODE_VALUE = 304,
-    BUCKET_COLORTOLERANCE_ENABLED = 305,
-    BUCKET_FILLEXPAND_ENABLED = 306,
-    BUCKET_END = 399,
+    BUCKET_COLORTOLERANCE_VALUE,
+    BUCKET_FILLEXPAND_VALUE,
+    BUCKET_FILLLAYERREFERENCEMODE_VALUE,
+    BUCKET_FILLMODE_VALUE,
+    BUCKET_COLORTOLERANCE_ENABLED,
+    BUCKET_FILLEXPAND_ENABLED,
+    BUCKET_END,
 
     // CameraSettings
-    CAMERA_START = 400,
+    CAMERA_START = BUCKET_END + 1,
     CAMERA_SHOWPATH_ENABLED = CAMERA_START,
-    CAMERA_PATH_DOTCOLOR_TYPE = 401,
-    CAMERA_END = 499,
+    CAMERA_PATH_DOTCOLOR_TYPE,
+    CAMERA_END,
 
     // TransformSettings
-    TRANSFORM_START = 500,
+    TRANSFORM_START = CAMERA_END + 1,
     TRANSFORM_SHOWSELECTIONINFO_ENABLED = TRANSFORM_START,
-    TRANSFORM_ANTI_ALIASING_ENABLED = 501,
-    TRANSFORM_END = 599,
+    TRANSFORM_ANTI_ALIASING_ENABLED,
+    TRANSFORM_END,
+
+    TOOLSETTING_COUNT,
 };
 
 
@@ -264,6 +265,10 @@ public:
     /* Update the default properties with additional properties */
     void updateDefaults(const QHash<int, PropertyInfo>& defaultProps) {
         mProps.insert(defaultProps);
+    }
+
+    void setStringKeys(const QHash<int, QString> stringKeys) {
+        mPropStringKeys = stringKeys;
     }
 
     /*  Loads settings for the given tool
@@ -392,34 +397,24 @@ public:
     }
 
 protected:
-
     virtual QString identifier(int i) const {
-
-		return mPropKeyStrings.at(static_cast<ToolSettingType>(i));
-        /*
-        switch (type)
-        {
-        case SHOWPATH_ENABLED:
-            propertyID = "ShowPathEnabled";
-            break;
-        case PATH_DOTCOLOR_TYPE:
-            propertyID = "PathDotColorType";
-            break;
-        case END:
-            break;
-        }*/
+        auto it = mPropStringKeys.find(i);
+		if (it == mPropStringKeys.end()) {
+            Q_ASSERT_X(false, __func__, "No identifier found for the given property type.");
+            return "";
+        }
+		return it.value();
     }
 
     QString mIdentifier = "unidentified";
     QHash<int, PropertyInfo> mProps;
-    std::map<ToolSettingType, QString> mPropKeyStrings;
+    QHash<int, QString> mPropStringKeys;
 
     // The list of ranges that are valid for the given tool. ToolSettings can inherit its parents cases as well
     // eg. PolyLineTool uses both StrokeSettings range as well as it's own
     QVector<QPair<int, int>> mTypeRanges;
 
 private:
-
     void loadProperty(const QString& settingName, PropertyInfo& info, const QSettings& settings) {
         switch (info.type()) {
             case PropertyInfo::INTEGER: {
@@ -449,78 +444,10 @@ private:
     QString mVersionKey = "ToolSettings_Version";
 };
 
-struct StrokeSettings: public ToolSettings
-{
-
-    enum Type {
-        START               = 100,
-        WIDTH_VALUE         = START,
-
-        FEATHER_VALUE       = 101,
-        STABILIZATION_VALUE = 102,
-        PRESSURE_ENABLED         = 103,
-        INVISIBILITY_ENABLED     = 104,
-        FEATHER_ENABLED          = 105,
-        ANTI_ALIASING_ENABLED    = 106,
-        FILLCONTOUR_ENABLED      = 107,
-
-        END                 = 199,
-    };
-
-    StrokeSettings() {
-        mTypeRanges = { { START, END } };
-    }
-
-    QString identifier(int typeRaw) const override {
-        auto type = static_cast<StrokeSettings::Type>(typeRaw);
-        QString propertyID = ToolSettings::identifier(typeRaw);
-        switch (type)
-        {
-        case WIDTH_VALUE:
-            propertyID = "Width";
-            break;
-        case FEATHER_VALUE:
-            propertyID = "Feather";
-            break;
-        case STABILIZATION_VALUE:
-            propertyID = "LineStabilization";
-            break;
-        case PRESSURE_ENABLED:
-            propertyID = "Pressure";
-            break;
-        case INVISIBILITY_ENABLED:
-            propertyID = "Invisibility";
-            break;
-        case FEATHER_ENABLED:
-            propertyID = "FeatherEnabled";
-            break;
-        case ANTI_ALIASING_ENABLED:
-            propertyID = "AntiAliasingEnabled";
-            break;
-        case FILLCONTOUR_ENABLED:
-            propertyID = "FillContourEnabled";
-            break;
-        case END:
-            break;
-        }
-
-        return propertyID;
-    }
-
-    qreal width() const { return mProps[WIDTH_VALUE].realValue(); }
-    qreal feather() const { return mProps[FEATHER_VALUE].realValue(); }
-    int stabilizerLevel() const { return mProps[STABILIZATION_VALUE].intValue(); }
-    bool pressureEnabled() const { return mProps[PRESSURE_ENABLED].boolValue(); }
-    bool invisibilityEnabled() const { return mProps[INVISIBILITY_ENABLED].boolValue(); }
-    bool featherEnabled() const { return mProps[FEATHER_ENABLED].boolValue(); }
-    bool AntiAliasingEnabled() const { return mProps[ANTI_ALIASING_ENABLED].boolValue(); }
-    bool fillContourEnabled() const { return mProps[FILLCONTOUR_ENABLED].boolValue(); }
-};
-
 /// This struct is an example of how we can
 /// share settings among tools rather than duplicating logic, eg. polyline uses settings from StrokeSettings.
 /// The same could be done for PencilTool, BrushTool, Eraser etc...
-struct PolylineSettings: public StrokeSettings
+struct PolylineSettings: public ToolSettings
 {
     enum Type {
         START               = 200,
@@ -532,7 +459,7 @@ struct PolylineSettings: public StrokeSettings
     };
 
     PolylineSettings() {
-        mTypeRanges.append(StrokeSettings::mTypeRanges);
+        //mTypeRanges.append(StrokeSettings::mTypeRanges);
         mTypeRanges = { { START, END } };
     }
 
@@ -548,16 +475,17 @@ struct PolylineSettings: public StrokeSettings
             propertyID = "BezierPathEnabled";
             break;
         default:
-            propertyID = StrokeSettings::identifier(typeRaw);
+            //propertyID = StrokeSettings::identifier(typeRaw);
+            break;
         }
 
         return propertyID;
     }
 
-    qreal width() const { return mProps[StrokeSettings::WIDTH_VALUE].realValue(); }
+    qreal width() const { return mProps[STROKE_WIDTH_VALUE].realValue(); }
     bool closedPathEnabled() const { return mProps[CLOSEDPATH_ENABLED].boolValue(); }
     bool bezierPathEnabled() const { return mProps[BEZIERPATH_ENABLED].boolValue(); }
-    bool AntiAliasingEnabled() const { return mProps[StrokeSettings::ANTI_ALIASING_ENABLED].boolValue(); }
+    bool AntiAliasingEnabled() const { return mProps[STROKE_ANTI_ALIASING_ENABLED].boolValue(); }
 };
 
 struct BucketSettings: public ToolSettings

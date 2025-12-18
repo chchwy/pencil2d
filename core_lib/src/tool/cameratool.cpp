@@ -45,12 +45,6 @@ CameraTool::~CameraTool()
     saveSettings();
 }
 
-void CameraTool::createSettings(ToolSettings*)
-{
-    //BaseTool::createSettings(nullptr);
-    //settings()->
-}
-
 void CameraTool::loadSettings()
 {
     connect(mEditor->layers(), &LayerManager::currentLayerChanged, this, &CameraTool::updateProperties);

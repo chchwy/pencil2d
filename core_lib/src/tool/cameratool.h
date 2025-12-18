@@ -63,7 +63,6 @@ public:
 
     void paint(QPainter& painter, const QRect&) override;
 
-    void createSettings(ToolSettings*) override;
     void loadSettings() override;
 
     void pointerPressEvent(PointerEvent* event) override;

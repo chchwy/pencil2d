@@ -20,7 +20,6 @@ GNU General Public License for more details.
 
 TransformTool::TransformTool(QObject* parent) : BaseTool(parent)
 {
-
 }
 
 TransformTool::~TransformTool()
@@ -43,7 +42,7 @@ void TransformTool::createSettings(ToolSettings* settings)
 
 void TransformTool::setShowSelectionInfo(bool enabled)
 {
-    mSettings->setBaseValue(TransformSettings::SHOWSELECTIONINFO_ENABLED, enabled);
+    mSettings->setBaseValue(TRANSFORM_SHOWSELECTIONINFO_ENABLED, enabled);
     emit showSelectionInfoChanged(enabled);
 
     mEditor->updateFrame();
@@ -51,6 +50,6 @@ void TransformTool::setShowSelectionInfo(bool enabled)
 
 void TransformTool::setAntiAliasingEnabled(bool enabled)
 {
-    mSettings->setBaseValue(TransformSettings::ANTI_ALIASING_ENABLED, enabled);
+    mSettings->setBaseValue(TRANSFORM_ANTI_ALIASING_ENABLED, enabled);
     emit antiAliasingChanged(enabled);
 }

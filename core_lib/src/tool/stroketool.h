@@ -72,6 +72,16 @@ public:
     virtual void setFillContourEnabled(bool enabled);
     virtual void setStrokeInvisibleEnabled(bool enabled);
 
+
+    qreal width() const { return settings()->getInfo(STROKE_WIDTH_VALUE).realValue(); }
+    qreal feather() const { return settings()->getInfo(STROKE_FEATHER_VALUE).realValue(); }
+    int stabilizerLevel() const { return settings()->getInfo(STROKE_STABILIZATION_VALUE).intValue(); }
+    bool pressureEnabled() const { return settings()->getInfo(STROKE_PRESSURE_ENABLED).boolValue(); }
+    bool invisibilityEnabled() const { return settings()->getInfo(STROKE_INVISIBILITY_ENABLED).boolValue(); }
+    bool featherEnabled() const { return settings()->getInfo(STROKE_FEATHER_ENABLED).boolValue(); }
+    bool AntiAliasingEnabled() const { return settings()->getInfo(STROKE_ANTI_ALIASING_ENABLED).boolValue(); }
+    bool fillContourEnabled() const { return settings()->getInfo(STROKE_FILLCONTOUR_ENABLED).boolValue(); }
+
 signals:
     void widthChanged(qreal value);
     void featherChanged(qreal value);
@@ -94,7 +104,7 @@ protected:
     QPointF getLastPixel() const;
     QPointF getLastPoint() const;
 
-    QRectF cursorRect(StrokeSettings::Type settingType, const QPointF& point);
+    QRectF cursorRect(ToolSettingType settingType, const QPointF& point);
 
     static bool mQuickSizingEnabled;
 
@@ -122,8 +132,6 @@ protected:
     StrokeInterpolator mInterpolator;
 
     const UndoSaveState* mUndoSaveState = nullptr;
-
-    StrokeSettings* mSettings = nullptr;
 
     static const qreal FEATHER_MIN;
     static const qreal FEATHER_MAX;

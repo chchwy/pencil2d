@@ -50,26 +50,26 @@ void PolylineTool::loadSettings()
 {
     StrokeTool::loadSettings();
 
-    mPropertyUsed[StrokeSettings::WIDTH_VALUE] = { Layer::BITMAP, Layer::VECTOR };
+    mPropertyUsed[STROKE_WIDTH_VALUE] = { Layer::BITMAP, Layer::VECTOR };
     mPropertyUsed[PolylineSettings::CLOSEDPATH_ENABLED] = { Layer::BITMAP, Layer::VECTOR };
     mPropertyUsed[PolylineSettings::BEZIERPATH_ENABLED] = { Layer::BITMAP };
-    mPropertyUsed[StrokeSettings::ANTI_ALIASING_ENABLED] = { Layer::BITMAP };
+    mPropertyUsed[STROKE_ANTI_ALIASING_ENABLED] = { Layer::BITMAP };
 
     QSettings settings(PENCIL2D, PENCIL2D);
 
     QHash<int, PropertyInfo> info;
 
-    info[StrokeSettings::WIDTH_VALUE] = { WIDTH_MIN, WIDTH_MAX, 8.0 };
+    info[STROKE_WIDTH_VALUE] = { WIDTH_MIN, WIDTH_MAX, 8.0 };
     info[PolylineSettings::CLOSEDPATH_ENABLED] = false;
     info[PolylineSettings::BEZIERPATH_ENABLED] = false;
-    info[StrokeSettings::ANTI_ALIASING_ENABLED] = true;
+    info[STROKE_ANTI_ALIASING_ENABLED] = true;
 
     mSettings->updateDefaults(info);
     mSettings->load(typeName(), settings);
 
     if (mSettings->requireMigration(settings, ToolSettings::VERSION_1)) {
-        mSettings->setBaseValue(StrokeSettings::WIDTH_VALUE, settings.value("polylineWidth", 8.0).toReal());
-        mSettings->setBaseValue(StrokeSettings::ANTI_ALIASING_ENABLED, settings.value("brushAA", true).toBool());
+        mSettings->setBaseValue(STROKE_WIDTH_VALUE, settings.value("polylineWidth", 8.0).toReal());
+        mSettings->setBaseValue(STROKE_ANTI_ALIASING_ENABLED, settings.value("brushAA", true).toBool());
         mSettings->setBaseValue(PolylineSettings::CLOSEDPATH_ENABLED, settings.value("closedPolylinePath", false).toBool());
 
         settings.remove("polylineWidth");
@@ -77,7 +77,7 @@ void PolylineTool::loadSettings()
         settings.remove("closedPolylinePath");
     }
 
-    mQuickSizingProperties.insert(Qt::ShiftModifier, StrokeSettings::WIDTH_VALUE);
+    mQuickSizingProperties.insert(Qt::ShiftModifier, STROKE_WIDTH_VALUE);
 }
 
 bool PolylineTool::leavingThisTool()
