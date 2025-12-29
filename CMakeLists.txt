@@ -49,11 +49,6 @@ if(WIN32)
     add_compile_definitions(_WIN32_WINNT=0x0601)
 endif()
 
-if(APPLE)
-    find_library(APPKIT_FRAMEWORK AppKit)
-    set(PLATFORM_LIBS ${APPKIT_FRAMEWORK} "-lobjc")
-endif()
-
 # Global definitions
 add_compile_definitions(
     APP_VERSION="${APP_VERSION}"

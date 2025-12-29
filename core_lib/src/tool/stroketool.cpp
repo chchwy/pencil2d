@@ -58,11 +58,6 @@ StrokeTool::~StrokeTool()
 {
 }
 
-void StrokeTool::createSettings(ToolSettings* settings)
-{
-    BaseTool::createSettings(nullptr);
-}
-
 void StrokeTool::loadSettings()
 {
     mQuickSizingEnabled = mEditor->preference()->isOn(SETTING::QUICK_SIZING);
@@ -91,8 +86,7 @@ void StrokeTool::loadSettings()
     };
 
     auto toolSettings = BaseTool::settings();
-    toolSettings->setDefaults(info);
-	toolSettings->setStringKeys(stringKeys);
+    toolSettings->setDefaults(info, stringKeys);
     toolSettings->load(typeName(), settings);
 
     /// Given the way that we update preferences currently, this connection should not be removed

@@ -258,18 +258,17 @@ public:
 
         @param defaultProps A QHash that's constructed like so: QHash<MyToolSettingProperty::WIDTH_VALUE, PropertyInfo>
     */
-    void setDefaults(const QHash<int, PropertyInfo>& defaultProps) {
+    void setDefaults(const QHash<int, PropertyInfo>& defaultProps, const QHash<int, QString> stringKeys) {
         mProps = defaultProps;
+        mPropStringKeys = stringKeys;
     }
 
     /* Update the default properties with additional properties */
-    void updateDefaults(const QHash<int, PropertyInfo>& defaultProps) {
+    void updateDefaults(const QHash<int, PropertyInfo>& defaultProps, const QHash<int, QString> stringKeys) {
         mProps.insert(defaultProps);
+        mPropStringKeys.insert(stringKeys);
     }
 
-    void setStringKeys(const QHash<int, QString> stringKeys) {
-        mPropStringKeys = stringKeys;
-    }
 
     /*  Loads settings for the given tool
         By setting the initial BaseValue
@@ -463,47 +462,6 @@ struct BucketSettings: public ToolSettings
     BucketSettings() {
         mTypeRanges = { { START, END } };
     }
-
-    QString identifier(int typeRaw) const override {
-        auto type = static_cast<BucketSettings::Type>(typeRaw);
-        QString propertyID = ToolSettings::identifier(typeRaw);
-        switch (type)
-        {
-        case FILLTHICKNESS_VALUE:
-            propertyID = "FillThickness";
-            break;
-        case COLORTOLERANCE_VALUE:
-            propertyID = "ColorTolerance";
-            break;
-        case COLORTOLERANCE_ENABLED:
-            propertyID = "ColorToleranceEnabled";
-            break;
-        case FILLEXPAND_ENABLED:
-            propertyID = "FillExpandEnabled";
-            break;
-        case FILLEXPAND_VALUE:
-            propertyID = "FillExpand";
-            break;
-        case FILLLAYERREFERENCEMODE_VALUE:
-            propertyID = "FillReferenceMode";
-            break;
-        case FILLMODE_VALUE:
-            propertyID = "FillMode";
-            break;
-        case END:
-            break;
-        }
-
-        return  propertyID;
-    }
-
-    qreal fillThickness() const { return mProps[FILLTHICKNESS_VALUE].realValue(); }
-    int tolerance() const { return mProps[COLORTOLERANCE_VALUE].intValue(); }
-    int fillExpandAmount() const { return mProps[FILLEXPAND_VALUE].intValue(); }
-    int fillReferenceMode() const { return mProps[FILLLAYERREFERENCEMODE_VALUE].intValue(); }
-    int fillMode() const { return mProps[FILLMODE_VALUE].intValue(); }
-    bool colorToleranceEnabled() const { return mProps[COLORTOLERANCE_ENABLED].boolValue(); }
-    bool fillExpandEnabled() const { return mProps[FILLEXPAND_ENABLED].boolValue(); }
 };
 
 // Used by both select and move tool

@@ -48,7 +48,7 @@ BucketOptionsWidget::~BucketOptionsWidget()
 void BucketOptionsWidget::initUI()
 {
     mBucketTool = static_cast<BucketTool*>(mEditor->tools()->getTool(BUCKET));
-    mSettings = static_cast<const BucketSettings*>(mBucketTool->settings());
+    auto mSettings = mBucketTool->settings();
 
     auto toleranceInfo = mSettings->getInfo(BucketSettings::COLORTOLERANCE_VALUE);
     auto expandInfo = mSettings->getInfo(BucketSettings::FILLEXPAND_VALUE);
@@ -86,7 +86,7 @@ void BucketOptionsWidget::updateUI()
     updatePropertyVisibility();
 
     if (mBucketTool->isPropertyEnabled(BucketSettings::FILLTHICKNESS_VALUE)) {
-        mBucketTool->setStrokeThickness(mSettings->fillThickness());
+        emit mBucketTool->fillThicknessChanged(mSettings->fillThickness());
     }
 
     if (mBucketTool->isPropertyEnabled(BucketSettings::FILLEXPAND_ENABLED)) {

@@ -26,16 +26,12 @@ public:
     TransformTool(QObject* parent = nullptr);
     ~TransformTool();
 
-    void createSettings(ToolSettings* settings) override;
     void setShowSelectionInfo(bool enabled);
     void setAntiAliasingEnabled(bool enabled);
 
 signals:
     void showSelectionInfoChanged(bool enabled);
     void antiAliasingChanged(bool enabled);
-
-protected:
-    TransformSettings* mSettings = nullptr;
 };
 
 #endif // TRANSFORMTOOL_H

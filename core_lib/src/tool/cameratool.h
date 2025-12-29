@@ -127,8 +127,6 @@ private:
     QColor mHandleColor;
     QColor mHandleDisabledColor;
     QColor mHandleTextColor;
-
-    //ToolSettings* mSettings = nullptr;
 };
 
 #endif // CAMERATOOL_H

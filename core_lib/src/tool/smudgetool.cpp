@@ -46,16 +46,18 @@ void SmudgeTool::loadSettings()
 {
     StrokeTool::loadSettings();
 
-    QHash<int, PropertyInfo> info;
-    QSettings settings(PENCIL2D, PENCIL2D);
     mPropertyUsed[STROKE_WIDTH_VALUE] = { Layer::BITMAP };
     mPropertyUsed[STROKE_FEATHER_VALUE] = { Layer::BITMAP };
-
+    
+    QHash<int, PropertyInfo> info;
     info[STROKE_WIDTH_VALUE] = { WIDTH_MIN, WIDTH_MAX, 24.0 };
     info[STROKE_FEATHER_VALUE] = { FEATHER_MIN, FEATHER_MAX, 48.0 };
 
+    QHash<int, QString> stringKeys;
     auto mSettings = BaseTool::settings();
-    mSettings->updateDefaults(info);
+    mSettings->updateDefaults(info, stringKeys);
+    
+    QSettings settings(PENCIL2D, PENCIL2D);
     mSettings->load(typeName(), settings);
 
     if (mSettings->requireMigration(settings, ToolSettings::VERSION_1)) {

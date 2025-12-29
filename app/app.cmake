@@ -7,6 +7,7 @@ set(APP_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/addtransparencytopaperdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/app-pch.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/appearance.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/app/src/basewidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/buttonappearancewatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/importlayersdialog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/importpositiondialog.h
@@ -21,6 +22,7 @@ set(APP_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/filespage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/generalpage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/shortcutspage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/app/src/strokeoptionswidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/timelinepage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/toolboxwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/toolspage.h
@@ -58,6 +60,7 @@ set(APP_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/statusbar.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/elidedlabel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/cameraoptionswidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/app/src/transformoptionswidget.h
 )
 
 set(APP_SOURCES
@@ -114,6 +117,9 @@ set(APP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/statusbar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/elidedlabel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/app/src/cameraoptionswidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/app/src/basewidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/app/src/strokeoptionswidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/app/src/transformoptionswidget.cpp
 )
 
 set(APP_FORMS
@@ -147,6 +153,8 @@ set(APP_FORMS
     ${CMAKE_CURRENT_SOURCE_DIR}/app/ui/toolspage.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/app/ui/toolboxwidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/app/ui/presetdialog.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/app/src/transformoptionswidget.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/app/ui/strokeoptionswidget.ui
 )
 
 set(APP_RESOURCES
@@ -266,7 +274,7 @@ target_link_libraries(pencil2d PRIVATE
 
 # Platform-specific libraries
 if(APPLE)
-    target_link_libraries(pencil2d PRIVATE ${APPKIT_FRAMEWORK} "-lobjc")
+    target_link_libraries(pencil2d PRIVATE ${APPKIT_FRAMEWORK})
 endif()
 
 # Set precompiled header

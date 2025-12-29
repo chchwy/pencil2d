@@ -56,7 +56,6 @@ private:
     void updatePropertyVisibility();
 
     BucketTool* mBucketTool = nullptr;
-    const BucketSettings* mSettings = nullptr;
     Ui::BucketOptionsWidget *ui;
     Editor* mEditor = nullptr;
 };

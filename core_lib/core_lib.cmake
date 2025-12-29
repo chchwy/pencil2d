@@ -95,6 +95,8 @@ set(CORE_LIB_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/activeframepool.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/external/platformhandler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/selectionpainter.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/tool/toolsettings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/tool/transformtool.h
 )
 
 set(CORE_LIB_SOURCES
@@ -176,6 +178,8 @@ set(CORE_LIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/qminiz.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/activeframepool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/selectionpainter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/tool/transformtool.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/tool/radialoffsettool.cpp
 )
 
 # Platform-specific sources

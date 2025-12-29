@@ -69,8 +69,7 @@ void CameraTool::loadSettings()
     };
 
     auto toolSettings = BaseTool::settings();
-    toolSettings->setDefaults(info);
-    toolSettings->setStringKeys(stringKeys);
+    toolSettings->setDefaults(info, stringKeys);
     toolSettings->load(typeName(), settings);
 
     connect(mEditor->preference(), &PreferenceManager::optionChanged, this, &CameraTool::updateSettings);

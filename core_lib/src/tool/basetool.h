@@ -38,10 +38,6 @@ class QMouseEvent;
 class QTabletEvent;
 class PointerEvent;
 
-const int ON = 1;
-const int OFF = 0;
-const int DISABLED = -1;
-
 
 class BaseTool : public QObject
 {
@@ -105,8 +101,6 @@ signals:
     bool isActiveChanged(ToolType, bool);
 
 protected:
-    virtual void createSettings(ToolSettings* settings);
-
     Editor* editor() { return mEditor; }
     QHash<int, QSet<Layer::LAYER_TYPE>> mPropertyUsed;
 

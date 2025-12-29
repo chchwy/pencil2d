@@ -54,8 +54,6 @@ void BrushTool::loadSettings()
     mPropertyUsed[STROKE_INVISIBILITY_ENABLED] = { Layer::VECTOR };
     mPropertyUsed[STROKE_STABILIZATION_VALUE] = { Layer::BITMAP, Layer::VECTOR };
 
-    QSettings settings(PENCIL2D, PENCIL2D);
-
     QHash<int, PropertyInfo> info;
     info[STROKE_WIDTH_VALUE] = { WIDTH_MIN, WIDTH_MAX, 24.0 };
     info[STROKE_FEATHER_VALUE] = { FEATHER_MIN, FEATHER_MAX, 48.0 };
@@ -64,8 +62,11 @@ void BrushTool::loadSettings()
     info[STROKE_INVISIBILITY_ENABLED] = false;
     info[STROKE_STABILIZATION_VALUE] = { StabilizationLevel::NONE, StabilizationLevel::STRONG, StabilizationLevel::STRONG };
 
+    QHash<int, QString> stringKeys;
     auto mSettings = BaseTool::settings();
-    mSettings->updateDefaults(info);
+    mSettings->updateDefaults(info,stringKeys);
+    
+    QSettings settings(PENCIL2D, PENCIL2D);
     mSettings->load(typeName(), settings);
 
     if (mSettings->requireMigration(settings, ToolSettings::VERSION_1)) {

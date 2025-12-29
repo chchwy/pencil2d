@@ -56,7 +56,7 @@ target_link_libraries(pencil2d_tests PRIVATE
 
 # Platform-specific libraries
 if(APPLE)
-    target_link_libraries(pencil2d_tests PRIVATE ${APPKIT_FRAMEWORK} "-lobjc")
+    target_link_libraries(pencil2d_tests PRIVATE ${APPKIT_FRAMEWORK})
 endif()
 
 # Enable testing

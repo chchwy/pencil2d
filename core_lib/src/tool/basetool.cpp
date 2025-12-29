@@ -64,10 +64,6 @@ void BaseTool::initialize(Editor* editor)
     loadSettings();
 }
 
-void BaseTool::createSettings(ToolSettings* settings)
-{
-}
-
 void BaseTool::saveSettings()
 {
     if (settings()) {

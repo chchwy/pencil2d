@@ -40,22 +40,22 @@ void PenTool::loadSettings()
 {
     StrokeTool::loadSettings();
 
-    QSettings settings(PENCIL2D, PENCIL2D);
-
     mPropertyUsed[STROKE_WIDTH_VALUE] = { Layer::BITMAP, Layer::VECTOR };
     mPropertyUsed[STROKE_PRESSURE_ENABLED] = { Layer::BITMAP, Layer::VECTOR };
     mPropertyUsed[STROKE_ANTI_ALIASING_ENABLED] = { Layer::BITMAP };
     mPropertyUsed[STROKE_STABILIZATION_VALUE] = { Layer::BITMAP, Layer::VECTOR };
 
     QHash<int, PropertyInfo> info;
-
     info[STROKE_WIDTH_VALUE] = { WIDTH_MIN, WIDTH_MAX, 12.0 };
     info[STROKE_PRESSURE_ENABLED] = true;
     info[STROKE_ANTI_ALIASING_ENABLED] = true;
     info[STROKE_STABILIZATION_VALUE] = { StabilizationLevel::NONE, StabilizationLevel::STRONG, StabilizationLevel::STRONG };
 
+    QHash<int, QString> stringKeys;
     auto mSettings = BaseTool::settings();
-    mSettings->updateDefaults(info);
+    mSettings->updateDefaults(info, stringKeys);
+    
+    QSettings settings(PENCIL2D, PENCIL2D);
     mSettings->load(typeName(), settings);
 
     if (mSettings->requireMigration(settings, ToolSettings::VERSION_1)) {

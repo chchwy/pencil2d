@@ -38,12 +38,6 @@ BucketTool::BucketTool(QObject* parent) : BaseTool(parent)
 {
 }
 
-void BucketTool::createSettings(ToolSettings*)
-{
-    mSettings = new BucketSettings();
-    BaseTool::createSettings(mSettings);
-}
-
 void BucketTool::loadSettings()
 {
     mPropertyUsed[BucketSettings::FILLTHICKNESS_VALUE] = { Layer::VECTOR };
@@ -65,18 +59,28 @@ void BucketTool::loadSettings()
     info[BucketSettings::FILLEXPAND_ENABLED] = true;
     info[BucketSettings::FILLLAYERREFERENCEMODE_VALUE] = { 0, 1, 0 };
     info[BucketSettings::FILLMODE_VALUE] = { 0, 2, 0 };
+    
+    QHash<int, QString> propertyNames {
+        { BUCKET_FILLTHICKNESS_VALUE, "FillThickness" },
+        { BUCKET_COLORTOLERANCE_VALUE, "ColorTolerance" },
+        { BUCKET_COLORTOLERANCE_ENABLED, "ColorToleranceEnabled" },
+        { BUCKET_FILLEXPAND_ENABLED, "FillExpandEnabled" },
+        { BUCKET_FILLEXPAND_VALUE, "FillExpand" },
+        { BUCKET_FILLLAYERREFERENCEMODE_VALUE, "FillReferenceMode" },
+        { BUCKET_FILLMODE_VALUE, "FillMode" }
+    };
+    auto properties = BaseTool::settings();
+    properties->setDefaults(info, propertyNames);
+    properties->load(typeName(), settings);
 
-    mSettings->setDefaults(info);
-    mSettings->load(typeName(), settings);
-
-    if (mSettings->requireMigration(settings, ToolSettings::VERSION_1)) {
-        mSettings->setBaseValue(BucketSettings::FILLTHICKNESS_VALUE, settings.value("fillThickness", 4.0).toReal());
-        mSettings->setBaseValue(BucketSettings::COLORTOLERANCE_VALUE, settings.value("Tolerance", 32).toInt());
-        mSettings->setBaseValue(BucketSettings::COLORTOLERANCE_ENABLED, settings.value("BucketToleranceEnabled", false).toBool());
-        mSettings->setBaseValue(BucketSettings::FILLEXPAND_VALUE, settings.value("BucketFillExpand", 2).toInt());
-        mSettings->setBaseValue(BucketSettings::FILLEXPAND_ENABLED, settings.value("BucketFillExpandEnabled", true).toBool());
-        mSettings->setBaseValue(BucketSettings::FILLLAYERREFERENCEMODE_VALUE, settings.value("BucketFillReferenceMode", 0).toInt());
-        mSettings->setBaseValue(BucketSettings::FILLMODE_VALUE, settings.value("FillMode", 0).toInt());
+    if (properties->requireMigration(settings, ToolSettings::VERSION_1)) {
+        properties->setBaseValue(BucketSettings::FILLTHICKNESS_VALUE, settings.value("fillThickness", 4.0).toReal());
+        properties->setBaseValue(BucketSettings::COLORTOLERANCE_VALUE, settings.value("Tolerance", 32).toInt());
+        properties->setBaseValue(BucketSettings::COLORTOLERANCE_ENABLED, settings.value("BucketToleranceEnabled", false).toBool());
+        properties->setBaseValue(BucketSettings::FILLEXPAND_VALUE, settings.value("BucketFillExpand", 2).toInt());
+        properties->setBaseValue(BucketSettings::FILLEXPAND_ENABLED, settings.value("BucketFillExpandEnabled", true).toBool());
+        properties->setBaseValue(BucketSettings::FILLLAYERREFERENCEMODE_VALUE, settings.value("BucketFillReferenceMode", 0).toInt());
+        properties->setBaseValue(BucketSettings::FILLMODE_VALUE, settings.value("FillMode", 0).toInt());
 
         settings.remove("fillThickness");
         settings.remove("Tolerance");
@@ -111,11 +115,15 @@ void BucketTool::pointerPressEvent(PointerEvent* event)
     LayerCamera* layerCam = mEditor->layers()->getCameraLayerBelow(mEditor->currentLayerIndex());
 
     mUndoSaveState = mEditor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
+    const int toleranceValue = colorToleranceEnabled() ? tolerance() : 0;
+    const int expandValue = fillExpandEnabled() ? fillExpandAmount() : 0;
     mBitmapBucket = BitmapBucket(mEditor,
                                  mEditor->color()->frontColor(),
                                  layerCam ? layerCam->getViewAtFrame(mEditor->currentFrame()).inverted().mapRect(layerCam->getViewRect()) : QRect(),
                                  getCurrentPoint(),
-                                 *mSettings);
+                                 toleranceValue,
+                                 fillMode(),
+                                 fillReferenceMode());
 
     // Because we can change layer to on the fly, but we do not act reactively
     // on it, it's necessary to invalidate layer cache on press event.
@@ -203,43 +211,43 @@ void BucketTool::applyChanges()
 
 void BucketTool::setStrokeThickness(qreal width)
 {
-    mSettings->setBaseValue(BucketSettings::FILLTHICKNESS_VALUE, width);
+    settings()->setBaseValue(BucketSettings::FILLTHICKNESS_VALUE, width);
     emit strokeThicknessChanged(width);
 }
 
 void BucketTool::setColorTolerance(int tolerance)
 {
-    mSettings->setBaseValue(BucketSettings::COLORTOLERANCE_VALUE, tolerance);
+    settings()->setBaseValue(BucketSettings::COLORTOLERANCE_VALUE, tolerance);
     emit toleranceChanged(tolerance);
 }
 
 void BucketTool::setColorToleranceEnabled(bool enabled)
 {
-    mSettings->setBaseValue(BucketSettings::COLORTOLERANCE_ENABLED, enabled);
+    settings()->setBaseValue(BucketSettings::COLORTOLERANCE_ENABLED, enabled);
     emit toleranceEnabledChanged(enabled);
 }
 
 void BucketTool::setFillExpand(int fillExpandValue)
 {
-    mSettings->setBaseValue(BucketSettings::FILLEXPAND_VALUE, fillExpandValue);
+    settings()->setBaseValue(BucketSettings::FILLEXPAND_VALUE, fillExpandValue);
     emit fillExpandChanged(fillExpandValue);
 }
 
 void BucketTool::setFillExpandEnabled(bool enabled)
 {
-    mSettings->setBaseValue(BucketSettings::FILLEXPAND_ENABLED, enabled);
+    settings()->setBaseValue(BucketSettings::FILLEXPAND_ENABLED, enabled);
     emit fillExpandEnabledChanged(enabled);
 }
 
 void BucketTool::setFillReferenceMode(int referenceMode)
 {
-    mSettings->setBaseValue(BucketSettings::FILLLAYERREFERENCEMODE_VALUE, referenceMode);
+    settings()->setBaseValue(BucketSettings::FILLLAYERREFERENCEMODE_VALUE, referenceMode);
     emit fillReferenceModeChanged(referenceMode);
 }
 
 void BucketTool::setFillMode(int mode)
 {
-    mSettings->setBaseValue(BucketSettings::FILLMODE_VALUE, mode);
+    settings()->setBaseValue(BucketSettings::FILLMODE_VALUE, mode);
     emit fillModeChanged(mode);
 }
 

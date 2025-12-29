@@ -46,8 +46,7 @@ void PencilTool::loadSettings()
     mPropertyUsed[STROKE_FILLCONTOUR_ENABLED] = { Layer::VECTOR };
     mPropertyUsed[STROKE_STABILIZATION_VALUE] = { Layer::BITMAP, Layer::VECTOR };
 
-    QSettings settings(PENCIL2D, PENCIL2D);
-
+    
     QHash<int, PropertyInfo> info;
 
     info[STROKE_WIDTH_VALUE] = { WIDTH_MIN, WIDTH_MAX, 4.0 };
@@ -56,9 +55,13 @@ void PencilTool::loadSettings()
     info[STROKE_FEATHER_ENABLED] = false;
     info[STROKE_STABILIZATION_VALUE] = { StabilizationLevel::NONE, StabilizationLevel::STRONG, StabilizationLevel::STRONG };
     info[STROKE_FILLCONTOUR_ENABLED] = false;
-
+    
+    QHash<int, QString> stringKeys;
+    
     auto mSettings = BaseTool::settings();
-    mSettings->updateDefaults(info);
+    mSettings->updateDefaults(info, stringKeys);
+    
+    QSettings settings(PENCIL2D, PENCIL2D);
     mSettings->load(typeName(), settings);
 
     if (mSettings->requireMigration(settings, ToolSettings::VERSION_1)) {

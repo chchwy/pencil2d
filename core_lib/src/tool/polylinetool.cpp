@@ -61,10 +61,9 @@ void PolylineTool::loadSettings()
         {POLYLINE_CLOSEDPATH_ENABLED, "ClosedPolylinePath"},
         {POLYLINE_BEZIERPATH_ENABLED, "BezierPolylinePath"},
 	};
-    // TODO: add string keys
 
 	auto toolProperties = BaseTool::settings();
-    toolProperties->updateDefaults(info);
+    toolProperties->updateDefaults(info, stringKeys);
     toolProperties->load(typeName(), settings);
 
     if (toolProperties->requireMigration(settings, ToolSettings::VERSION_1)) {

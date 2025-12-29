@@ -35,7 +35,8 @@ class BitmapBucket
 {
 public:
     explicit BitmapBucket();
-    explicit BitmapBucket(Editor* editor, QColor color, QRect maxFillRegion, QPointF fillPoint, BucketSettings properties);
+    explicit BitmapBucket(Editor* editor, QColor color, QRect maxFillRegion, QPointF fillPoint,
+                          int tolerance, int fillMode, int fillReferenceMode);
 
     /** Will paint at the given point, given that it makes sense.. canUse is always called prior to painting
      *
@@ -76,13 +77,14 @@ private:
 
     QRect mMaxFillRegion;
 
-    int mTolerance = 0;
+    const int mTolerance;
+    const int mFillMode;
+    const int mFillReferenceMode;
+    const int mExpandValue;
 
     int mTargetFillToLayerIndex = -1;
     bool mFilledOnce = false;
     bool mUseDragToFill = false;
-
-    BucketSettings mProperties;
 };
 
 #endif // BITMAPBUCKET_H

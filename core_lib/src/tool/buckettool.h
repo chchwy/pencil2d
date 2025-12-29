@@ -36,7 +36,6 @@ public:
     ToolType type() const override { return BUCKET; }
     ToolCategory category() const override { return BASETOOL; }
 
-    void createSettings(ToolSettings*) override;
     void loadSettings() override;
 
     void pointerPressEvent(PointerEvent*) override;
@@ -59,6 +58,14 @@ public:
     QPointF getCurrentPoint() const;
     QPointF getCurrentPixel() const;
 
+    qreal fillThickness() const { return settings()->getInfo(BUCKET_FILLTHICKNESS_VALUE).realValue(); }
+    int tolerance() const { return settings()->getInfo(BUCKET_COLORTOLERANCE_VALUE).intValue(); }
+    int fillExpandAmount() const { return settings()->getInfo(BUCKET_FILLEXPAND_VALUE).intValue(); }
+    int fillReferenceMode() const { return settings()->getInfo(BUCKET_FILLLAYERREFERENCEMODE_VALUE).intValue(); }
+    int fillMode() const { return settings()->getInfo(BUCKET_FILLMODE_VALUE).intValue(); }
+    bool colorToleranceEnabled() const { return settings()->getInfo(BUCKET_COLORTOLERANCE_ENABLED).boolValue(); }
+    bool fillExpandEnabled() const { return settings()->getInfo(BUCKET_FILLEXPAND_ENABLED).boolValue(); }
+    
 signals:
     void fillModeChanged(int mode);
     void fillReferenceModeChanged(int referenceMode);
@@ -75,7 +82,6 @@ private:
 
     bool mFilledOnMove = false;
 
-    BucketSettings* mSettings = nullptr;
     StrokeInterpolator mInterpolator;
     const UndoSaveState* mUndoSaveState = nullptr;
 };
