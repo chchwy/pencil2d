@@ -46,6 +46,7 @@ SOURCES += \
     src/test_toolsettings.cpp \
     src/test_vectorimage.cpp \
     src/test_viewmanager.cpp \
+    src/test_movekeyframe_undo.cpp
     src/test_util.cpp
 
 # --- core_lib ---
