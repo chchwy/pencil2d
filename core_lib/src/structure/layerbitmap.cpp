@@ -122,27 +122,65 @@ Status LayerBitmap::presave(const QString& sDataFolder)
         }
     });
 
+    // First pass: Move all frames to temporary locations
     for (BitmapImage* b : movedOnlyBitmaps)
     {
         // Move to temporary locations first to avoid overwritting anything we shouldn't be
         // Ex: Frame A moves from 1 -> 2, Frame B moves from 2 -> 3. Make sure A does not overwrite B
         QString tmpPath = dataFolder.filePath(QString::asprintf("t_%03d.%03d.png", id(), b->pos()));
-        if (QFileInfo(b->fileName()).dir() != dataFolder) {
+        QString oldPath = b->fileName();
+
+        bool success = false;
+        if (QFileInfo(oldPath).dir() != dataFolder) {
             // Copy instead of move if the data folder itself has changed
-            QFile::copy(b->fileName(), tmpPath);
+            success = QFile::copy(oldPath, tmpPath);
         }
         else {
-            QFile::rename(b->fileName(), tmpPath);
+            success = QFile::rename(oldPath, tmpPath);
         }
+
+        if (!success) {
+            DebugDetails dd;
+            dd << "Failed to move frame file to temporary location";
+            dd << QString("Frame position: %1").arg(b->pos());
+            dd << QString("Source: %1").arg(oldPath);
+            dd << QString("Destination: %1").arg(tmpPath);
+            return Status(Status::FAIL, dd);
+        }
+
         b->setFileName(tmpPath);
     }
 
+    // Second pass: Move frames from temporary to final locations
     for (BitmapImage* b : movedOnlyBitmaps)
     {
         QString dest = filePath(b, dataFolder);
-        QFile::remove(dest);
+        QString tmpPath = b->fileName();
 
-        QFile::rename(b->fileName(), dest);
+        // Remove destination file if it exists
+        if (QFile::exists(dest))
+        {
+            if (!QFile::remove(dest))
+            {
+                DebugDetails dd;
+                dd << "Failed to remove existing file at destination";
+                dd << QString("Frame position: %1").arg(b->pos());
+                dd << QString("Destination: %1").arg(dest);
+                return Status(Status::FAIL, dd);
+            }
+        }
+
+        // Rename from temporary to final location
+        if (!QFile::rename(tmpPath, dest))
+        {
+            DebugDetails dd;
+            dd << "Failed to rename frame file to final location";
+            dd << QString("Frame position: %1").arg(b->pos());
+            dd << QString("Source: %1").arg(tmpPath);
+            dd << QString("Destination: %1").arg(dest);
+            return Status(Status::FAIL, dd);
+        }
+
         b->setFileName(dest);
     }
 
