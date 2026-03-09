@@ -65,6 +65,20 @@ setup_windows() {
   nuget install -x -OutputDirectory util/installer WixToolset.DUtil -Version 6.0.2
   nuget install -x -OutputDirectory util/installer WixToolset.BootstrapperApplicationApi -Version 6.0.2
   nuget install -x -OutputDirectory util/installer WixToolset.WixStandardBootstrapperApplicationFunctionApi -Version 6.0.2
+
+  if [ -n "${SENTRY_DSN}" ] && [ "${INPUT_ARCH}" = "win64_msvc2019_64" ]; then
+    echo "::group::Build sentry-native (crashpad backend)"
+    git clone --depth=1 --branch 0.7.17 --recurse-submodules \
+      https://github.com/getsentry/sentry-native.git third_party/sentry-native
+    cmake -S third_party/sentry-native -B third_party/sentry-native/build \
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+      -DSENTRY_BACKEND=crashpad \
+      -DSENTRY_SDK_NAME=sentry.native \
+      -DCMAKE_INSTALL_PREFIX=third_party/sentry-native/install
+    cmake --build third_party/sentry-native/build --config RelWithDebInfo --parallel 4
+    cmake --install third_party/sentry-native/build --config RelWithDebInfo
+    echo "::endgroup::"
+  fi
 }
 
 "setup_$(echo "${RUNNER_OS}" | tr '[A-Z]' '[a-z]')"

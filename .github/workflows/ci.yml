@@ -85,18 +85,22 @@ jobs:
         with:
           arch: ${{matrix.arch}}
           qt: ${{matrix.qt}}
+          sentry_dsn: ${{secrets.SENTRY_DSN}}
       - name: Set up environment
         uses: ./.github/actions/setup-environment
         with:
           arch: ${{matrix.arch}}
           vcvars: ${{matrix.vcvars}}
       - name: Configure build
+        env:
+          SENTRY_DSN: ${{secrets.SENTRY_DSN}}
         run: >
           mkdir build; ${{runner.os == 'Linux' && '${BUILD_CMD}' || ''}}
           ${{runner.os == 'Linux' && matrix.qt == 5 && 'qmake-qt5' || 'qmake'}}
           -o build PREFIX=/usr CONFIG-=debug_and_release CONFIG+=GIT
           VERSION=${{ env.VERSION_NUMBER }}
           ${{runner.os == 'macOS' && matrix.qt == 6 && 'QMAKE_APPLE_DEVICE_ARCHS="x86_64 arm64"' || ''}}
+          ${{runner.os == 'Windows' && matrix.arch == 'win64_msvc2019_64' && env.SENTRY_DSN != '' && format('SENTRY_DSN={0}', env.SENTRY_DSN) || ''}}
 
       - name: Build Pencil2D
         run: ${{runner.os != 'Windows' && '${BUILD_CMD} make -C build' || 'cd build; nmake'}}

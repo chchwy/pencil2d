@@ -20,6 +20,12 @@ GNU General Public License for more details.
 #include "pencilerror.h"
 #include "platformhandler.h"
 
+#ifdef SENTRY_ENABLED
+#include "crashhandler.h"
+#include <QCoreApplication>
+#include <QStandardPaths>
+#endif
+
 /**
  * This is the entrypoint of the program. It performs basic initialization, then
  * boots the actual application (@ref Pencil2D).
@@ -32,13 +38,31 @@ int main(int argc, char* argv[])
 
     Pencil2D app(argc, argv);
 
+#ifdef SENTRY_ENABLED
+    {
+        QString handlerPath = QCoreApplication::applicationDirPath() + "/crashpad_handler.exe";
+        QString dbPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/crashes";
+        CrashHandler::init(handlerPath, dbPath);
+    }
+#endif
+
+    int result;
     switch (app.handleCommandLineOptions().code())
     {
         case Status::OK:
-            return Pencil2D::exec();
+            result = Pencil2D::exec();
+            break;
         case Status::SAFE:
-            return EXIT_SUCCESS;
+            result = EXIT_SUCCESS;
+            break;
         default:
-            return EXIT_FAILURE;
+            result = EXIT_FAILURE;
+            break;
     }
+
+#ifdef SENTRY_ENABLED
+    CrashHandler::close();
+#endif
+
+    return result;
 }

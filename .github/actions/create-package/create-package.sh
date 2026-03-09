@@ -151,6 +151,14 @@ create_package_windows() {
   env -C ../util/installer qmake CONFIG-=debug_and_release CONFIG+=release
   env -C ../util/installer "PATH=${PATH/\/usr\/bin:/}" nmake
   env -C Pencil2D find resources/ -type f | harvest_files resources > resources.wxs
+
+  # Harvest sentry-native files if crash reporting is enabled
+  local sentry_wxs=""
+  if [ -f "Pencil2D/sentry.dll" ]; then
+    printf '%s\n' sentry.dll crashpad_handler.exe | harvest_files sentry > sentry.wxs
+    sentry_wxs="sentry.wxs"
+  fi
+
   for i in ../util/installer/translations/pencil2d_*.wxl.xlf; do
     local basename="$(basename -s .wxl.xlf "$i")"
     local locale="${basename#*_}"
@@ -167,7 +175,7 @@ create_package_windows() {
     -d "ProductCode=$(python -c "import uuid; print(str(uuid.uuid5(uuid.NAMESPACE_URL, '-Nhttps://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}#${platform}')).upper())")" \
     $versiondefines \
     -out "pencil2d-${platform}-$3.msi" \
-    ../util/installer/pencil2d.wxs windeployqt.wxs resources.wxs
+    ../util/installer/pencil2d.wxs windeployqt.wxs resources.wxs ${sentry_wxs}
   wix build -pdbtype none -arch "x${wordsize/32/86}" -dcl high -sw1133 -b ../util/installer -b Pencil2D \
     -ext WixToolset.Util.wixext -ext WixToolset.BootstrapperApplications.wixext \
     $versiondefines \

@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 ! include( ../util/common.pri ) { error( Could not find the common.pri file! ) }
+include( ../util/sentry.pri )
 
 TEMPLATE = app
 CONFIG += precompile_header lrelease embed_translations
@@ -74,6 +75,7 @@ INCLUDEPATH += \
 PRECOMPILED_HEADER = src/app-pch.h
 
 HEADERS += \
+    src/crashhandler.h \
     src/addtransparencytopaperdialog.h \
     src/app-pch.h \
     src/basewidget.h \
@@ -133,6 +135,7 @@ HEADERS += \
     src/transformoptionswidget.h
 
 SOURCES += \
+    src/crashhandler.cpp \
     src/addtransparencytopaperdialog.cpp \
     src/basewidget.cpp \
     src/buttonappearancewatcher.cpp \
