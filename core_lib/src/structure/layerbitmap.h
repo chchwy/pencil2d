@@ -26,6 +26,9 @@ class LayerBitmap : public Layer
 {
     Q_DECLARE_TR_FUNCTIONS(LayerBitmap)
 
+    // Friend declaration for unit tests
+    friend class LayerBitmapTest;
+
 public:
     explicit LayerBitmap(int id);
     ~LayerBitmap() override;

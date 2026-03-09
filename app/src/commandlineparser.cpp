@@ -20,7 +20,7 @@ GNU General Public License for more details.
 #include <QTextStream>
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-const auto qEndl = Qt::endl;
+//const auto qEndl = Qt::endl;
 #else
 const auto qEndl = endl;
 #endif

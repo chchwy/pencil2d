@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell:*)",
+      "Bash(where:*)",
+      "Bash(dir /S /B \"d:\\Github\\pencil2d\\pencil2d-wrok1\\tests.exe\")",
+      "Bash(./debug/tests.exe:*)",
+      "Bash($env:PATH += \";C:\\Qt\\6.5.3\\msvc2019_64\\bin\")",
+      "Bash(.testsdebugtests.exe \"Bug #2\")",
+      "Bash(Select-String -Pattern \"(Building|Error|tests.exe|Test|PASSED|FAILED|Bug #2)\" -Context 0,2)",
+      "Bash(cmd /c \"cd /d d:\\Github\\pencil2d\\pencil2d-wrok1 && build-win.bat\")",
+      "Bash(cmd /c \"cd /d d:\\Github\\pencil2d\\pencil2d-wrok1 && set PATH=%PATH%;C:\\Qt\\6.5.3\\msvc2019_64\\bin && tests\\debug\\tests.exe \"\"LayerBitmap::presave - Bug #3 Error Handling Tests\"\"\")",
+      "Bash(cmd /c \"cd /d d:\\Github\\pencil2d\\pencil2d-wrok1\\tests\\debug && set PATH=%PATH%;C:\\Qt\\6.5.3\\msvc2019_64\\bin && tests.exe\")"
+    ]
+  }
+}
