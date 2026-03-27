@@ -18,12 +18,25 @@ GNU General Public License for more details.
 #include <memory>
 #include <QDomDocument>
 #include <QDomElement>
+#include <QDir>
+#include <QFileInfo>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 #include "object.h"
 #include "layerbitmap.h"
 #include "layervector.h"
 #include "layersound.h"
 
+// Returns true if 'path' is located inside 'dir', resolving symlinks on both
+// sides to avoid false negatives from e.g. /var -> /private/var on macOS.
+static bool isUnderDirectory(const QString& path, const QString& dir)
+{
+    QString canonicalPath = QFileInfo(path).canonicalFilePath();
+    QString canonicalDir  = QFileInfo(dir).canonicalFilePath();
+    if (canonicalPath.isEmpty() || canonicalDir.isEmpty()) return false;
+    if (!canonicalDir.endsWith('/')) canonicalDir += '/';
+    return canonicalPath.startsWith(canonicalDir);
+}
 
 TEST_CASE("Object::addXXXLayer()")
 {
@@ -102,6 +115,55 @@ TEST_CASE("Object::addXXXLayer()")
 }
 
 
+
+TEST_CASE("Object::createWorkingDir()")
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+
+    SECTION("Working dir is created under AppLocalDataLocation, not system temp")
+    {
+        Object obj;
+        obj.createWorkingDir();
+
+        QString workingDir = obj.workingDir();
+        REQUIRE(!workingDir.isEmpty());
+        REQUIRE(QDir(workingDir).exists());
+
+        // Must be under AppLocalDataLocation, not the system temp dir
+        REQUIRE(isUnderDirectory(workingDir, appDataPath));
+        REQUIRE(!isUnderDirectory(workingDir, QDir::tempPath()));
+    }
+
+    SECTION("Working dir contains a 'data' subdirectory")
+    {
+        Object obj;
+        obj.createWorkingDir();
+
+        REQUIRE(QDir(obj.dataDir()).exists());
+        REQUIRE(isUnderDirectory(obj.dataDir(), obj.workingDir()));
+    }
+
+    SECTION("Each Object gets a unique working dir")
+    {
+        Object obj1;
+        obj1.createWorkingDir();
+
+        Object obj2;
+        obj2.createWorkingDir();
+
+        REQUIRE(obj1.workingDir() != obj2.workingDir());
+    }
+
+    SECTION("Working dir name includes project name from file path")
+    {
+        Object obj;
+        obj.setFilePath("/some/path/MyAnimation.pclx");
+        obj.createWorkingDir();
+
+        QString workingDir = obj.workingDir();
+        REQUIRE(workingDir.contains("MyAnimation"));
+    }
+}
 
 TEST_CASE("Object::getUniqueLayerID()")
 {

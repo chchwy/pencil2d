@@ -27,6 +27,7 @@ GNU General Public License for more details.
 #include <QDateTime>
 #include <QImageWriter>
 #include <QRegularExpression>
+#include <QStandardPaths>
 
 #include "layer.h"
 #include "layerbitmap.h"
@@ -170,15 +171,15 @@ void Object::createWorkingDir()
         QFileInfo fileInfo(mFilePath);
         projectName = fileInfo.completeBaseName();
     }
-    QDir dir(QDir::tempPath());
-
+    QString appDataPath = QDir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)).canonicalPath();
+    QDir dir(appDataPath);
     QString strWorkingDir;
     do
     {
-        strWorkingDir = QString("%1/Pencil2D/%2_%3_%4/").arg(QDir::tempPath(),
-                                                             projectName,
-                                                             PFF_TMP_DECOMPRESS_EXT,
-                                                             uniqueString(8));
+        strWorkingDir = QString("%1/working/%2_%3_%4/").arg(appDataPath,
+                                                            projectName,
+                                                            PFF_TMP_DECOMPRESS_EXT,
+                                                            uniqueString(8));
     }
     while(dir.exists(strWorkingDir));
 

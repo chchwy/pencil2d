@@ -18,6 +18,9 @@ GNU General Public License for more details.
 #include <QTemporaryDir>
 #include <QTemporaryFile>
 #include <QImage>
+#include <QDir>
+#include <QFileInfo>
+#include <QStandardPaths>
 #include "qminiz.h"
 #include "fileformat.h"
 #include "filemanager.h"
@@ -25,6 +28,17 @@ GNU General Public License for more details.
 #include "object.h"
 #include "bitmapimage.h"
 #include "layerbitmap.h"
+
+// Returns true if 'path' is located inside 'dir', resolving symlinks on both
+// sides to avoid false negatives from e.g. /var -> /private/var on macOS.
+static bool isUnderDirectory(const QString& path, const QString& dir)
+{
+    QString canonicalPath = QFileInfo(path).canonicalFilePath();
+    QString canonicalDir  = QFileInfo(dir).canonicalFilePath();
+    if (canonicalPath.isEmpty() || canonicalDir.isEmpty()) return false;
+    if (!canonicalDir.endsWith('/')) canonicalDir += '/';
+    return canonicalPath.startsWith(canonicalDir);
+}
 
 
 TEST_CASE("FileManager Initial Test")
@@ -234,6 +248,63 @@ QString QtResourceToFile(QString rscPath, QString filename, QTemporaryDir& tempD
     fout.write(content);
     fout.close();
     return filePathOnDisk;
+}
+
+TEST_CASE("FileManager working directory location")
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+
+    SECTION("Loading a PCLX extracts files to AppLocalDataLocation, not system temp")
+    {
+        QTemporaryDir tempDir;
+        FileManager fm;
+        Object* o = fm.load(QtResourceToFile(":/empty.pclx", "empty.pclx", tempDir));
+        REQUIRE(o != nullptr);
+
+        if (o)
+        {
+            QString workingDir = o->workingDir();
+            REQUIRE(!workingDir.isEmpty());
+            REQUIRE(isUnderDirectory(workingDir, appDataPath));
+            REQUIRE(!isUnderDirectory(workingDir, QDir::tempPath()));
+            delete o;
+        }
+    }
+
+    SECTION("Working directory exists on disk after loading a PCLX")
+    {
+        QTemporaryDir tempDir;
+        FileManager fm;
+        Object* o = fm.load(QtResourceToFile(":/empty.pclx", "empty.pclx", tempDir));
+        REQUIRE(o != nullptr);
+
+        if (o)
+        {
+            REQUIRE(QDir(o->workingDir()).exists());
+            REQUIRE(QDir(o->dataDir()).exists());
+            delete o;
+        }
+    }
+
+    SECTION("Saving a project creates working files under AppLocalDataLocation")
+    {
+        FileManager fm;
+
+        Object* o = new Object;
+        o->init();
+        o->addNewBitmapLayer();
+
+        QTemporaryDir saveDir;
+        QString savePath = saveDir.filePath("test.pclx");
+        Status s = fm.save(o, savePath);
+        REQUIRE(s.ok());
+
+        QString workingDir = o->workingDir();
+        REQUIRE(isUnderDirectory(workingDir, appDataPath));
+        REQUIRE(!isUnderDirectory(workingDir, QDir::tempPath()));
+
+        delete o;
+    }
 }
 
 TEST_CASE("FileManager Load PCLX")
