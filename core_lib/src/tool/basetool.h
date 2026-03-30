@@ -54,6 +54,7 @@ public:
     QString typeName() { return TypeName(type()); }
 
     void initialize(Editor* editor);
+    void setScribbleArea(ScribbleArea* scribbleArea);
 
     virtual ToolType type() const = 0;
 
