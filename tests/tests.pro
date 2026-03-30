@@ -47,6 +47,7 @@ SOURCES += \
     src/test_vectorimage.cpp \
     src/test_viewmanager.cpp \
     src/test_util.cpp
+    src/test_editor.cpp
 
 # --- core_lib ---
 
