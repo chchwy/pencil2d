@@ -111,7 +111,7 @@ public:
     void updateObject();
     void prepareSave();
 
-    void setScribbleArea(ScribbleArea* pScirbbleArea) { mScribbleArea = pScirbbleArea; }
+    void setScribbleArea(ScribbleArea* scribbleArea);
     ScribbleArea* getScribbleArea() { return mScribbleArea; }
 
     int currentFrame() const;

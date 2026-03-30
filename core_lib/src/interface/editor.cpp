@@ -100,6 +100,15 @@ bool Editor::init()
     return true;
 }
 
+void Editor::setScribbleArea(ScribbleArea* scribbleArea)
+{
+    mScribbleArea = scribbleArea;
+    if (mToolManager)
+    {
+        mToolManager->setScribbleArea(scribbleArea);
+    }
+}
+
 int Editor::currentFrame() const
 {
     return mFrame;

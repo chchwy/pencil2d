@@ -25,6 +25,7 @@ GNU General Public License for more details.
 #include "basemanager.h"
 #include "camerafieldoption.h"
 
+class ScribbleArea;
 class StrokeTool;
 class TransformTool;
 
@@ -50,6 +51,7 @@ public:
     bool tryClearTemporaryTool(Qt::Key key);
     bool tryClearTemporaryTool(Qt::MouseButton button);
     void clearTemporaryTool();
+    void setScribbleArea(ScribbleArea* scribbleArea);
     void cleanupAllToolsData();
     bool leavingThisTool();
 

@@ -363,6 +363,8 @@ void StrokeTool::updateCanvasCursor()
     mWidthCursorPainter.preparePainter(widthOptions);
     mFeatherCursorPainter.preparePainter(featherOptions);
 
+    if (mScribbleArea == nullptr) { return; }
+
     const QRect& dirtyRect = mWidthCursorPainter.dirtyRect();
 
     // We know that the width rect is bigger than the feather rect
