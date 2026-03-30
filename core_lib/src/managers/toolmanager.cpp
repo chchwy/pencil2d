@@ -67,6 +67,9 @@ bool ToolManager::init()
         pTool->initialize(editor());
     }
 
+    // Propagate ScribbleArea if it was set on the Editor before init() was called
+    setScribbleArea(editor()->getScribbleArea());
+
     setDefaultTool();
 
     return true;
@@ -81,6 +84,14 @@ Status ToolManager::load(Object*)
 Status ToolManager::save(Object*)
 {
     return Status::OK;
+}
+
+void ToolManager::setScribbleArea(ScribbleArea* scribbleArea)
+{
+    foreach(BaseTool* pTool, mToolSetHash.values())
+    {
+        pTool->setScribbleArea(scribbleArea);
+    }
 }
 
 BaseTool* ToolManager::currentTool() const
