@@ -23,6 +23,8 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/src/test_viewmanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/src/test_util.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/src/test_undoredocommand.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/src/test_preferencemanager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/src/test_undoredomanager.cpp
 )
 
 set(TEST_RESOURCES
