@@ -99,6 +99,7 @@ jobs:
           ${{runner.os == 'Linux' && matrix.qt == 6 && 'qmake6' || 'qmake'}}
           -o build PREFIX=/usr CONFIG-=debug_and_release CONFIG+=GIT
           VERSION=${{ env.VERSION_NUMBER }}
+          ${{runner.os == 'macOS' && matrix.arch && format('QMAKE_APPLE_DEVICE_ARCHS={0}', matrix.arch) || ''}}
 
       - name: Build Pencil2D
         run: ${{runner.os != 'Windows' && '${BUILD_CMD} make -C build' || 'cd build; nmake'}}

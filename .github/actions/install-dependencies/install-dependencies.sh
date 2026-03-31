@@ -41,14 +41,29 @@ setup_linux() {
 }
 
 setup_macos() {
-  echo "::group::Update Homebrew"
-  brew update
-  echo "::endgroup::"
-  echo "::group::Install Homebrew packages"
-  brew install libarchive qt@${INPUT_QT}
-  brew link qt@${INPUT_QT} --force
-  echo "/usr/local/opt/libarchive/bin" >> "${GITHUB_PATH}"
-  echo "::endgroup::"
+  if [ "${INPUT_ARCH}" = "x86_64" ] && [ "$(uname -m)" != "x86_64" ]; then
+    # Cross-compile for x86_64 on Apple Silicon: install x86_64 Homebrew
+    # under Rosetta 2 at /usr/local, then use it to get x86_64 Qt libraries
+    echo "::group::Install x86_64 Homebrew"
+    NONINTERACTIVE=1 arch -x86_64 /bin/bash -c \
+      "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    echo "::endgroup::"
+    echo "::group::Install x86_64 Homebrew packages"
+    arch -x86_64 /usr/local/bin/brew install libarchive qt@${INPUT_QT}
+    echo "/usr/local/opt/qt@${INPUT_QT}/bin" >> "${GITHUB_PATH}"
+    echo "/usr/local/opt/libarchive/bin" >> "${GITHUB_PATH}"
+    echo "::endgroup::"
+  else
+    echo "::group::Update Homebrew"
+    brew update
+    echo "::endgroup::"
+    echo "::group::Install Homebrew packages"
+    brew install libarchive qt@${INPUT_QT}
+    brew link qt@${INPUT_QT} --force
+    HOMEBREW_PREFIX="$(brew --prefix)"
+    echo "${HOMEBREW_PREFIX}/opt/libarchive/bin" >> "${GITHUB_PATH}"
+    echo "::endgroup::"
+  fi
 }
 
 setup_windows() {
