@@ -27,47 +27,67 @@
 
 ## Critical Gaps
 
-### 1. UndoRedoManager — No Tests
+### 1. UndoRedoManager — Basic Tests Added
 
-The undo/redo command stack, state save/restore, and command history are completely untested. Bugs here silently corrupt user work. **Recommended tests:** undo stack for each operation type (draw stroke, add/remove keyframe, move layer, transform selection). These are pure state operations that are easy to test without UI.
+- [x] Initialization (new system disabled by default, enabled via preference)
+- [x] `load()` clears the stack / returns OK
+- [x] `save()` marks stack as clean
+- [x] `clearStack()` resets unsaved-changes state
+- [x] `state()` returns nullptr when system disabled or INVALID type; valid state on bitmap layer
+- [x] `record()` marks stack dirty, nullifies state pointer, no-op on nullptr
+- [x] Undo restores bitmap pixel to pre-modification value
+- [x] Redo re-applies modification after undo
+- [x] Multiple undos restore intermediate states in order
+- [x] Undo/redo cycle preserves full history
+- [x] Post-save modifications tracked; undo back to save point shows clean
+- [ ] Vector layer undo/redo (VectorReplaceCommand)
+- [ ] Selection transform undo/redo (TransformCommand)
+- [ ] Undo stack limit enforcement (UNDO_REDO_MAX_STEPS)
 
 ### 2. SelectionManager — No Tests
 
-Complex transformation math (rotation, scale, translate) and coordinate-space conversions are untested. **Recommended tests:** rotation, scaling, flipping, coordinate-space conversion, anchor points. Floating-point math regressions are hard to spot visually.
+- [ ] Rotation, scaling, flipping
+- [ ] Coordinate-space conversion and anchor points
 
 ### 3. VectorImage — Near-Empty (615 bytes, ~1 test case)
 
-The bitmap side has 13 KB of tests; the vector side has almost none. **Recommended tests:** Bezier curve operations, area detection, color management.
+- [ ] Bezier curve operations
+- [ ] Area detection
+- [ ] Color management
 
 ### 4. All Drawing Tools (15+ tools) — No Tests
 
-Brush, Pencil, Eraser, Select, Transform — the primary user interaction — have zero test coverage. **Recommended tests:** stroke interpolation, pressure curves, blend modes. Extract and test computational parts without needing a full canvas.
+- [ ] Stroke interpolation
+- [ ] Pressure curves
+- [ ] Blend modes
 
 ### 5. Editor — No Tests
 
-The main orchestrator class that creates and wires all 11 managers together is untested. **Recommended tests:** initialization, manager wiring, null-pointer safety.
+- [x] Initialization and manager wiring (`tests/src/test_editor.cpp`)
 
 ### 6. PlaybackManager / SoundManager — No Tests
 
-Animation playback and audio have no coverage. **Recommended tests:** frame advance logic, FPS timing, sound clip association.
+- [ ] Frame advance logic and FPS timing (PlaybackManager)
+- [ ] Sound clip association (SoundManager)
 
 ### 7. Rendering Pipeline — No Tests
 
-CanvasPainter, OnionSkinPainter, CameraPainter, SelectionPainter — all untested. **Recommended tests:** basic rendering output validation, onion skin frame selection.
+- [ ] CanvasPainter, OnionSkinPainter, CameraPainter, SelectionPainter
 
 ### 8. MovieExporter / MovieImporter — No Tests
 
-Export is a common source of user-reported bugs. **Recommended tests:** export parameter validation, edge cases (empty project, single frame, large canvas).
+- [ ] Export parameter validation, edge cases (empty project, single frame, large canvas)
+- [ ] MovieImporter
 
 ### Other Untested Managers
 
-- PreferenceManager (defaults and save/load round-trip)
-- ClipboardManager (copy/paste of keyframes and layers)
-- OverlayManager
+- [x] PreferenceManager — defaults and save/load round-trip (`tests/src/test_preferencemanager.cpp`)
+- [ ] ClipboardManager — copy/paste of keyframes and layers
+- [ ] OverlayManager
 
 ## Recommended Priorities
 
-1. **UndoRedoManager** — highest impact, pure state logic, easy to test
+1. **UndoRedoManager** — basic tests added; vector/transform undo still needed
 2. **SelectionManager** — math-heavy, regression-prone
 3. **VectorImage** — needs parity with BitmapImage tests
 4. **Tool computational logic** — extract and test without UI
@@ -76,6 +96,6 @@ Export is a common source of user-reported bugs. **Recommended tests:** export p
 
 ## Quick Wins
 
-- **Editor initialization** — verify all managers are created and wired (2-3 test cases)
-- **PreferenceManager** — test defaults and save/load round-trip
-- **ClipboardManager** — test copy/paste of keyframes and layers
+- [x] **Editor initialization** — verify all managers are created and wired
+- [x] **PreferenceManager** — test defaults and save/load round-trip
+- [ ] **ClipboardManager** — test copy/paste of keyframes and layers
