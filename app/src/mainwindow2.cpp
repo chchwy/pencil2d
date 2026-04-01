@@ -722,7 +722,7 @@ void MainWindow2::openStartupFile(const QString& filename)
 
     if (!filename.isEmpty() && openObject(filename))
     {
-        return;
+            return;
     }
 
     loadMostRecent() || tryLoadPreset();

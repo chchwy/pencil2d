@@ -27,6 +27,7 @@ private:
     PreferenceManager* mPref = nullptr;
     QTimer mAutoSaveTimer;
 
+
 };
 
 #endif // AUTOSAVERBYTIME_H
