@@ -11,6 +11,7 @@ class AutosaverByTime : public QObject
 {
     Q_OBJECT
 
+
 public:
     explicit AutosaverByTime(PreferenceManager*, QObject* parent);
 
