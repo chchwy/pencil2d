@@ -154,10 +154,18 @@ public:
     void cutKeyFrames(const QList<int>& positions, int layerId, const QString& description);
     void deleteLayer(int layerIndex, int layerId, const QString& description);
     void pasteFrames(const QList<int>& addedPositions,
-                     const QList<int>& displacedOriginalPositions,
+                     const QList<int>& collisionPositions,
                      const QList<QPair<int, KeyFrame*>>& pastedClones,
                      int layerId,
                      const QString& description);
+    void setExposure(int offset,
+                     int layerId,
+                     const QList<int>& selectedByPos,
+                     const QList<int>& selectedByLast,
+                     bool hadSelectedFrames,
+                     int currentFramePos,
+                     const QString& description);
+    void insertExposureAtPosition(int insertPosition, int layerId, const QString& description);
 
     void beginMacro(const QString& text);
     void endMacro();

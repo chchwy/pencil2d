@@ -331,37 +331,10 @@ void Editor::pasteToFrames()
 
     int newPositionOffset = mFrame - clipboardFrames.cbegin()->first;
 
-    // Pre-compute what will happen for undo recording
     QList<int> addedPositions;
-    QList<int> displacedOriginalPositions;
+    QList<int> collisionPositions;
     QList<QPair<int, KeyFrame*>> pastedClones;
 
-    for (auto it = clipboardFrames.cbegin(); it != clipboardFrames.cend(); ++it) {
-        int newPosition = it->first + newPositionOffset;
-        addedPositions.append(newPosition);
-        pastedClones.append(qMakePair(newPosition, it->second->clone()));
-
-        // Determine which frames will be displaced by this paste position.
-        // Note: if two clipboard frames displace the same group, mDisplacedOriginalPositions
-        // may contain duplicates, which would misapply offsets on undo/redo (known limitation).
-        if (currentLayer->getKeyFrameWhichCovers(newPosition) != nullptr) {
-            // newSelectionOfConnectedFrames selects from newPosition through connected chain.
-            // Those will be moved +1 by moveSelectedFrames(1).
-            // Record their CURRENT positions before the move.
-            currentLayer->newSelectionOfConnectedFrames(newPosition);
-            const QList<int> willBeDisplaced = currentLayer->selectedKeyFramesPositions();
-            for (int pos : willBeDisplaced) {
-                displacedOriginalPositions.append(pos);
-            }
-            currentLayer->deselectAll(); // reset selection; the actual move happens below
-        }
-    }
-
-    // Push undo command BEFORE making changes (command takes ownership of the clones)
-    undoRedo()->pasteFrames(addedPositions, displacedOriginalPositions, pastedClones, currentLayer->id(), tr("Paste"));
-    // pastedClones ownership transferred to command — do not use pastedClones after this point
-
-    // Perform the actual paste (command's redo() skips its first automatic execution)
     for (auto it = clipboardFrames.cbegin(); it != clipboardFrames.cend(); ++it)
     {
         int newPosition = it->first + newPositionOffset;
@@ -369,6 +342,8 @@ void Editor::pasteToFrames()
         KeyFrame* keyFrameNewPos = currentLayer->getKeyFrameWhichCovers(newPosition);
 
         if (keyFrameNewPos != nullptr) {
+            collisionPositions.append(newPosition);
+
             // Select and move any frames that may come into contact with the new position
             currentLayer->newSelectionOfConnectedFrames(newPosition);
             currentLayer->moveSelectedFrames(1);
@@ -379,6 +354,9 @@ void Editor::pasteToFrames()
         Q_ASSERT(key != nullptr);
 
         currentLayer->addKeyFrame(newPosition, key);
+        addedPositions.append(newPosition);
+        pastedClones.append(qMakePair(newPosition, key->clone()));
+
         if (currentLayer->type() == Layer::SOUND)
         {
             auto soundClip = static_cast<SoundClip*>(key);
@@ -387,6 +365,9 @@ void Editor::pasteToFrames()
 
         currentLayer->setFrameSelected(key->pos(), true);
     }
+
+    // Push after applying paste; command's first redo is skipped.
+    undoRedo()->pasteFrames(addedPositions, collisionPositions, pastedClones, currentLayer->id(), tr("Paste"));
 
     layers()->notifyAnimationLengthChanged();
 }
