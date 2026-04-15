@@ -200,14 +200,38 @@ void UndoRedoManager::deleteLayer(int layerIndex, int layerId, const QString& de
 }
 
 void UndoRedoManager::pasteFrames(const QList<int>& addedPositions,
-                                   const QList<int>& displacedOriginalPositions,
+                                   const QList<int>& collisionPositions,
                                    const QList<QPair<int, KeyFrame*>>& pastedClones,
                                    int layerId,
                                    const QString& description)
 {
     if (!mNewBackupSystemEnabled) { return; }
 
-    PasteFramesCommand* cmd = new PasteFramesCommand(addedPositions, displacedOriginalPositions, pastedClones, layerId, description, editor());
+    PasteFramesCommand* cmd = new PasteFramesCommand(addedPositions, collisionPositions, pastedClones, layerId, description, editor());
+    pushCommand(cmd);
+}
+
+void UndoRedoManager::setExposure(int offset,
+                                    int layerId,
+                                    const QList<int>& selectedByPos,
+                                    const QList<int>& selectedByLast,
+                                    bool hadSelectedFrames,
+                                    int currentFramePos,
+                                    const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    SetExposureCommand* cmd = new SetExposureCommand(offset, layerId, selectedByPos, selectedByLast,
+                                                     hadSelectedFrames, currentFramePos,
+                                                     description, editor());
+    pushCommand(cmd);
+}
+
+void UndoRedoManager::insertExposureAtPosition(int insertPosition, int layerId, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    InsertExposureCommand* cmd = new InsertExposureCommand(insertPosition, layerId, description, editor());
     pushCommand(cmd);
 }
 

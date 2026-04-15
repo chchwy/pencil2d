@@ -705,8 +705,27 @@ void ActionCommands::exposeSelectedFrames(int offset)
     // A:
     KeyFrame* key = currentLayer->getLastKeyFrameAtPosition(mEditor->currentFrame());
     if (!hasSelectedFrames) {
-
         if (key == nullptr) { return; }
+    }
+
+    if (mEditor->undoRedo()->isNewBackupSystemEnabled()) {
+        // The command performs the mutation internally (including the temporary
+        // selection described in A/B above) and records both before and after
+        // state so that undo/redo work correctly.
+        const int currentFramePos = hasSelectedFrames ? 0 : key->pos();
+        mEditor->undoRedo()->setExposure(offset,
+                                         currentLayer->id(),
+                                         currentLayer->selectedKeyFramesPositions(),
+                                         currentLayer->selectedKeyFramesByLast(),
+                                         hasSelectedFrames,
+                                         currentFramePos,
+                                         tr("Set Exposure"));
+        emit mEditor->updateTimeLine();
+        emit mEditor->framesModified();
+        return;
+    }
+
+    if (!hasSelectedFrames) {
         currentLayer->setFrameSelected(key->pos(), true);
     }
 
@@ -735,6 +754,15 @@ Status ActionCommands::insertKeyFrameAtCurrentPosition()
 {
     Layer* currentLayer = mEditor->layers()->currentLayer();
     int currentPosition = mEditor->currentFrame();
+
+    if (mEditor->undoRedo()->isNewBackupSystemEnabled() && currentLayer->type() != Layer::SOUND) {
+        if (!currentLayer->getKeyFrameAt(currentPosition)) {
+            // No key at current position to expose; fall through to a plain add
+            return addNewKey();
+        }
+        mEditor->undoRedo()->insertExposureAtPosition(currentPosition, currentLayer->id(), tr("Insert Exposure"));
+        return Status::OK;
+    }
 
     currentLayer->insertExposureAt(currentPosition);
     return addNewKey();
