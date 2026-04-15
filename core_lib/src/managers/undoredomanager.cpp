@@ -199,6 +199,30 @@ void UndoRedoManager::deleteLayer(int layerIndex, int layerId, const QString& de
     pushCommand(cmd);
 }
 
+void UndoRedoManager::pasteFrames(const QList<int>& addedPositions,
+                                   const QList<int>& displacedOriginalPositions,
+                                   const QList<QPair<int, KeyFrame*>>& pastedClones,
+                                   int layerId,
+                                   const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    PasteFramesCommand* cmd = new PasteFramesCommand(addedPositions, displacedOriginalPositions, pastedClones, layerId, description, editor());
+    pushCommand(cmd);
+}
+
+void UndoRedoManager::beginMacro(const QString& text)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+    mUndoStack.beginMacro(text);
+}
+
+void UndoRedoManager::endMacro()
+{
+    if (!mNewBackupSystemEnabled) { return; }
+    mUndoStack.endMacro();
+}
+
 void UndoRedoManager::removeKeyFrame(const UndoSaveState& undoState, const QString& description)
 {
     KeyFrameRemoveCommand* element = new KeyFrameRemoveCommand(undoState.keyframe.get(),

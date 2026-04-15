@@ -487,6 +487,80 @@ void DeleteLayerCommand::redo()
     emit layerMgr->layerCountChanged(layerMgr->count());
 }
 
+PasteFramesCommand::PasteFramesCommand(const QList<int>& addedPositions,
+                                       const QList<int>& displacedOriginalPositions,
+                                       const QList<QPair<int, KeyFrame*>>& pastedClones,
+                                       int layerId,
+                                       const QString& description,
+                                       Editor* editor,
+                                       QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+{
+    mLayerId = layerId;
+    mAddedPositions = addedPositions;
+    mDisplacedOrigPositions = displacedOriginalPositions;
+    mPastedClones = pastedClones;
+
+    setText(description);
+}
+
+PasteFramesCommand::~PasteFramesCommand()
+{
+    for (auto& p : mPastedClones) {
+        delete p.second;
+    }
+}
+
+void PasteFramesCommand::undo()
+{
+    UndoRedoCommand::undo();
+
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (layer == nullptr) {
+        setObsolete(true);
+        return;
+    }
+
+    // Remove all newly added frames
+    for (int pos : mAddedPositions) {
+        layer->removeKeyFrame(pos);
+    }
+
+    // Move displaced frames back: they are now at origPos + 1, so move -1
+    // Note: if multiple clipboard frames collided with the same displaced group,
+    // mDisplacedOrigPositions may contain duplicates, which would misapply offsets.
+    for (int origPos : mDisplacedOrigPositions) {
+        layer->moveKeyFrame(origPos + 1, -1);
+    }
+
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
+void PasteFramesCommand::redo()
+{
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (layer == nullptr) {
+        setObsolete(true);
+        return;
+    }
+
+    // Move displaced frames forward
+    for (int origPos : mDisplacedOrigPositions) {
+        layer->moveKeyFrame(origPos, 1);
+    }
+
+    // Re-add pasted frames using stored clones
+    for (auto& p : mPastedClones) {
+        layer->addKeyFrame(p.first, p.second->clone());
+    }
+
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
 void TransformCommand::apply(const QRectF& selectionRect,
                              const QPointF& translation,
                              const qreal rotationAngle,

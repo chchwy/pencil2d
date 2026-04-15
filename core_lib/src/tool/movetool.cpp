@@ -217,12 +217,6 @@ void MoveTool::transformSelection(const QPointF& pos, Qt::KeyboardModifiers keyM
 void MoveTool::beginInteraction(const QPointF& pos, Qt::KeyboardModifiers keyMod, Layer* layer)
 {
     auto selectMan = mEditor->select();
-    QRectF selectionRect = selectMan->mySelectionRect();
-    if (!selectionRect.isNull())
-    {
-        mUndoSaveStateId = mEditor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
-        mEditor->backup(typeName());
-    }
 
     if (keyMod != Qt::ShiftModifier)
     {

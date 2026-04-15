@@ -24,6 +24,7 @@ GNU General Public License for more details.
 #include "editor.h"
 #include "layermanager.h"
 #include "selectionmanager.h"
+#include "undoredomanager.h"
 #include "layerbitmap.h"
 #include "bitmapimage.h"
 
@@ -214,6 +215,8 @@ void AddTransparencyToPaperDialog::traceScannedDrawings()
         }
         mEditor->scrubTo(frame);
 
+        int undoStateId = mEditor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+
         if (somethingSelected)
         {
             BitmapImage selection = layer->getBitmapImageAtFrame(frame)->copy(selectionRect);
@@ -228,9 +231,12 @@ void AddTransparencyToPaperDialog::traceScannedDrawings()
                                      ui->cb_Green->isChecked(),
                                      ui->cb_Blue->isChecked());
         img->modification();
+
+        mEditor->undoRedo()->record(undoStateId, tr("Trace Scanned Drawings"));
     }
     else
     {
+        mEditor->undoRedo()->beginMacro(tr("Trace Scanned Drawings"));
         QProgressDialog* mProgress = new QProgressDialog(tr("Tracing scanned drawings..."), tr("Abort"), 0, 100, this);
         mProgress->setWindowModality(Qt::WindowModal);
         mProgress->show();
@@ -248,6 +254,7 @@ void AddTransparencyToPaperDialog::traceScannedDrawings()
                 {
                     break;
                 }
+                int undoStateId = mEditor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
                 if (somethingSelected)
                 {
                     BitmapImage selection = layer->getBitmapImageAtFrame(i)->copy(selectionRect);
@@ -262,8 +269,10 @@ void AddTransparencyToPaperDialog::traceScannedDrawings()
                                              ui->cb_Green->isChecked(),
                                              ui->cb_Blue->isChecked());
                 img->modification();
+                mEditor->undoRedo()->record(undoStateId, tr("Trace Scanned Drawings"));
             }
         }
+        mEditor->undoRedo()->endMacro();
         mProgress->close();
     }
 }

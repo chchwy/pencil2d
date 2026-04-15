@@ -246,4 +246,29 @@ private:
     Layer* mLayer = nullptr;  // owns the layer while between redo and undo states
 };
 
+class PasteFramesCommand : public UndoRedoCommand
+{
+public:
+    // addedPositions: positions where new frames were inserted (owned by layer after paste)
+    // displacedOriginalPositions: original positions of frames that were moved out of the way
+    // pastedClones: position->clone for redo (command owns these)
+    PasteFramesCommand(const QList<int>& addedPositions,
+                       const QList<int>& displacedOriginalPositions,
+                       const QList<QPair<int, KeyFrame*>>& pastedClones,
+                       int layerId,
+                       const QString& description,
+                       Editor* editor,
+                       QUndoCommand* parent = nullptr);
+    ~PasteFramesCommand() override;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int mLayerId = 0;
+    QList<int> mAddedPositions;           // positions to remove on undo
+    QList<int> mDisplacedOrigPositions;   // positions of displaced frames BEFORE they were moved
+    QList<QPair<int, KeyFrame*>> mPastedClones; // owned clones for redo
+};
+
 #endif // UNDOREDOCOMMAND_H
