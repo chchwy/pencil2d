@@ -119,6 +119,25 @@ private:
     QList<int> positions;
 };
 
+class RemoveKeyFramesCommand : public UndoRedoCommand
+{
+public:
+    RemoveKeyFramesCommand(const QList<int>& positions,
+                           int layerId,
+                           const QString& description,
+                           Editor* editor,
+                           QUndoCommand* parent = nullptr);
+    ~RemoveKeyFramesCommand() override;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int mLayerId = 0;
+    // Each entry: position -> cloned keyframe (owned by this command)
+    QList<QPair<int, KeyFrame*>> mFrames;
+};
+
 class BitmapReplaceCommand : public UndoRedoCommand
 {
 
@@ -206,6 +225,25 @@ private:
     qreal redoRotationAngle;
 
     bool roundPixels;
+};
+
+class DeleteLayerCommand : public UndoRedoCommand
+{
+public:
+    DeleteLayerCommand(int layerIndex,
+                       int layerId,
+                       const QString& description,
+                       Editor* editor,
+                       QUndoCommand* parent = nullptr);
+    ~DeleteLayerCommand() override;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int mLayerIndex = 0;  // position to re-insert on undo
+    int mLayerId = 0;
+    Layer* mLayer = nullptr;  // owns the layer while between redo and undo states
 };
 
 #endif // UNDOREDOCOMMAND_H

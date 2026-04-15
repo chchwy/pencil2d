@@ -229,7 +229,10 @@ void Editor::copyAndCut()
     Layer* currentLayer = layers()->currentLayer();
 
     if (currentLayer->hasAnySelectedFrames() && !select()->somethingSelected()) {
-        for (int pos : currentLayer->selectedKeyFramesPositions()) {
+        const QList<int> positions = currentLayer->selectedKeyFramesPositions();
+        const int layerId = currentLayer->id();
+        undoRedo()->cutKeyFrames(positions, layerId, tr("Cut"));
+        for (int pos : positions) {
             currentLayer->removeKeyFrame(pos);
         }
         emit layers()->currentLayerChanged(currentLayerIndex());
