@@ -27,6 +27,7 @@ GNU General Public License for more details.
 #include "layer.h"
 
 #include "editor.h"
+#include "object.h"
 #include "undoredocommand.h"
 
 UndoRedoCommand::UndoRedoCommand(Editor* editor, QUndoCommand* parent) : QUndoCommand(parent)
@@ -205,6 +206,70 @@ void MoveKeyFramesCommand::redo()
 
     emit editor()->framesModified();
 }
+RemoveKeyFramesCommand::RemoveKeyFramesCommand(const QList<int>& positions,
+                                               int layerId,
+                                               const QString& description,
+                                               Editor* editor,
+                                               QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+{
+    mLayerId = layerId;
+
+    Layer* layer = editor->layers()->findLayerById(layerId);
+    if (layer) {
+        for (int pos : positions) {
+            KeyFrame* frame = layer->getKeyFrameAt(pos);
+            if (frame) {
+                mFrames.append(qMakePair(pos, frame->clone()));
+            }
+        }
+    }
+
+    setText(description);
+}
+
+RemoveKeyFramesCommand::~RemoveKeyFramesCommand()
+{
+    for (auto& pair : mFrames) {
+        delete pair.second;
+    }
+}
+
+void RemoveKeyFramesCommand::undo()
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (layer == nullptr) {
+        return setObsolete(true);
+    }
+
+    UndoRedoCommand::undo();
+
+    for (const auto& pair : qAsConst(mFrames)) {
+        layer->addKeyFrame(pair.first, pair.second->clone());
+    }
+
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
+void RemoveKeyFramesCommand::redo()
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (layer == nullptr) {
+        return setObsolete(true);
+    }
+
+    UndoRedoCommand::redo();
+
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    for (const auto& pair : qAsConst(mFrames)) {
+        layer->removeKeyFrame(pair.first);
+    }
+
+    emit editor()->framesModified();
+}
+
 BitmapReplaceCommand::BitmapReplaceCommand(const BitmapImage* undoBitmap,
                              const int undoLayerId,
                              const QString& description,
@@ -359,6 +424,67 @@ void TransformCommand::redo()
           redoScaleY,
           redoAnchor,
           roundPixels);
+}
+
+DeleteLayerCommand::DeleteLayerCommand(int layerIndex,
+                                       int layerId,
+                                       const QString& description,
+                                       Editor* editor,
+                                       QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+{
+    mLayerIndex = layerIndex;
+    mLayerId = layerId;
+
+    // Take ownership of the layer now so it isn't destroyed by the caller
+    mLayer = editor->object()->takeLayer(layerId);
+
+    setText(description);
+}
+
+DeleteLayerCommand::~DeleteLayerCommand()
+{
+    delete mLayer;
+}
+
+void DeleteLayerCommand::undo()
+{
+    UndoRedoCommand::undo();
+
+    // Re-insert the layer at its original position (preserving its ID)
+    editor()->object()->insertLayerAt(mLayerIndex, mLayer);
+    mLayer = nullptr; // ownership transferred back to the Object
+
+    emit editor()->layers()->layerCountChanged(editor()->layers()->count());
+    editor()->layers()->setCurrentLayer(mLayerIndex);
+}
+
+void DeleteLayerCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Skip the automatic redo call when first pushed onto the stack —
+    // the caller already performed the deletion before pushing this command
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    LayerManager* layerMgr = editor()->layers();
+
+    // Adjust the current layer index before removing, mirroring LayerManager::deleteLayer
+    if (mLayerIndex == editor()->object()->getLayerCount() - 1 &&
+        mLayerIndex == layerMgr->currentLayerIndex())
+    {
+        layerMgr->setCurrentLayer(layerMgr->currentLayerIndex() - 1);
+    }
+
+    mLayer = editor()->object()->takeLayer(mLayerId);
+
+    if (mLayerIndex >= layerMgr->currentLayerIndex())
+    {
+        layerMgr->setCurrentLayer(layerMgr->currentLayerIndex());
+    }
+
+    emit layerMgr->layerDeleted(mLayerIndex);
+    emit layerMgr->layerCountChanged(layerMgr->count());
 }
 
 void TransformCommand::apply(const QRectF& selectionRect,

@@ -175,6 +175,30 @@ void UndoRedoManager::pushCommand(QUndoCommand* command)
     emit didUpdateUndoStack();
 }
 
+void UndoRedoManager::removeKeyFrames(const QList<int>& positions, int layerId, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    RemoveKeyFramesCommand* cmd = new RemoveKeyFramesCommand(positions, layerId, description, editor());
+    pushCommand(cmd);
+}
+
+void UndoRedoManager::cutKeyFrames(const QList<int>& positions, int layerId, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    RemoveKeyFramesCommand* cmd = new RemoveKeyFramesCommand(positions, layerId, description, editor());
+    pushCommand(cmd);
+}
+
+void UndoRedoManager::deleteLayer(int layerIndex, int layerId, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    DeleteLayerCommand* cmd = new DeleteLayerCommand(layerIndex, layerId, description, editor());
+    pushCommand(cmd);
+}
+
 void UndoRedoManager::removeKeyFrame(const UndoSaveState& undoState, const QString& description)
 {
     KeyFrameRemoveCommand* element = new KeyFrameRemoveCommand(undoState.keyframe.get(),
