@@ -46,6 +46,7 @@ GNU General Public License for more details.
 #include "viewmanager.h"
 #include "selectionmanager.h"
 #include "overlaymanager.h"
+#include "undoredomanager.h"
 
 ScribbleArea::ScribbleArea(QWidget* parent) : QWidget(parent),
     mCanvasPainter(mCanvas),
@@ -1345,13 +1346,15 @@ void ScribbleArea::applyTransformedSelection()
     {
         if (selectMan->mySelectionRect().isEmpty() || selectMan->selectionTransform().isIdentity()) { return; }
 
+        // Capture state BEFORE modifying (for undo)
+        int undoStateId = mEditor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+
         if (layer->type() == Layer::BITMAP)
         {
             handleDrawingOnEmptyFrame();
             BitmapImage* bitmapImage = currentBitmapImage(layer);
             if (bitmapImage == nullptr) { return; }
             BitmapImage transformedImage = bitmapImage->transformed(selectMan->mySelectionRect().toRect(), selectMan->selectionTransform(), useAA);
-
 
             bitmapImage->clear(selectMan->mySelectionRect());
             bitmapImage->paste(&transformedImage, QPainter::CompositionMode_SourceOver);
@@ -1366,6 +1369,9 @@ void ScribbleArea::applyTransformedSelection()
 
             vectorImage->applySelectionTransformation();
         }
+
+        // Record the modification (creates BitmapReplaceCommand or VectorReplaceCommand)
+        mEditor->undoRedo()->record(undoStateId, tr("Apply Transformation"));
 
         mEditor->setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
     }
