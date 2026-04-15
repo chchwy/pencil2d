@@ -17,6 +17,7 @@ GNU General Public License for more details.
 */
 
 #include <QDebug>
+#include <algorithm>
 
 #include "layermanager.h"
 #include "selectionmanager.h"
@@ -488,7 +489,7 @@ void DeleteLayerCommand::redo()
 }
 
 PasteFramesCommand::PasteFramesCommand(const QList<int>& addedPositions,
-                                       const QList<int>& displacedOriginalPositions,
+                                       const QList<int>& collisionPositions,
                                        const QList<QPair<int, KeyFrame*>>& pastedClones,
                                        int layerId,
                                        const QString& description,
@@ -498,7 +499,7 @@ PasteFramesCommand::PasteFramesCommand(const QList<int>& addedPositions,
 {
     mLayerId = layerId;
     mAddedPositions = addedPositions;
-    mDisplacedOrigPositions = displacedOriginalPositions;
+    mCollisionPositions = collisionPositions;
     mPastedClones = pastedClones;
 
     setText(description);
@@ -521,17 +522,25 @@ void PasteFramesCommand::undo()
         return;
     }
 
-    // Remove all newly added frames
-    for (int pos : mAddedPositions) {
+    layer->deselectAll();
+
+    // Remove in descending order to avoid coverage interactions.
+    QList<int> sortedAddedPositions = mAddedPositions;
+    std::sort(sortedAddedPositions.begin(), sortedAddedPositions.end(), std::greater<int>());
+    for (int pos : sortedAddedPositions) {
         layer->removeKeyFrame(pos);
     }
 
-    // Move displaced frames back: they are now at origPos + 1, so move -1
-    // Note: if multiple clipboard frames collided with the same displaced group,
-    // mDisplacedOrigPositions may contain duplicates, which would misapply offsets.
-    for (int origPos : mDisplacedOrigPositions) {
-        layer->moveKeyFrame(origPos + 1, -1);
+    // Reverse collision shifts in reverse paste order.
+    for (int i = mCollisionPositions.count() - 1; i >= 0; --i) {
+        const int position = mCollisionPositions.at(i);
+        if (!layer->newSelectionOfConnectedFrames(position + 1)) {
+            continue;
+        }
+        layer->moveSelectedFrames(-1);
     }
+
+    layer->deselectAll();
 
     emit editor()->framesModified();
     editor()->layers()->notifyAnimationLengthChanged();
@@ -539,6 +548,8 @@ void PasteFramesCommand::undo()
 
 void PasteFramesCommand::redo()
 {
+    UndoRedoCommand::redo();
+
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
     Layer* layer = editor()->layers()->findLayerById(mLayerId);
@@ -547,18 +558,230 @@ void PasteFramesCommand::redo()
         return;
     }
 
-    // Move displaced frames forward
-    for (int origPos : mDisplacedOrigPositions) {
-        layer->moveKeyFrame(origPos, 1);
-    }
+    layer->deselectAll();
 
-    // Re-add pasted frames using stored clones
+    // Replay the original paste behavior deterministically.
     for (auto& p : mPastedClones) {
+        const int position = p.first;
+        if (layer->getKeyFrameWhichCovers(position) != nullptr) {
+            layer->newSelectionOfConnectedFrames(position);
+            layer->moveSelectedFrames(1);
+        }
+
         layer->addKeyFrame(p.first, p.second->clone());
+        layer->setFrameSelected(position, true);
     }
 
     emit editor()->framesModified();
     editor()->layers()->notifyAnimationLengthChanged();
+}
+
+SetExposureCommand::SetExposureCommand(int offset,
+                                       int layerId,
+                                       const QList<int>& selectedByPos,
+                                       const QList<int>& selectedByLast,
+                                       bool hadSelectedFrames,
+                                       int currentFramePos,
+                                       const QString& description,
+                                       Editor* editor,
+                                       QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+{
+    mOffset = offset;
+    mLayerId = layerId;
+
+    Layer* layer = editor->layers()->findLayerById(layerId);
+    if (!layer) {
+        setText(description);
+        return;
+    }
+
+    // Snapshot all frame positions before the mutation
+    QList<int> beforePositions;
+    layer->foreachKeyFrame([&beforePositions](KeyFrame* frame) {
+        beforePositions.append(frame->pos());
+    });
+
+    // Perform the mutation: restore the selection state that was active before
+    // the caller delegated to us, then apply the exposure change.
+    layer->deselectAll();
+    for (int pos : selectedByLast) {
+        layer->setFrameSelected(pos, true);
+    }
+    if (!hadSelectedFrames) {
+        layer->setFrameSelected(currentFramePos, true);
+    }
+
+    layer->setExposureForSelectedFrames(offset);
+
+    if (!hadSelectedFrames) {
+        layer->deselectAll();
+    }
+
+    // Snapshot all frame positions after the mutation
+    QList<int> afterPositions;
+    layer->foreachKeyFrame([&afterPositions](KeyFrame* frame) {
+        afterPositions.append(frame->pos());
+    });
+
+    // Build the moved-frames list from sorted before/after snapshots.
+    // foreachKeyFrame iterates in descending key order (std::greater), so sort ascending.
+    std::sort(beforePositions.begin(), beforePositions.end());
+    std::sort(afterPositions.begin(), afterPositions.end());
+
+    Q_ASSERT(beforePositions.size() == afterPositions.size());
+    for (int i = 0; i < beforePositions.size(); ++i) {
+        if (beforePositions[i] != afterPositions[i]) {
+            mMovedFrames.append(qMakePair(beforePositions[i], afterPositions[i]));
+        }
+    }
+
+    setText(description);
+}
+
+void SetExposureCommand::undo()
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (layer == nullptr) {
+        return setObsolete(true);
+    }
+
+    UndoRedoCommand::undo();
+
+    // Move each displaced frame from its after-position back to its before-position.
+    // mMovedFrames pairs are (before, after). For undo we need (after -> before).
+    // When undoing a positive offset (frames moved right), process in ascending
+    // after-position order; for negative offset, descending after-position order.
+    QList<QPair<int, int>> undoMoves;
+    undoMoves.reserve(mMovedFrames.size());
+    for (const auto& p : qAsConst(mMovedFrames)) {
+        undoMoves.append(qMakePair(p.second, p.first)); // (after, before)
+    }
+    if (mOffset > 0) {
+        std::sort(undoMoves.begin(), undoMoves.end(),
+                  [](const QPair<int,int>& a, const QPair<int,int>& b){ return a.first < b.first; });
+    } else {
+        std::sort(undoMoves.begin(), undoMoves.end(),
+                  [](const QPair<int,int>& a, const QPair<int,int>& b){ return a.first > b.first; });
+    }
+
+    applyPositions(layer, undoMoves);
+
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
+void SetExposureCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when first pushed onto the stack —
+    // the constructor already performed the mutation.
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (layer == nullptr) {
+        return setObsolete(true);
+    }
+
+    // Move each displaced frame from its before-position to its after-position.
+    // mMovedFrames pairs are (before, after). For redo we use them directly.
+    // Process in descending before-position order for positive offset (moving right),
+    // ascending for negative offset (moving left), to avoid collisions.
+    QList<QPair<int, int>> redoMoves = mMovedFrames;
+    if (mOffset > 0) {
+        std::sort(redoMoves.begin(), redoMoves.end(),
+                  [](const QPair<int,int>& a, const QPair<int,int>& b){ return a.first > b.first; });
+    } else {
+        std::sort(redoMoves.begin(), redoMoves.end(),
+                  [](const QPair<int,int>& a, const QPair<int,int>& b){ return a.first < b.first; });
+    }
+
+    applyPositions(layer, redoMoves);
+
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
+void SetExposureCommand::applyPositions(Layer* layer, const QList<QPair<int, int>>& moves)
+{
+    for (const auto& p : qAsConst(moves)) {
+        const int fromPos = p.first;
+        const int toPos = p.second;
+        if (fromPos != toPos) {
+            layer->moveKeyFrame(fromPos, toPos - fromPos);
+        }
+    }
+}
+
+InsertExposureCommand::InsertExposureCommand(int insertPosition,
+                                             int layerId,
+                                             const QString& description,
+                                             Editor* editor,
+                                             QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+{
+    mInsertPosition = insertPosition;
+    mLayerId = layerId;
+    mNewKeyPosition = insertPosition + 1;
+
+    Layer* layer = editor->layers()->findLayerById(layerId);
+    if (!layer) { setText(description); return; }
+
+    // Snapshot before-positions of frames that will be shifted by insertExposureAt
+    layer->foreachKeyFrame([&](KeyFrame* frame) {
+        if (frame->pos() >= insertPosition + 1) {
+            mShiftedPositions.append(frame->pos());
+        }
+    });
+    std::sort(mShiftedPositions.begin(), mShiftedPositions.end());
+
+    // Perform the mutation: shift connected frames then add the new key
+    layer->insertExposureAt(insertPosition);
+    layer->addNewKeyFrameAt(mNewKeyPosition);
+
+    editor->scrubTo(mNewKeyPosition);
+    emit editor->framesModified();
+    editor->layers()->notifyAnimationLengthChanged();
+
+    setText(description);
+}
+
+void InsertExposureCommand::undo()
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (layer == nullptr) { return setObsolete(true); }
+
+    UndoRedoCommand::undo();
+
+    layer->removeKeyFrame(mNewKeyPosition);
+
+    // Restore shifted frames: they moved from origPos to origPos+1, so move back -1.
+    // Process in ascending order (leftmost first) to avoid clobbering.
+    for (int origPos : qAsConst(mShiftedPositions)) {
+        layer->moveKeyFrame(origPos + 1, -1);
+    }
+
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+    editor()->scrubTo(mInsertPosition);
+}
+
+void InsertExposureCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (layer == nullptr) { return setObsolete(true); }
+
+    layer->insertExposureAt(mInsertPosition);
+    layer->addNewKeyFrameAt(mNewKeyPosition);
+
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+    editor()->scrubTo(mNewKeyPosition);
 }
 
 void TransformCommand::apply(const QRectF& selectionRect,
