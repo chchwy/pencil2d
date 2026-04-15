@@ -250,10 +250,10 @@ class PasteFramesCommand : public UndoRedoCommand
 {
 public:
     // addedPositions: positions where new frames were inserted (owned by layer after paste)
-    // displacedOriginalPositions: original positions of frames that were moved out of the way
+    // collisionPositions: positions where paste collided and shifted connected frames
     // pastedClones: position->clone for redo (command owns these)
     PasteFramesCommand(const QList<int>& addedPositions,
-                       const QList<int>& displacedOriginalPositions,
+                       const QList<int>& collisionPositions,
                        const QList<QPair<int, KeyFrame*>>& pastedClones,
                        int layerId,
                        const QString& description,
@@ -267,8 +267,51 @@ public:
 private:
     int mLayerId = 0;
     QList<int> mAddedPositions;           // positions to remove on undo
-    QList<int> mDisplacedOrigPositions;   // positions of displaced frames BEFORE they were moved
+    QList<int> mCollisionPositions;       // paste positions that triggered a connected-frame shift
     QList<QPair<int, KeyFrame*>> mPastedClones; // owned clones for redo
+};
+
+class SetExposureCommand : public UndoRedoCommand
+{
+public:
+    SetExposureCommand(int offset,
+                       int layerId,
+                       const QList<int>& selectedByLast,
+                       bool hadSelectedFrames,
+                       int currentFramePos,
+                       const QString& description,
+                       Editor* editor,
+                       QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    void applyPositions(Layer* layer, const QList<QPair<int, int>>& moves);
+
+    int mLayerId = 0;
+    int mOffset = 0;
+    // Each pair: (before_position, after_position) for frames that moved
+    QList<QPair<int, int>> mMovedFrames;
+};
+
+class InsertExposureCommand : public UndoRedoCommand
+{
+public:
+    InsertExposureCommand(int insertPosition,
+                          int layerId,
+                          const QString& description,
+                          Editor* editor,
+                          QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int mLayerId = 0;
+    int mInsertPosition = 0;
+    int mNewKeyPosition = 0;
+    QList<int> mShiftedPositions; // before-positions of frames shifted by the exposure insert
 };
 
 #endif // UNDOREDOCOMMAND_H
