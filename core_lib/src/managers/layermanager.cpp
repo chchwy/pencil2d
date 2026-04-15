@@ -19,6 +19,7 @@ GNU General Public License for more details.
 
 #include "object.h"
 #include "editor.h"
+#include "undoredomanager.h"
 
 #include "layersound.h"
 #include "layerbitmap.h"
@@ -335,7 +336,19 @@ Status LayerManager::deleteLayer(int index)
     {
         setCurrentLayer(currentLayerIndex() - 1);
     }
-    object()->deleteLayer(layer);
+
+    const int layerId = layer->id();
+    if (editor()->undoRedo()->isNewBackupSystemEnabled())
+    {
+        // The command constructor takes ownership of the layer via takeLayer,
+        // removing it from the Object without deleting it.
+        editor()->undoRedo()->deleteLayer(index, layerId, tr("Delete Layer"));
+    }
+    else
+    {
+        object()->deleteLayer(layer);
+    }
+
     if (index >= currentLayerIndex())
     {
         // current layer has changed, so trigger updates

@@ -150,6 +150,12 @@ public:
      */
     void addUserState(SAVESTATE_ID SaveStateId, const UserSaveState& userState);
 
+    void removeKeyFrames(const QList<int>& positions, int layerId, const QString& description);
+    void cutKeyFrames(const QList<int>& positions, int layerId, const QString& description);
+    void deleteLayer(int layerIndex, int layerId, const QString& description);
+
+    bool isNewBackupSystemEnabled() const { return mNewBackupSystemEnabled; }
+
     QAction* createUndoAction(QObject* parent, const QIcon& icon);
     QAction* createRedoAction(QObject* parent, const QIcon& icon);
 

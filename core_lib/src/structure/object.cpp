@@ -384,6 +384,12 @@ bool Object::addLayer(Layer* layer)
     return true;
 }
 
+void Object::insertLayerAt(int index, Layer* layer)
+{
+    // Insert without reassigning ID — the layer already has its ID from when it was created
+    mLayers.insert(index, layer);
+}
+
 ColorRef Object::getColor(int index) const
 {
     ColorRef result(Qt::white, tr("error"));

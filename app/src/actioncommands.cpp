@@ -35,6 +35,7 @@ GNU General Public License for more details.
 #include "playbackmanager.h"
 #include "colormanager.h"
 #include "selectionmanager.h"
+#include "undoredomanager.h"
 #include "util.h"
 #include "app_util.h"
 
@@ -747,7 +748,7 @@ void ActionCommands::removeSelectedFrames()
 
     int ret = QMessageBox::warning(mParent,
                                    tr("Remove selected frames", "Windows title of remove selected frames pop-up."),
-                                   tr("Are you sure you want to remove the selected frames? This action is irreversible currently!"),
+                                   tr("Are you sure you want to remove the selected frames?"),
                                    QMessageBox::Ok | QMessageBox::Cancel,
                                    QMessageBox::Ok);
 
@@ -756,7 +757,12 @@ void ActionCommands::removeSelectedFrames()
         return;
     }
 
-    for (int pos : currentLayer->selectedKeyFramesPositions()) {
+    const QList<int> positions = currentLayer->selectedKeyFramesPositions();
+    const int layerId = currentLayer->id();
+
+    mEditor->undoRedo()->removeKeyFrames(positions, layerId, tr("Remove Selected Frames"));
+
+    for (int pos : positions) {
         currentLayer->removeKeyFrame(pos);
     }
     mEditor->layers()->notifyLayerChanged(currentLayer);
@@ -932,7 +938,7 @@ Status ActionCommands::deleteCurrentLayer()
 
     int ret = QMessageBox::warning(mParent,
                                    tr("Delete Layer", "Windows title of Delete current layer pop-up."),
-                                   tr("Are you sure you want to delete layer: %1? This cannot be undone.").arg(strLayerName),
+                                   tr("Are you sure you want to delete layer: %1?").arg(strLayerName),
                                    QMessageBox::Ok | QMessageBox::Cancel,
                                    QMessageBox::Ok);
     if (ret == QMessageBox::Ok)

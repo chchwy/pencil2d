@@ -132,6 +132,7 @@ public:
     void deleteLayer(int i);
     void deleteLayer(Layer*);
     bool addLayer(Layer* layer);
+    void insertLayerAt(int index, Layer* layer);
 
     template<typename T>
     std::vector<T*> getLayersByType() const
