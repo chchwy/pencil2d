@@ -46,8 +46,9 @@ SOURCES += \
     src/test_toolsettings.cpp \
     src/test_vectorimage.cpp \
     src/test_viewmanager.cpp \
-    src/test_util.cpp
-    src/test_editor.cpp
+    src/test_util.cpp \
+    src/test_editor.cpp \
+    src/test_undoredocommand.cpp
 
 # --- core_lib ---
 
