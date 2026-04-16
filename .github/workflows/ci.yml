@@ -126,7 +126,6 @@ jobs:
 
       - name: Resolve path
         id: resolve
-        if: runner.os != 'Linux' || matrix.qt == 5
         shell: bash
         env:
           BASENAME: ${{ steps.package.outputs.output-basename }}
