@@ -67,11 +67,11 @@ The new command-based undo/redo system (`KeyFrameAddCommand`, `KeyFrameRemoveCom
 - [ ] **Insert Exposure at Position** — `app/src/actioncommands.cpp` L738
   Calls `Layer::insertExposureAt(currentPosition)` with no undo.
 
-- [ ] **Move Frame Forward/Backward** — `app/src/actioncommands.cpp` L844–869
-  Calls `Layer::moveKeyFrame(pos, offset)`, only emits `framesModified()`.
+- [x] **Move Frame Forward/Backward** — `app/src/actioncommands.cpp` L844–869
+  Implemented via `MoveFrameCommand`. Records layerId, fromPos, offset; undo calls `moveKeyFrame(fromPos+offset, -offset)` and scrubs back; redo re-applies. No-op if `moveKeyFrame` returns false.
 
-- [ ] **Reverse Frame Order** — `app/src/actioncommands.cpp` L765–777
-  Calls `Layer::reverseOrderOfSelection()` with no undo command.
+- [x] **Reverse Frame Order** — `app/src/actioncommands.cpp` L765–777
+  Implemented via `ReverseFrameOrderCommand`. Captures the selected-frame positions at call time; both undo and redo call `applyReverse()` which re-establishes the selection and calls `reverseOrderOfSelection()` (self-inverse operation).
 
 - [ ] **Create Layer (Bitmap/Vector/Sound/Camera)** — `app/src/actioncommands.cpp` L871–922
   Each `addNewXxxLayer()` path calls `Object::addNewXxxLayer()` with no undo.
