@@ -276,6 +276,7 @@ class SetExposureCommand : public UndoRedoCommand
 public:
     SetExposureCommand(int offset,
                        int layerId,
+                       const QList<int>& selectedByPos,
                        const QList<int>& selectedByLast,
                        bool hadSelectedFrames,
                        int currentFramePos,
@@ -312,6 +313,45 @@ private:
     int mInsertPosition = 0;
     int mNewKeyPosition = 0;
     QList<int> mShiftedPositions; // before-positions of frames shifted by the exposure insert
+};
+
+class MoveFrameCommand : public UndoRedoCommand
+{
+public:
+    MoveFrameCommand(int position,
+                     int offset,
+                     int layerId,
+                     const QString& description,
+                     Editor* editor,
+                     QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int mLayerId = 0;
+    int mFromPos = 0;
+    int mOffset = 0;
+    bool mMoved = false; // false if moveKeyFrame returned false (no-op)
+};
+
+class ReverseFrameOrderCommand : public UndoRedoCommand
+{
+public:
+    ReverseFrameOrderCommand(const QList<int>& selectedFrames,
+                              int layerId,
+                              const QString& description,
+                              Editor* editor,
+                              QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    void applyReverse(Layer* layer) const;
+
+    int mLayerId = 0;
+    QList<int> mSelectedFrames; // sorted ascending
 };
 
 #endif // UNDOREDOCOMMAND_H

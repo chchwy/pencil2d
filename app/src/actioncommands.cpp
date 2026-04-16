@@ -800,14 +800,14 @@ void ActionCommands::reverseSelectedFrames()
 {
     Layer* currentLayer = mEditor->layers()->currentLayer();
 
-    if (!currentLayer->reverseOrderOfSelection()) {
-        return;
-    }
+    const QList<int> selectedFrames = currentLayer->selectedKeyFramesPositions();
+    if (selectedFrames.isEmpty()) { return; }
+
+    mEditor->undoRedo()->reverseFrameOrder(selectedFrames, currentLayer->id(), tr("Reverse Selected Frames"));
 
     if (currentLayer->type() == Layer::CAMERA) {
         mEditor->view()->forceUpdateViewTransform();
     }
-    emit mEditor->framesModified();
 };
 
 void ActionCommands::removeKey()
@@ -878,28 +878,17 @@ void ActionCommands::duplicateKey()
 void ActionCommands::moveFrameForward()
 {
     Layer* layer = mEditor->layers()->currentLayer();
-    if (layer)
-    {
-        if (layer->moveKeyFrame(mEditor->currentFrame(), 1))
-        {
-            mEditor->scrubForward();
-        }
-    }
-    mEditor->layers()->notifyAnimationLengthChanged();
-    emit mEditor->framesModified();
+    if (!layer) { return; }
+
+    mEditor->undoRedo()->moveFrame(mEditor->currentFrame(), 1, layer->id(), tr("Move Frame Forward"));
 }
 
 void ActionCommands::moveFrameBackward()
 {
     Layer* layer = mEditor->layers()->currentLayer();
-    if (layer)
-    {
-        if (layer->moveKeyFrame(mEditor->currentFrame(), -1))
-        {
-            mEditor->scrubBackward();
-        }
-    }
-    emit mEditor->framesModified();
+    if (!layer) { return; }
+
+    mEditor->undoRedo()->moveFrame(mEditor->currentFrame(), -1, layer->id(), tr("Move Frame Backward"));
 }
 
 Status ActionCommands::addNewBitmapLayer()

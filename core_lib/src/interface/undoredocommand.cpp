@@ -784,6 +784,109 @@ void InsertExposureCommand::redo()
     editor()->scrubTo(mNewKeyPosition);
 }
 
+MoveFrameCommand::MoveFrameCommand(int position,
+                                   int offset,
+                                   int layerId,
+                                   const QString& description,
+                                   Editor* editor,
+                                   QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+    , mLayerId(layerId)
+    , mFromPos(position)
+    , mOffset(offset)
+{
+    Layer* layer = editor->layers()->findLayerById(layerId);
+    if (layer) {
+        mMoved = layer->moveKeyFrame(mFromPos, mOffset);
+        if (mMoved) {
+            editor->scrubTo(mFromPos + mOffset);
+            emit editor->framesModified();
+            editor->layers()->notifyAnimationLengthChanged();
+        }
+    }
+    setText(description);
+}
+
+void MoveFrameCommand::undo()
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (!layer) { return setObsolete(true); }
+    if (!mMoved) { return; }
+
+    UndoRedoCommand::undo();
+
+    layer->moveKeyFrame(mFromPos + mOffset, -mOffset);
+    editor()->scrubTo(mFromPos);
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
+void MoveFrameCommand::redo()
+{
+    UndoRedoCommand::redo();
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (!layer) { return setObsolete(true); }
+    if (!mMoved) { return; }
+
+    layer->moveKeyFrame(mFromPos, mOffset);
+    editor()->scrubTo(mFromPos + mOffset);
+    emit editor()->framesModified();
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
+ReverseFrameOrderCommand::ReverseFrameOrderCommand(const QList<int>& selectedFrames,
+                                                   int layerId,
+                                                   const QString& description,
+                                                   Editor* editor,
+                                                   QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+    , mLayerId(layerId)
+    , mSelectedFrames(selectedFrames)
+{
+    Layer* layer = editor->layers()->findLayerById(layerId);
+    if (layer) {
+        applyReverse(layer);
+        emit editor->framesModified();
+    }
+    setText(description);
+}
+
+void ReverseFrameOrderCommand::undo()
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (!layer) { return setObsolete(true); }
+
+    UndoRedoCommand::undo();
+    applyReverse(layer);
+    emit editor()->framesModified();
+}
+
+void ReverseFrameOrderCommand::redo()
+{
+    UndoRedoCommand::redo();
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (!layer) { return setObsolete(true); }
+
+    applyReverse(layer);
+    emit editor()->framesModified();
+}
+
+void ReverseFrameOrderCommand::applyReverse(Layer* layer) const
+{
+    // Re-establish the same selection, then reverse it.
+    // reverseOrderOfSelection() is its own inverse so both undo and redo
+    // call this helper with identical logic.
+    layer->deselectAll();
+    for (int pos : qAsConst(mSelectedFrames)) {
+        layer->setFrameSelected(pos, true);
+    }
+    layer->reverseOrderOfSelection();
+}
+
 void TransformCommand::apply(const QRectF& selectionRect,
                              const QPointF& translation,
                              const qreal rotationAngle,
