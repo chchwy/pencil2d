@@ -235,6 +235,22 @@ void UndoRedoManager::insertExposureAtPosition(int insertPosition, int layerId, 
     pushCommand(cmd);
 }
 
+void UndoRedoManager::moveFrame(int position, int offset, int layerId, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    MoveFrameCommand* cmd = new MoveFrameCommand(position, offset, layerId, description, editor());
+    pushCommand(cmd);
+}
+
+void UndoRedoManager::reverseFrameOrder(const QList<int>& selectedFrames, int layerId, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    ReverseFrameOrderCommand* cmd = new ReverseFrameOrderCommand(selectedFrames, layerId, description, editor());
+    pushCommand(cmd);
+}
+
 void UndoRedoManager::beginMacro(const QString& text)
 {
     if (!mNewBackupSystemEnabled) { return; }

@@ -166,6 +166,8 @@ public:
                      int currentFramePos,
                      const QString& description);
     void insertExposureAtPosition(int insertPosition, int layerId, const QString& description);
+    void moveFrame(int position, int offset, int layerId, const QString& description);
+    void reverseFrameOrder(const QList<int>& selectedFrames, int layerId, const QString& description);
 
     void beginMacro(const QString& text);
     void endMacro();
