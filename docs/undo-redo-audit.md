@@ -8,7 +8,7 @@
 
 ## Already Covered
 
-The new command-based undo/redo system (`KeyFrameAddCommand`, `KeyFrameRemoveCommand`, `MoveKeyFramesCommand`, `BitmapReplaceCommand`, `VectorReplaceCommand`, `TransformCommand`, `RemoveKeyFramesCommand`, `DeleteLayerCommand`, `PasteFramesCommand`) covers the following:
+The new command-based undo/redo system (`KeyFrameAddCommand`, `KeyFrameRemoveCommand`, `MoveKeyFramesCommand`, `BitmapReplaceCommand`, `VectorReplaceCommand`, `TransformCommand`, `RemoveKeyFramesCommand`, `DeleteLayerCommand`, `PasteFramesCommand`, `SetExposureCommand`, `InsertExposureCommand`) covers the following:
 
 **Drawing tools**
 - [x] Brush, Pencil, Pen, Eraser, Bucket fill, Move, Select, Polyline — all commit via stroke/tool system
@@ -32,6 +32,8 @@ The new command-based undo/redo system (`KeyFrameAddCommand`, `KeyFrameRemoveCom
 - [x] Paste frames
 - [x] Apply transformed selection (Move tool commit path)
 - [x] Add Transparency to Paper / Trace Scanned Drawings (batched via macro)
+- [x] Add/Subtract frame exposure
+- [x] Insert exposure at position
 
 ---
 
@@ -61,11 +63,11 @@ The new command-based undo/redo system (`KeyFrameAddCommand`, `KeyFrameRemoveCom
 
 ### Priority 2 — High (Animation-affecting)
 
-- [ ] **Add/Subtract Frame Exposure** — `app/src/actioncommands.cpp` L697–731
-  Calls `Layer::setExposureForSelectedFrames(offset)`, emits `framesModified` but no undo command.
+- [x] **Add/Subtract Frame Exposure** — `app/src/actioncommands.cpp` L697–731
+  Implemented via `SetExposureCommand`. Constructor snapshots before/after frame positions, performs the mutation, and builds a `mMovedFrames` list. undo/redo replay moves in sorted order to avoid frame collisions. The unselected-single-frame path (A/B in the comments) is handled inside the command via `hadSelectedFrames`/`currentFramePos`.
 
-- [ ] **Insert Exposure at Position** — `app/src/actioncommands.cpp` L738
-  Calls `Layer::insertExposureAt(currentPosition)` with no undo.
+- [x] **Insert Exposure at Position** — `app/src/actioncommands.cpp` L738
+  Implemented via `InsertExposureCommand`. Constructor calls `insertExposureAt()` + `addNewKeyFrameAt()` atomically and records shifted positions for undo. undo removes the new key and shifts frames back in ascending order.
 
 - [ ] **Move Frame Forward/Backward** — `app/src/actioncommands.cpp` L844–869
   Calls `Layer::moveKeyFrame(pos, offset)`, only emits `framesModified()`.

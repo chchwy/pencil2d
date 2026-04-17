@@ -276,6 +276,7 @@ class SetExposureCommand : public UndoRedoCommand
 public:
     SetExposureCommand(int offset,
                        int layerId,
+                       const QList<int>& selectedByPos,
                        const QList<int>& selectedByLast,
                        bool hadSelectedFrames,
                        int currentFramePos,
