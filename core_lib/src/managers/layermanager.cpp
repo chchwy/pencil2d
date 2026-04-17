@@ -338,7 +338,7 @@ Status LayerManager::deleteLayer(int index)
     }
 
     const int layerId = layer->id();
-    if (editor()->undoRedo()->isNewBackupSystemEnabled())
+    if (editor()->undoRedo() && editor()->undoRedo()->isNewBackupSystemEnabled())
     {
         // The command constructor takes ownership of the layer via takeLayer,
         // removing it from the Object without deleting it.
