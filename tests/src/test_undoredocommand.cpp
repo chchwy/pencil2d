@@ -22,7 +22,12 @@ GNU General Public License for more details.
 #include "keyframe.h"
 #include "layermanager.h"
 #include "layerbitmap.h"
+#include "layervector.h"
 #include "layercamera.h"
+#include "bitmapimage.h"
+#include "vectorimage.h"
+#include "beziercurve.h"
+#include "selectionmanager.h"
 #include "undoredocommand.h"
 
 TEST_CASE("PasteFramesCommand round-trip preserves displaced contiguous frames", "[undo-redo-new]")
@@ -297,6 +302,449 @@ TEST_CASE("ReverseFrameOrderCommand reverses frame content and round-trips", "[u
     REQUIRE(layer->getKeyFrameAt(2) == frame8);
     REQUIRE(layer->getKeyFrameAt(5) == frame5);
     REQUIRE(layer->getKeyFrameAt(8) == frame2);
+
+    delete editor;
+}
+
+TEST_CASE("KeyFrameRemoveCommand removes and restores keyframe", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    KeyFrame* originalFrame = layer->getKeyFrameAt(5);
+    REQUIRE(originalFrame != nullptr);
+
+    // Constructor clones the keyframe before removal
+    KeyFrameRemoveCommand command(originalFrame, layer->id(), "Remove Frame", editor);
+
+    // Constructor performs the removal
+    REQUIRE(!layer->keyExists(5));
+
+    // Simulate QUndoStack push-time redo invocation (no-op)
+    command.redo();
+    REQUIRE(!layer->keyExists(5));
+
+    // Undo restores the frame
+    command.undo();
+    REQUIRE(layer->keyExists(5));
+    KeyFrame* restoredFrame = layer->getKeyFrameAt(5);
+    REQUIRE(restoredFrame != nullptr);
+
+    // Redo removes it again
+    command.redo();
+    REQUIRE(!layer->keyExists(5));
+
+    delete editor;
+}
+
+TEST_CASE("KeyFrameAddCommand adds and removes keyframe", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(!layer->keyExists(10));
+
+    // Constructor adds a new keyframe
+    KeyFrameAddCommand command(10, layer->id(), "Add Frame", editor);
+
+    // Constructor performs the addition
+    REQUIRE(layer->keyExists(10));
+
+    // Simulate QUndoStack push-time redo invocation (no-op)
+    command.redo();
+    REQUIRE(layer->keyExists(10));
+
+    // Undo removes the frame
+    command.undo();
+    REQUIRE(!layer->keyExists(10));
+
+    // Redo adds it back
+    command.redo();
+    REQUIRE(layer->keyExists(10));
+
+    delete editor;
+}
+
+TEST_CASE("MoveKeyFramesCommand moves multiple frames forward", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    REQUIRE(layer->addNewKeyFrameAt(8));
+    REQUIRE(layer->addNewKeyFrameAt(12));
+
+    KeyFrame* frame5 = layer->getKeyFrameAt(5);
+    KeyFrame* frame8 = layer->getKeyFrameAt(8);
+    KeyFrame* frame12 = layer->getKeyFrameAt(12);
+
+    // Move frames at positions 5, 8, 12 forward by 3
+    QList<int> positions = {5, 8, 12};
+    MoveKeyFramesCommand command(3, positions, layer->id(), "Move Frames", editor);
+
+    // Constructor performs the move
+    REQUIRE(!layer->keyExists(5));
+    REQUIRE(!layer->keyExists(8));
+    REQUIRE(!layer->keyExists(12));
+    REQUIRE(layer->getKeyFrameAt(8) == frame5);
+    REQUIRE(layer->getKeyFrameAt(11) == frame8);
+    REQUIRE(layer->getKeyFrameAt(15) == frame12);
+
+    // Simulate QUndoStack push-time redo invocation (no-op)
+    command.redo();
+
+    // Undo restores original positions
+    command.undo();
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->getKeyFrameAt(8) == frame8);
+    REQUIRE(layer->getKeyFrameAt(12) == frame12);
+    REQUIRE(!layer->keyExists(11));
+    REQUIRE(!layer->keyExists(15));
+
+    // Redo moves them forward again
+    command.redo();
+    REQUIRE(layer->getKeyFrameAt(8) == frame5);
+    REQUIRE(layer->getKeyFrameAt(11) == frame8);
+    REQUIRE(layer->getKeyFrameAt(15) == frame12);
+
+    delete editor;
+}
+
+TEST_CASE("MoveKeyFramesCommand moves frames backward", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(10));
+    REQUIRE(layer->addNewKeyFrameAt(15));
+
+    KeyFrame* frame10 = layer->getKeyFrameAt(10);
+    KeyFrame* frame15 = layer->getKeyFrameAt(15);
+
+    // Move frames backward by 5
+    QList<int> positions = {10, 15};
+    MoveKeyFramesCommand command(-5, positions, layer->id(), "Move Frames Back", editor);
+
+    REQUIRE(layer->getKeyFrameAt(5) == frame10);
+    REQUIRE(layer->getKeyFrameAt(10) == frame15);
+
+    command.undo();
+    REQUIRE(layer->getKeyFrameAt(10) == frame10);
+    REQUIRE(layer->getKeyFrameAt(15) == frame15);
+
+    delete editor;
+}
+
+TEST_CASE("SetExposureCommand extends and contracts frame exposure", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    // Create frames at positions 5, 10, 15
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    REQUIRE(layer->addNewKeyFrameAt(10));
+    REQUIRE(layer->addNewKeyFrameAt(15));
+
+    KeyFrame* frame5 = layer->getKeyFrameAt(5);
+    KeyFrame* frame10 = layer->getKeyFrameAt(10);
+    KeyFrame* frame15 = layer->getKeyFrameAt(15);
+
+    // Select frame at position 5 and extend exposure by 3
+    QList<int> selectedByPos = {5};
+    QList<int> selectedByLast;
+    SetExposureCommand command(3, layer->id(), selectedByPos, selectedByLast, true, 5, "Set Exposure", editor);
+
+    // Constructor performs the exposure change: frame at 10 should move to 13
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(!layer->keyExists(10));
+    REQUIRE(layer->getKeyFrameAt(13) == frame10);
+    REQUIRE(layer->getKeyFrameAt(15) == frame15);
+
+    // Simulate QUndoStack push-time redo invocation (no-op)
+    command.redo();
+
+    // Undo restores original positions
+    command.undo();
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->getKeyFrameAt(10) == frame10);
+    REQUIRE(layer->getKeyFrameAt(15) == frame15);
+
+    // Redo applies the exposure change again
+    command.redo();
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->getKeyFrameAt(13) == frame10);
+    REQUIRE(layer->getKeyFrameAt(15) == frame15);
+
+    delete editor;
+}
+
+TEST_CASE("SetExposureCommand contracts exposure (negative offset)", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    REQUIRE(layer->addNewKeyFrameAt(15));
+
+    KeyFrame* frame5 = layer->getKeyFrameAt(5);
+    KeyFrame* frame15 = layer->getKeyFrameAt(15);
+
+    // Contract exposure by 5: frame at 15 should move to 10
+    QList<int> selectedByPos = {5};
+    QList<int> selectedByLast;
+    SetExposureCommand command(-5, layer->id(), selectedByPos, selectedByLast, true, 5, "Contract Exposure", editor);
+
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->getKeyFrameAt(10) == frame15);
+    REQUIRE(!layer->keyExists(15));
+
+    command.undo();
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->getKeyFrameAt(15) == frame15);
+    REQUIRE(!layer->keyExists(10));
+
+    delete editor;
+}
+
+TEST_CASE("InsertExposureCommand inserts blank exposure and shifts frames", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    REQUIRE(layer->addNewKeyFrameAt(10));
+
+    KeyFrame* frame5 = layer->getKeyFrameAt(5);
+    KeyFrame* frame10 = layer->getKeyFrameAt(10);
+
+    // Insert exposure at position 7 (between frames 5 and 10)
+    InsertExposureCommand command(7, layer->id(), "Insert Exposure", editor);
+
+    // Constructor performs insertion: creates new frame and shifts subsequent frames
+    // Frame at 10 should be shifted forward
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->keyExists(7));  // new blank frame
+    REQUIRE(layer->getKeyFrameAt(11) == frame10);  // shifted by 1
+    REQUIRE(!layer->keyExists(10));
+
+    // Simulate QUndoStack push-time redo invocation (no-op)
+    command.redo();
+
+    // Undo removes the inserted frame and restores positions
+    command.undo();
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(!layer->keyExists(7));
+    REQUIRE(layer->getKeyFrameAt(10) == frame10);
+
+    // Redo inserts again
+    command.redo();
+    REQUIRE(layer->keyExists(7));
+    REQUIRE(layer->getKeyFrameAt(11) == frame10);
+
+    delete editor;
+}
+
+TEST_CASE("BitmapReplaceCommand replaces and restores bitmap image", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    LayerBitmap* layer = static_cast<LayerBitmap*>(object->addNewBitmapLayer());
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    BitmapImage* image = layer->getBitmapImageAtFrame(5);
+    REQUIRE(image != nullptr);
+
+    // Draw something on the original image
+    image->drawLine(QPointF(0, 0), QPointF(100, 100), QPen(Qt::black, 5), QPainter::CompositionMode_SourceOver, true);
+    QRect originalBounds = image->bounds();
+    REQUIRE(!originalBounds.isEmpty());
+
+    // Create backup and modify the image
+    BitmapImage backup = image->copy();
+    image->clear();
+    REQUIRE(image->bounds().isEmpty());
+
+    // Constructor stores both states
+    BitmapReplaceCommand command(&backup, layer->id(), "Draw", editor);
+
+    // Simulate QUndoStack push-time redo invocation (no-op)
+    command.redo();
+    REQUIRE(image->bounds().isEmpty());
+
+    // Undo restores the original drawn content
+    command.undo();
+    REQUIRE(image->bounds() == originalBounds);
+
+    // Redo applies the cleared state
+    command.redo();
+    REQUIRE(image->bounds().isEmpty());
+
+    delete editor;
+}
+
+TEST_CASE("VectorReplaceCommand replaces and restores vector image", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    LayerVector* layer = static_cast<LayerVector*>(object->addNewVectorLayer());
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    VectorImage* image = layer->getVectorImageAtFrame(5);
+    REQUIRE(image != nullptr);
+
+    // Add a curve to the original image
+    BezierCurve curve({QPointF(0, 0), QPointF(50, 50), QPointF(100, 0)});
+    image->addCurve(curve, 1.0);
+    REQUIRE(!image->isEmpty());
+
+    // Create backup and clear the image
+    VectorImage backup = *image;
+    image->clear();
+    REQUIRE(image->isEmpty());
+
+    // Constructor stores both states
+    VectorReplaceCommand command(&backup, layer->id(), "Draw", editor);
+
+    // Simulate QUndoStack push-time redo invocation (no-op)
+    command.redo();
+    REQUIRE(image->isEmpty());
+
+    // Undo restores the original drawn content
+    command.undo();
+    REQUIRE(!image->isEmpty());
+
+    // Redo applies the cleared state
+    command.redo();
+    REQUIRE(image->isEmpty());
+
+    delete editor;
+}
+
+TEST_CASE("TransformCommand applies and reverses selection transformation", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+    editor->scrubTo(1);
+
+    // Create a selection
+    QRectF originalRect(0, 0, 100, 100);
+    QPointF originalTranslation(0, 0);
+    qreal originalRotation = 0.0;
+    qreal originalScaleX = 1.0;
+    qreal originalScaleY = 1.0;
+    QPointF originalAnchor(50, 50);
+
+    editor->select()->setSelection(originalRect, true);
+
+    // Apply transformation: translate, rotate, scale
+    QPointF newTranslation(50, 30);
+    qreal newRotation = 45.0;
+    qreal newScaleX = 1.5;
+    qreal newScaleY = 1.5;
+    QPointF newAnchor(50, 50);
+
+    editor->select()->setTranslation(newTranslation);
+    editor->select()->setRotation(newRotation);
+    editor->select()->setScale(newScaleX, newScaleY);
+
+    // Constructor captures the current transformed state
+    TransformCommand command(
+        originalRect,
+        originalTranslation,
+        originalRotation,
+        originalScaleX,
+        originalScaleY,
+        originalAnchor,
+        false,
+        "Transform",
+        editor
+    );
+
+    // Simulate QUndoStack push-time redo invocation (no-op)
+    command.redo();
+
+    // Verify transformed state
+    REQUIRE(editor->select()->myTranslation() == newTranslation);
+    REQUIRE(editor->select()->myRotation() == newRotation);
+
+    // Undo restores original state
+    command.undo();
+    REQUIRE(editor->select()->myTranslation() == originalTranslation);
+    REQUIRE(editor->select()->myRotation() == originalRotation);
+
+    // Redo applies transformation again
+    command.redo();
+    REQUIRE(editor->select()->myTranslation() == newTranslation);
+    REQUIRE(editor->select()->myRotation() == newRotation);
 
     delete editor;
 }
