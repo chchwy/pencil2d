@@ -193,6 +193,70 @@ TEST_CASE("PasteFramesCommand cascading collisions preserve bitmap frame content
     delete editor;
 }
 
+TEST_CASE("PasteFramesCommand redo reapplies snapshot after intermediate manual edits", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(10));
+    REQUIRE(layer->addNewKeyFrameAt(11));
+
+    QList<QPair<int, KeyFrame*>> beforeFrames;
+    layer->foreachKeyFrame([&beforeFrames](KeyFrame* frame) {
+        beforeFrames.append(qMakePair(frame->pos(), frame->clone()));
+    });
+
+    const QList<int> pastePositions = {10, 11};
+    for (int pastePos : pastePositions)
+    {
+        if (layer->getKeyFrameWhichCovers(pastePos) != nullptr)
+        {
+            layer->newSelectionOfConnectedFrames(pastePos);
+            layer->moveSelectedFrames(1);
+        }
+
+        KeyFrame* source = layer->getKeyFrameAt(1);
+        REQUIRE(source != nullptr);
+        REQUIRE(layer->addKeyFrame(pastePos, source->clone()));
+    }
+
+    QList<QPair<int, KeyFrame*>> afterFrames;
+    layer->foreachKeyFrame([&afterFrames](KeyFrame* frame) {
+        afterFrames.append(qMakePair(frame->pos(), frame->clone()));
+    });
+
+    PasteFramesCommand command(beforeFrames,
+                               afterFrames,
+                               layer->id(),
+                               "Paste",
+                               editor);
+
+    command.redo();
+    command.undo();
+
+    // Introduce a non-command manual mutation between undo and redo.
+    REQUIRE(layer->addNewKeyFrameAt(30));
+    REQUIRE(layer->keyExists(30));
+
+    command.redo();
+
+    // Redo should fully restore command's after-snapshot state.
+    REQUIRE(layer->keyExists(10));
+    REQUIRE(layer->keyExists(11));
+    REQUIRE(layer->keyExists(12));
+    REQUIRE(layer->keyExists(13));
+    REQUIRE(!layer->keyExists(30));
+
+    delete editor;
+}
+
 TEST_CASE("RemoveKeyFramesCommand restores and re-removes selected frames", "[undo-redo-new]")
 {
     Editor* editor = new Editor;
