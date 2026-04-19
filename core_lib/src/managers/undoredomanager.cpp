@@ -250,6 +250,18 @@ void UndoRedoManager::reverseFrameOrder(const QList<int>& selectedFrames, int la
     pushCommand(cmd);
 }
 
+void UndoRedoManager::cameraTransform(const Camera& before,
+                                      const Camera& after,
+                                      int layerId,
+                                      int frame,
+                                      const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    CameraTransformCommand* cmd = new CameraTransformCommand(before, after, layerId, frame, description, editor());
+    pushCommand(cmd);
+}
+
 void UndoRedoManager::beginMacro(const QString& text)
 {
     if (!mNewBackupSystemEnabled) { return; }

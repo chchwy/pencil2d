@@ -353,4 +353,27 @@ private:
     QList<int> mSelectedFrames; // sorted ascending
 };
 
+class CameraTransformCommand : public UndoRedoCommand
+{
+public:
+    CameraTransformCommand(const Camera& before,
+                           const Camera& after,
+                           int layerId,
+                           int frame,
+                           const QString& description,
+                           Editor* editor,
+                           QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    bool apply(const Camera& state);
+
+    int mLayerId = 0;
+    int mFrame = 1;
+    Camera mBefore;
+    Camera mAfter;
+};
+
 #endif // UNDOREDOCOMMAND_H

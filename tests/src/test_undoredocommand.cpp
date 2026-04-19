@@ -32,6 +32,11 @@ GNU General Public License for more details.
 
 #include <QUndoStack>
 
+static bool areCameraStatesEqual(const Camera& lhs, const Camera& rhs)
+{
+    return lhs.compare(rhs);
+}
+
 TEST_CASE("PasteFramesCommand round-trip preserves displaced contiguous frames", "[undo-redo-new]")
 {
     Editor* editor = new Editor;
@@ -1260,6 +1265,58 @@ TEST_CASE("InsertExposureCommand round-trip with no frames after insert position
     REQUIRE(layer->keyExists(1));
     REQUIRE(layer->keyExists(5));
     REQUIRE(layer->keyExists(6));
+
+    delete editor;
+}
+
+TEST_CASE("CameraTransformCommand round-trip restores camera state", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    LayerCamera* layer = object->addNewCameraLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+    editor->scrubTo(1);
+
+    Camera* camera = layer->getCameraAtFrame(1);
+    REQUIRE(camera != nullptr);
+
+    Camera before(*camera);
+
+    camera->translate(QPointF(32.0, -8.0));
+    camera->rotate(18.0);
+    camera->scale(1.25);
+    camera->updateViewTransform();
+
+    Camera after(*camera);
+    REQUIRE(!areCameraStatesEqual(before, after));
+
+    QUndoStack stack;
+    stack.push(new CameraTransformCommand(before,
+                                          after,
+                                          layer->id(),
+                                          1,
+                                          "Transform Camera",
+                                          editor));
+
+    // First redo is skipped because mutation already happened before push.
+    Camera* current = layer->getCameraAtFrame(1);
+    REQUIRE(current != nullptr);
+    REQUIRE(areCameraStatesEqual(*current, after));
+
+    stack.undo();
+    current = layer->getCameraAtFrame(1);
+    REQUIRE(current != nullptr);
+    REQUIRE(areCameraStatesEqual(*current, before));
+
+    stack.redo();
+    current = layer->getCameraAtFrame(1);
+    REQUIRE(current != nullptr);
+    REQUIRE(areCameraStatesEqual(*current, after));
 
     delete editor;
 }

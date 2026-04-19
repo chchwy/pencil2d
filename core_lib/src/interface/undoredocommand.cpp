@@ -21,10 +21,12 @@ GNU General Public License for more details.
 
 #include "layermanager.h"
 #include "selectionmanager.h"
+#include "viewmanager.h"
 
 #include "layersound.h"
 #include "layerbitmap.h"
 #include "layervector.h"
+#include "layercamera.h"
 #include "layer.h"
 
 #include "editor.h"
@@ -901,6 +903,61 @@ void ReverseFrameOrderCommand::applyReverse(Layer* layer) const
         layer->setFrameSelected(pos, true);
     }
     layer->reverseOrderOfSelection();
+}
+
+CameraTransformCommand::CameraTransformCommand(const Camera& before,
+                                               const Camera& after,
+                                               int layerId,
+                                               int frame,
+                                               const QString& description,
+                                               Editor* editor,
+                                               QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+    , mLayerId(layerId)
+    , mFrame(frame)
+    , mBefore(before)
+    , mAfter(after)
+{
+    setText(description);
+}
+
+bool CameraTransformCommand::apply(const Camera& state)
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (!layer || layer->type() != Layer::CAMERA) {
+        setObsolete(true);
+        return false;
+    }
+
+    LayerCamera* cameraLayer = static_cast<LayerCamera*>(layer);
+    Camera* target = cameraLayer->getCameraAtFrame(mFrame);
+    if (!target) {
+        setObsolete(true);
+        return false;
+    }
+
+    target->assign(state);
+    target->setPathControlPointMoved(state.pathControlPointMoved());
+    editor()->scrubTo(mFrame);
+    editor()->view()->forceUpdateViewTransform();
+    emit editor()->frameModified(mFrame);
+    return true;
+}
+
+void CameraTransformCommand::undo()
+{
+    UndoRedoCommand::undo();
+    apply(mBefore);
+}
+
+void CameraTransformCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack.
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    apply(mAfter);
 }
 
 void TransformCommand::apply(const QRectF& selectionRect,
