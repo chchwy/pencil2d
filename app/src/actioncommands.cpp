@@ -833,6 +833,8 @@ void ActionCommands::duplicateLayer()
     if (!fromLayer->keyExists(1)) {
         toLayer->removeKeyFrame(1);
     }
+
+    mEditor->undoRedo()->addLayer(layerMgr->getIndex(toLayer), toLayer->id(), tr("Duplicate Layer"));
     mEditor->scrubTo(currFrame);
 }
 
@@ -862,6 +864,9 @@ void ActionCommands::duplicateKey()
     }
 
     layer->addKeyFrame(nextEmptyFrame, dupKey);
+
+    mEditor->undoRedo()->duplicateKeyFrame(layer->id(), nextEmptyFrame, dupKey, tr("Duplicate Frame"));
+
     mEditor->scrubTo(nextEmptyFrame);
     emit mEditor->frameModified(nextEmptyFrame);
 
@@ -899,7 +904,8 @@ Status ActionCommands::addNewBitmapLayer()
                                          mEditor->layers()->nameSuggestLayer(tr("Bitmap Layer")), &ok);
     if (ok && !text.isEmpty())
     {
-        mEditor->layers()->createBitmapLayer(text);
+        Layer* layer = mEditor->layers()->createBitmapLayer(text);
+        mEditor->undoRedo()->addLayer(mEditor->layers()->getIndex(layer), layer->id(), tr("Add Bitmap Layer"));
     }
     return Status::OK;
 }
@@ -912,7 +918,8 @@ Status ActionCommands::addNewVectorLayer()
                                          mEditor->layers()->nameSuggestLayer(tr("Vector Layer")), &ok);
     if (ok && !text.isEmpty())
     {
-        mEditor->layers()->createVectorLayer(text);
+        Layer* layer = mEditor->layers()->createVectorLayer(text);
+        mEditor->undoRedo()->addLayer(mEditor->layers()->getIndex(layer), layer->id(), tr("Add Vector Layer"));
     }
     return Status::OK;
 }
@@ -925,7 +932,8 @@ Status ActionCommands::addNewCameraLayer()
                                          mEditor->layers()->nameSuggestLayer(tr("Camera Layer")), &ok);
     if (ok && !text.isEmpty())
     {
-        mEditor->layers()->createCameraLayer(text);
+        Layer* layer = mEditor->layers()->createCameraLayer(text);
+        mEditor->undoRedo()->addLayer(mEditor->layers()->getIndex(layer), layer->id(), tr("Add Camera Layer"));
     }
     return Status::OK;
 }
@@ -939,6 +947,7 @@ Status ActionCommands::addNewSoundLayer()
     if (ok && !strLayerName.isEmpty())
     {
         Layer* layer = mEditor->layers()->createSoundLayer(strLayerName);
+        mEditor->undoRedo()->addLayer(mEditor->layers()->getIndex(layer), layer->id(), tr("Add Sound Layer"));
         mEditor->layers()->setCurrentLayer(layer);
    }
     return Status::OK;

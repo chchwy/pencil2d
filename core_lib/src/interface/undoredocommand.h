@@ -376,4 +376,63 @@ private:
     Camera mAfter;
 };
 
+class AddLayerCommand : public UndoRedoCommand
+{
+public:
+    AddLayerCommand(int layerIndex,
+                    int layerId,
+                    const QString& description,
+                    Editor* editor,
+                    QUndoCommand* parent = nullptr);
+    ~AddLayerCommand() override;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int mLayerIndex = 0;
+    int mLayerId = 0;
+    Layer* mLayer = nullptr;
+};
+
+class DuplicateKeyFrameCommand : public UndoRedoCommand
+{
+public:
+    DuplicateKeyFrameCommand(int layerId,
+                             int framePos,
+                             const KeyFrame* key,
+                             const QString& description,
+                             Editor* editor,
+                             QUndoCommand* parent = nullptr);
+    ~DuplicateKeyFrameCommand() override;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int mLayerId = 0;
+    int mFramePos = 1;
+    KeyFrame* mKeyClone = nullptr;
+};
+
+class SwapLayersCommand : public UndoRedoCommand
+{
+public:
+    SwapLayersCommand(int leftIndex,
+                      int rightIndex,
+                      const QString& description,
+                      Editor* editor,
+                      QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    bool applySwap();
+
+    int mLeftIndex = 0;
+    int mRightIndex = 0;
+    bool mDidSwap = false;
+};
+
 #endif // UNDOREDOCOMMAND_H

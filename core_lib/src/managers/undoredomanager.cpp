@@ -262,6 +262,31 @@ void UndoRedoManager::cameraTransform(const Camera& before,
     pushCommand(cmd);
 }
 
+void UndoRedoManager::addLayer(int layerIndex, int layerId, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    AddLayerCommand* cmd = new AddLayerCommand(layerIndex, layerId, description, editor());
+    pushCommand(cmd);
+}
+
+void UndoRedoManager::duplicateKeyFrame(int layerId, int framePos, const KeyFrame* key, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+    if (!key) { return; }
+
+    DuplicateKeyFrameCommand* cmd = new DuplicateKeyFrameCommand(layerId, framePos, key, description, editor());
+    pushCommand(cmd);
+}
+
+void UndoRedoManager::swapLayers(int leftIndex, int rightIndex, const QString& description)
+{
+    if (!mNewBackupSystemEnabled) { return; }
+
+    SwapLayersCommand* cmd = new SwapLayersCommand(leftIndex, rightIndex, description, editor());
+    pushCommand(cmd);
+}
+
 void UndoRedoManager::beginMacro(const QString& text)
 {
     if (!mNewBackupSystemEnabled) { return; }
