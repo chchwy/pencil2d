@@ -153,6 +153,11 @@ MainWindow2::MainWindow2(QWidget* parent) :
 
 void MainWindow2::autoSaveTimeout()
 {
+    if (!mEditor->undoRedo()->hasUnsavedChanges())
+    {
+        return;
+    }
+
     FileManager fm;
     fm.writeToWorkingFolder(mEditor->object());
 }
