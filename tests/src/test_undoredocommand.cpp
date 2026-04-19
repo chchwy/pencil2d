@@ -1078,6 +1078,66 @@ TEST_CASE("SetExposureCommand single unselected frame uses currentFramePos", "[u
     delete editor;
 }
 
+TEST_CASE("SetExposureCommand large positive offset round-trips frame positions", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    REQUIRE(layer->addNewKeyFrameAt(10));
+    REQUIRE(layer->addNewKeyFrameAt(50));
+
+    KeyFrame* frame5 = layer->getKeyFrameAt(5);
+    KeyFrame* frame10 = layer->getKeyFrameAt(10);
+    KeyFrame* frame50 = layer->getKeyFrameAt(50);
+    REQUIRE(frame5 != nullptr);
+    REQUIRE(frame10 != nullptr);
+    REQUIRE(frame50 != nullptr);
+
+    layer->setFrameSelected(5, true);
+
+    const QList<int> selectedByPos = layer->selectedKeyFramesPositions();
+    const QList<int> selectedByLast = layer->selectedKeyFramesByLast();
+
+    SetExposureCommand command(20,
+                               layer->id(),
+                               selectedByPos,
+                               selectedByLast,
+                               /*hadSelectedFrames=*/true,
+                               /*currentFramePos=*/0,
+                               "Set Exposure Large Offset",
+                               editor);
+
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->getKeyFrameAt(30) == frame10);
+    REQUIRE(layer->getKeyFrameAt(70) == frame50);
+    REQUIRE(!layer->keyExists(10));
+    REQUIRE(!layer->keyExists(50));
+
+    command.redo();
+    command.undo();
+
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->getKeyFrameAt(10) == frame10);
+    REQUIRE(layer->getKeyFrameAt(50) == frame50);
+    REQUIRE(!layer->keyExists(30));
+    REQUIRE(!layer->keyExists(70));
+
+    command.redo();
+    REQUIRE(layer->getKeyFrameAt(5) == frame5);
+    REQUIRE(layer->getKeyFrameAt(30) == frame10);
+    REQUIRE(layer->getKeyFrameAt(70) == frame50);
+
+    delete editor;
+}
+
 TEST_CASE("InsertExposureCommand round-trip inserts and removes key", "[undo-redo-new]")
 {
     Editor* editor = new Editor;
