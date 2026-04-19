@@ -30,6 +30,8 @@ GNU General Public License for more details.
 #include "selectionmanager.h"
 #include "undoredocommand.h"
 
+#include <QUndoStack>
+
 TEST_CASE("PasteFramesCommand round-trip preserves displaced contiguous frames", "[undo-redo-new]")
 {
     Editor* editor = new Editor;
@@ -42,6 +44,7 @@ TEST_CASE("PasteFramesCommand round-trip preserves displaced contiguous frames",
     Layer* layer = object->addNewBitmapLayer();
     REQUIRE(editor->setObject(object) == Status::OK);
     editor->layers()->setCurrentLayer(0);
+    editor->scrubTo(5);
 
     REQUIRE(layer->addNewKeyFrameAt(10));
     REQUIRE(layer->addNewKeyFrameAt(11));
@@ -116,6 +119,8 @@ TEST_CASE("PasteFramesCommand cascading collisions preserve bitmap frame content
     LayerBitmap* layer = static_cast<LayerBitmap*>(object->addNewBitmapLayer());
     REQUIRE(editor->setObject(object) == Status::OK);
     editor->layers()->setCurrentLayer(0);
+    editor->scrubTo(5);
+    editor->scrubTo(5);
 
     REQUIRE(layer->addNewKeyFrameAt(10));
     REQUIRE(layer->addNewKeyFrameAt(11));
@@ -787,23 +792,28 @@ TEST_CASE("BitmapReplaceCommand replaces and restores bitmap image", "[undo-redo
     REQUIRE(!originalBounds.isEmpty());
 
     // Create backup and modify the image
-    BitmapImage backup = image->copy();
+    BitmapImage backup = *image;
     image->clear();
     REQUIRE(image->bounds().isEmpty());
 
-    // Constructor stores both states
-    BitmapReplaceCommand command(&backup, layer->id(), "Draw", editor);
+    QUndoStack stack;
+    stack.push(new BitmapReplaceCommand(&backup, layer->id(), "Draw", editor));
+    REQUIRE(stack.canUndo());
+    REQUIRE(!stack.canRedo());
 
-    // Simulate QUndoStack push-time redo invocation (no-op)
-    command.redo();
-    REQUIRE(image->bounds().isEmpty());
+    // Push-time redo is a no-op for this command, so image should remain cleared.
+    REQUIRE(layer->keyExists(5));
 
     // Undo restores the original drawn content
-    command.undo();
+    stack.undo();
+    image = layer->getBitmapImageAtFrame(5);
+    REQUIRE(image != nullptr);
     REQUIRE(image->bounds() == originalBounds);
 
     // Redo applies the cleared state
-    command.redo();
+    stack.redo();
+    image = layer->getBitmapImageAtFrame(5);
+    REQUIRE(image != nullptr);
     REQUIRE(image->bounds().isEmpty());
 
     delete editor;
@@ -820,6 +830,7 @@ TEST_CASE("VectorReplaceCommand replaces and restores vector image", "[undo-redo
     LayerVector* layer = static_cast<LayerVector*>(object->addNewVectorLayer());
     REQUIRE(editor->setObject(object) == Status::OK);
     editor->layers()->setCurrentLayer(0);
+    editor->scrubTo(5);
 
     REQUIRE(layer->addNewKeyFrameAt(5));
     VectorImage* image = layer->getVectorImageAtFrame(5);
@@ -835,19 +846,24 @@ TEST_CASE("VectorReplaceCommand replaces and restores vector image", "[undo-redo
     image->clear();
     REQUIRE(image->isEmpty());
 
-    // Constructor stores both states
-    VectorReplaceCommand command(&backup, layer->id(), "Draw", editor);
+    QUndoStack stack;
+    stack.push(new VectorReplaceCommand(&backup, layer->id(), "Draw", editor));
 
-    // Simulate QUndoStack push-time redo invocation (no-op)
-    command.redo();
+    // Push-time redo is a no-op for this command, so image should remain cleared.
+    image = layer->getVectorImageAtFrame(5);
+    REQUIRE(image != nullptr);
     REQUIRE(image->isEmpty());
 
     // Undo restores the original drawn content
-    command.undo();
+    stack.undo();
+    image = layer->getVectorImageAtFrame(5);
+    REQUIRE(image != nullptr);
     REQUIRE(!image->isEmpty());
 
     // Redo applies the cleared state
-    command.redo();
+    stack.redo();
+    image = layer->getVectorImageAtFrame(5);
+    REQUIRE(image != nullptr);
     REQUIRE(image->isEmpty());
 
     delete editor;

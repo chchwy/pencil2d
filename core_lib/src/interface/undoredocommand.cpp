@@ -277,14 +277,21 @@ BitmapReplaceCommand::BitmapReplaceCommand(const BitmapImage* undoBitmap,
                              Editor *editor,
                              QUndoCommand *parent) : UndoRedoCommand(editor, parent)
 {
-
-    this->undoBitmap = *undoBitmap;
+    // Capture snapshots as clones so keyframe position/bounds are preserved.
+    BitmapImage* undoClone = static_cast<BitmapImage*>(undoBitmap->clone());
+    Q_ASSERT(undoClone != nullptr);
+    this->undoBitmap = *undoClone;
+    delete undoClone;
     this->undoLayerId = undoLayerId;
 
     Layer* layer = editor->layers()->currentLayer();
     redoLayerId = layer->id();
-    redoBitmap = *static_cast<LayerBitmap*>(layer)->
-            getLastBitmapImageAtFrame(editor->currentFrame());
+    BitmapImage* currentBitmap = static_cast<LayerBitmap*>(layer)->getBitmapImageAtFrame(editor->currentFrame());
+    Q_ASSERT(currentBitmap != nullptr);
+    BitmapImage* redoClone = static_cast<BitmapImage*>(currentBitmap->clone());
+    Q_ASSERT(redoClone != nullptr);
+    redoBitmap = *redoClone;
+    delete redoClone;
 
     setText(description);
 }
@@ -297,6 +304,11 @@ void BitmapReplaceCommand::undo()
     }
 
     UndoRedoCommand::undo();
+
+    BitmapImage* currentBitmap = static_cast<LayerBitmap*>(layer)->getBitmapImageAtFrame(undoBitmap.pos());
+    if (currentBitmap) {
+        redoBitmap = *currentBitmap;
+    }
 
     static_cast<LayerBitmap*>(layer)->replaceKeyFrame(&undoBitmap);
 
@@ -315,6 +327,11 @@ void BitmapReplaceCommand::redo()
     // Ignore automatic redo when added to undo stack
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
+    BitmapImage* currentBitmap = static_cast<LayerBitmap*>(layer)->getBitmapImageAtFrame(redoBitmap.pos());
+    if (currentBitmap) {
+        undoBitmap = *currentBitmap;
+    }
+
     static_cast<LayerBitmap*>(layer)->replaceKeyFrame(&redoBitmap);
 
     editor()->scrubTo(redoBitmap.pos());
@@ -332,7 +349,7 @@ VectorReplaceCommand::VectorReplaceCommand(const VectorImage* undoVector,
     Layer* layer = editor->layers()->currentLayer();
     redoLayerId = layer->id();
     redoVector = *static_cast<LayerVector*>(layer)->
-            getLastVectorImageAtFrame(editor->currentFrame(), 0);
+            getVectorImageAtFrame(editor->currentFrame());
 
     setText(description);
 }
@@ -345,6 +362,11 @@ void VectorReplaceCommand::undo()
     }
 
     UndoRedoCommand::undo();
+
+    VectorImage* currentVector = static_cast<LayerVector*>(layer)->getVectorImageAtFrame(undoVector.pos());
+    if (currentVector) {
+        redoVector = *currentVector;
+    }
 
     static_cast<LayerVector*>(layer)->replaceKeyFrame(&undoVector);
 
@@ -362,6 +384,11 @@ void VectorReplaceCommand::redo()
 
     // Ignore automatic redo when added to undo stack
     if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    VectorImage* currentVector = static_cast<LayerVector*>(layer)->getVectorImageAtFrame(redoVector.pos());
+    if (currentVector) {
+        undoVector = *currentVector;
+    }
 
     static_cast<LayerVector*>(layer)->replaceKeyFrame(&redoVector);
 
