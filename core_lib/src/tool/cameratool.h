@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include <QCursor>
 
 #include "basetool.h"
+#include "camera.h"
 #include "camerafieldoption.h"
 #include "preferencemanager.h"
 
@@ -111,6 +112,10 @@ private:
     QPointF mTransformOffset;
     CameraMoveType mCamMoveMode = CameraMoveType::NONE;
     int mDragPathFrame = 1;
+    CameraMoveType mUndoMoveMode = CameraMoveType::NONE;
+    int mUndoFrame = 1;
+    bool mHasUndoBaseline = false;
+    Camera mUndoBefore;
     int mRotationIncrement = 0;
 
     QRectF mCameraRect;

@@ -29,6 +29,7 @@ GNU General Public License for more details.
 #include "mathutils.h"
 #include "transform.h"
 #include "camera.h"
+#include "undoredomanager.h"
 
 #include "scribblearea.h"
 
@@ -38,6 +39,14 @@ GNU General Public License for more details.
 
 CameraTool::CameraTool(QObject* object) : BaseTool(object)
 {
+}
+
+static bool cameraStatesEqual(const Camera& lhs, const Camera& rhs)
+{
+    return lhs.compare(rhs)
+           && lhs.getPathControlPoint() == rhs.getPathControlPoint()
+           && lhs.pathControlPointMoved() == rhs.pathControlPointMoved()
+           && lhs.getEasingType() == rhs.getEasingType();
 }
 
 CameraTool::~CameraTool()
@@ -328,6 +337,27 @@ void CameraTool::pointerPressEvent(PointerEvent* event)
     updateMoveMode(event->canvasPos());
     updateUIAssists(mEditor->layers()->currentLayer());
 
+    mHasUndoBaseline = false;
+    mUndoMoveMode = mCamMoveMode;
+
+    Layer* layer = mEditor->layers()->currentLayer();
+    Q_ASSERT(layer && layer->type() == Layer::CAMERA);
+    LayerCamera* cameraLayer = static_cast<LayerCamera*>(layer);
+
+    if (mCamMoveMode != CameraMoveType::NONE) {
+        if (mCamMoveMode == CameraMoveType::PATH) {
+            mUndoFrame = mDragPathFrame;
+        } else {
+            mUndoFrame = mEditor->currentFrame();
+        }
+
+        Camera* before = cameraLayer->getCameraAtFrame(mUndoFrame);
+        if (before) {
+            mUndoBefore = *before;
+            mHasUndoBaseline = true;
+        }
+    }
+
     mStartAngle = getAngleBetween(event->canvasPos(), mCameraRect.center()) - mCurrentAngle;
     mTransformOffset = event->canvasPos();
 }
@@ -367,6 +397,23 @@ void CameraTool::pointerReleaseEvent(PointerEvent* event)
         transformCameraPath(event->canvasPos());
         mEditor->view()->forceUpdateViewTransform();
     }
+
+    if (mHasUndoBaseline) {
+        LayerCamera* cameraLayer = static_cast<LayerCamera*>(layer);
+        Camera* after = cameraLayer->getCameraAtFrame(mUndoFrame);
+        if (after && !cameraStatesEqual(mUndoBefore, *after)) {
+            const QString actionText = (mUndoMoveMode == CameraMoveType::PATH)
+                ? tr("Move Camera Path")
+                : tr("Transform Camera");
+            mEditor->undoRedo()->cameraTransform(mUndoBefore,
+                                                 *after,
+                                                 layer->id(),
+                                                 mUndoFrame,
+                                                 actionText);
+        }
+    }
+    mHasUndoBaseline = false;
+
     emit mEditor->frameModified(frame);
 }
 
