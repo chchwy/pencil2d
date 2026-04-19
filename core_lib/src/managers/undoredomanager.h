@@ -172,6 +172,9 @@ public:
                          int layerId,
                          int frame,
                          const QString& description);
+    void addLayer(int layerIndex, int layerId, const QString& description);
+    void duplicateKeyFrame(int layerId, int framePos, const KeyFrame* key, const QString& description);
+    void swapLayers(int leftIndex, int rightIndex, const QString& description);
 
     void beginMacro(const QString& text);
     void endMacro();

@@ -1031,6 +1031,11 @@ void Editor::switchVisibilityOfLayer(int layerNumber)
 
 void Editor::swapLayers(int i, int j)
 {
+    if (undoRedo() && undoRedo()->isNewBackupSystemEnabled()) {
+        undoRedo()->swapLayers(i, j, tr("Swap Layers"));
+        return;
+    }
+
     bool didSwapLayer = mObject->swapLayers(i, j);
     if (!didSwapLayer) { return; }
 

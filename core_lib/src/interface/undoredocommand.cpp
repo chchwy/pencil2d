@@ -22,6 +22,7 @@ GNU General Public License for more details.
 #include "layermanager.h"
 #include "selectionmanager.h"
 #include "viewmanager.h"
+#include "soundmanager.h"
 
 #include "layersound.h"
 #include "layerbitmap.h"
@@ -31,6 +32,7 @@ GNU General Public License for more details.
 
 #include "editor.h"
 #include "object.h"
+#include "scribblearea.h"
 #include "undoredocommand.h"
 
 UndoRedoCommand::UndoRedoCommand(Editor* editor, QUndoCommand* parent) : QUndoCommand(parent)
@@ -958,6 +960,188 @@ void CameraTransformCommand::redo()
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
     apply(mAfter);
+}
+
+AddLayerCommand::AddLayerCommand(int layerIndex,
+                                 int layerId,
+                                 const QString& description,
+                                 Editor* editor,
+                                 QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+    , mLayerIndex(layerIndex)
+    , mLayerId(layerId)
+{
+    setText(description);
+}
+
+AddLayerCommand::~AddLayerCommand()
+{
+    delete mLayer;
+}
+
+void AddLayerCommand::undo()
+{
+    LayerManager* layerMgr = editor()->layers();
+    Layer* layer = editor()->object()->findLayerById(mLayerId);
+    if (!layer) {
+        return setObsolete(true);
+    }
+
+    UndoRedoCommand::undo();
+
+    if (mLayerIndex == editor()->object()->getLayerCount() - 1 &&
+        mLayerIndex == layerMgr->currentLayerIndex())
+    {
+        layerMgr->setCurrentLayer(layerMgr->currentLayerIndex() - 1);
+    }
+
+    mLayer = editor()->object()->takeLayer(mLayerId);
+
+    if (mLayerIndex >= layerMgr->currentLayerIndex())
+    {
+        layerMgr->setCurrentLayer(layerMgr->currentLayerIndex());
+    }
+
+    emit layerMgr->layerDeleted(mLayerIndex);
+    emit layerMgr->layerCountChanged(layerMgr->count());
+}
+
+void AddLayerCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack.
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    if (!mLayer) {
+        return setObsolete(true);
+    }
+
+    editor()->object()->insertLayerAt(mLayerIndex, mLayer);
+    mLayer = nullptr;
+
+    emit editor()->layers()->layerCountChanged(editor()->layers()->count());
+    editor()->layers()->setCurrentLayer(mLayerIndex);
+}
+
+DuplicateKeyFrameCommand::DuplicateKeyFrameCommand(int layerId,
+                                                   int framePos,
+                                                   const KeyFrame* key,
+                                                   const QString& description,
+                                                   Editor* editor,
+                                                   QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+    , mLayerId(layerId)
+    , mFramePos(framePos)
+{
+    mKeyClone = key ? key->clone() : nullptr;
+    setText(description);
+}
+
+DuplicateKeyFrameCommand::~DuplicateKeyFrameCommand()
+{
+    delete mKeyClone;
+}
+
+void DuplicateKeyFrameCommand::undo()
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (!layer) {
+        return setObsolete(true);
+    }
+
+    UndoRedoCommand::undo();
+    layer->removeKeyFrame(mFramePos);
+
+    emit editor()->frameModified(mFramePos);
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
+void DuplicateKeyFrameCommand::redo()
+{
+    Layer* layer = editor()->layers()->findLayerById(mLayerId);
+    if (!layer || !mKeyClone) {
+        return setObsolete(true);
+    }
+
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack.
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    if (!layer->addKeyFrame(mFramePos, mKeyClone->clone())) {
+        return;
+    }
+
+    if (layer->type() == Layer::SOUND)
+    {
+        SoundClip* clip = dynamic_cast<SoundClip*>(layer->getKeyFrameAt(mFramePos));
+        if (clip) {
+            editor()->sound()->processSound(clip);
+        }
+    }
+
+    editor()->scrubTo(mFramePos);
+    emit editor()->frameModified(mFramePos);
+    editor()->layers()->notifyAnimationLengthChanged();
+}
+
+SwapLayersCommand::SwapLayersCommand(int leftIndex,
+                                     int rightIndex,
+                                     const QString& description,
+                                     Editor* editor,
+                                     QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent)
+    , mLeftIndex(leftIndex)
+    , mRightIndex(rightIndex)
+{
+    mDidSwap = applySwap();
+    setText(description);
+}
+
+bool SwapLayersCommand::applySwap()
+{
+    const bool didSwapLayer = editor()->object()->swapLayers(mLeftIndex, mRightIndex);
+    if (!didSwapLayer) {
+        return false;
+    }
+
+    if (mRightIndex < mLeftIndex)
+    {
+        editor()->layers()->setCurrentLayer(mRightIndex + 1);
+    }
+    else
+    {
+        editor()->layers()->setCurrentLayer(mRightIndex - 1);
+    }
+    emit editor()->updateTimeLine();
+    if (editor()->getScribbleArea()) {
+        editor()->getScribbleArea()->onLayerChanged();
+    }
+    return true;
+}
+
+void SwapLayersCommand::undo()
+{
+    if (!mDidSwap) {
+        return;
+    }
+    UndoRedoCommand::undo();
+    applySwap();
+}
+
+void SwapLayersCommand::redo()
+{
+    if (!mDidSwap) {
+        return;
+    }
+
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack.
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    applySwap();
 }
 
 void TransformCommand::apply(const QRectF& selectionRect,

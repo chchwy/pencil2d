@@ -1320,3 +1320,123 @@ TEST_CASE("CameraTransformCommand round-trip restores camera state", "[undo-redo
 
     delete editor;
 }
+
+TEST_CASE("AddLayerCommand removes and restores newly created layer", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+    object->addNewCameraLayer();
+
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    Layer* created = editor->layers()->createBitmapLayer("Bitmap Layer");
+    REQUIRE(created != nullptr);
+
+    const int createdIndex = editor->layers()->getIndex(created);
+    const int createdId = created->id();
+    const int countAfterCreate = object->getLayerCount();
+
+    AddLayerCommand command(createdIndex,
+                            createdId,
+                            "Add Bitmap Layer",
+                            editor);
+
+    command.redo();
+    REQUIRE(object->getLayerCount() == countAfterCreate);
+
+    command.undo();
+    REQUIRE(object->findLayerById(createdId) == nullptr);
+    REQUIRE(object->getLayerCount() == countAfterCreate - 1);
+
+    command.redo();
+    REQUIRE(object->findLayerById(createdId) != nullptr);
+    REQUIRE(object->getLayerCount() == countAfterCreate);
+
+    delete editor;
+}
+
+TEST_CASE("DuplicateKeyFrameCommand removes and restores duplicated key", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* layer = object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(5));
+    KeyFrame* source = layer->getKeyFrameAt(5);
+    REQUIRE(source != nullptr);
+
+    const int dupPos = 6;
+    KeyFrame* dupKey = source->clone();
+    REQUIRE(layer->addKeyFrame(dupPos, dupKey));
+
+    DuplicateKeyFrameCommand command(layer->id(),
+                                     dupPos,
+                                     dupKey,
+                                     "Duplicate Frame",
+                                     editor);
+
+    command.redo();
+    REQUIRE(layer->keyExists(dupPos));
+
+    command.undo();
+    REQUIRE(!layer->keyExists(dupPos));
+
+    command.redo();
+    REQUIRE(layer->keyExists(dupPos));
+
+    delete editor;
+}
+
+TEST_CASE("SwapLayersCommand swaps layer order and round-trips", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    Layer* camera = object->addNewCameraLayer();
+    Layer* bitmap = object->addNewBitmapLayer();
+    Layer* vector = object->addNewVectorLayer();
+    Q_UNUSED(camera)
+
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(2);
+
+    const int left = 1;
+    const int right = 2;
+    const int bitmapId = bitmap->id();
+    const int vectorId = vector->id();
+
+    SwapLayersCommand command(left,
+                              right,
+                              "Swap Layers",
+                              editor);
+
+    REQUIRE(object->getLayer(left)->id() == vectorId);
+    REQUIRE(object->getLayer(right)->id() == bitmapId);
+
+    command.redo();
+    REQUIRE(object->getLayer(left)->id() == vectorId);
+    REQUIRE(object->getLayer(right)->id() == bitmapId);
+
+    command.undo();
+    REQUIRE(object->getLayer(left)->id() == bitmapId);
+    REQUIRE(object->getLayer(right)->id() == vectorId);
+
+    command.redo();
+    REQUIRE(object->getLayer(left)->id() == vectorId);
+    REQUIRE(object->getLayer(right)->id() == bitmapId);
+
+    delete editor;
+}
