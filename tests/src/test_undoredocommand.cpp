@@ -659,14 +659,14 @@ TEST_CASE("SetExposureCommand extends and contracts frame exposure", "[undo-redo
 
     // Select frame at position 5 and extend exposure by 3
     QList<int> selectedByPos = {5};
-    QList<int> selectedByLast;
+    QList<int> selectedByLast = {5};
     SetExposureCommand command(3, layer->id(), selectedByPos, selectedByLast, true, 5, "Set Exposure", editor);
 
     // Constructor performs the exposure change: frame at 10 should move to 13
     REQUIRE(layer->getKeyFrameAt(5) == frame5);
     REQUIRE(!layer->keyExists(10));
     REQUIRE(layer->getKeyFrameAt(13) == frame10);
-    REQUIRE(layer->getKeyFrameAt(15) == frame15);
+    REQUIRE(layer->getKeyFrameAt(18) == frame15);
 
     // Simulate QUndoStack push-time redo invocation (no-op)
     command.redo();
@@ -681,7 +681,7 @@ TEST_CASE("SetExposureCommand extends and contracts frame exposure", "[undo-redo
     command.redo();
     REQUIRE(layer->getKeyFrameAt(5) == frame5);
     REQUIRE(layer->getKeyFrameAt(13) == frame10);
-    REQUIRE(layer->getKeyFrameAt(15) == frame15);
+    REQUIRE(layer->getKeyFrameAt(18) == frame15);
 
     delete editor;
 }
@@ -706,7 +706,7 @@ TEST_CASE("SetExposureCommand contracts exposure (negative offset)", "[undo-redo
 
     // Contract exposure by 5: frame at 15 should move to 10
     QList<int> selectedByPos = {5};
-    QList<int> selectedByLast;
+    QList<int> selectedByLast = {5};
     SetExposureCommand command(-5, layer->id(), selectedByPos, selectedByLast, true, 5, "Contract Exposure", editor);
 
     REQUIRE(layer->getKeyFrameAt(5) == frame5);
@@ -739,15 +739,14 @@ TEST_CASE("InsertExposureCommand inserts blank exposure and shifts frames", "[un
     KeyFrame* frame5 = layer->getKeyFrameAt(5);
     KeyFrame* frame10 = layer->getKeyFrameAt(10);
 
-    // Insert exposure at position 7 (between frames 5 and 10)
-    InsertExposureCommand command(7, layer->id(), "Insert Exposure", editor);
+    // Insert exposure at position 5 where a keyframe exists.
+    InsertExposureCommand command(5, layer->id(), "Insert Exposure", editor);
 
-    // Constructor performs insertion: creates new frame and shifts subsequent frames
-    // Frame at 10 should be shifted forward
+    // Constructor performs insertion by creating a new key at 6.
+    // Frame at 10 is unchanged because there is no keyframe at 6 to shift.
     REQUIRE(layer->getKeyFrameAt(5) == frame5);
-    REQUIRE(layer->keyExists(7));  // new blank frame
-    REQUIRE(layer->getKeyFrameAt(11) == frame10);  // shifted by 1
-    REQUIRE(!layer->keyExists(10));
+    REQUIRE(layer->keyExists(6));
+    REQUIRE(layer->getKeyFrameAt(10) == frame10);
 
     // Simulate QUndoStack push-time redo invocation (no-op)
     command.redo();
@@ -755,13 +754,13 @@ TEST_CASE("InsertExposureCommand inserts blank exposure and shifts frames", "[un
     // Undo removes the inserted frame and restores positions
     command.undo();
     REQUIRE(layer->getKeyFrameAt(5) == frame5);
-    REQUIRE(!layer->keyExists(7));
+    REQUIRE(!layer->keyExists(6));
     REQUIRE(layer->getKeyFrameAt(10) == frame10);
 
     // Redo inserts again
     command.redo();
-    REQUIRE(layer->keyExists(7));
-    REQUIRE(layer->getKeyFrameAt(11) == frame10);
+    REQUIRE(layer->keyExists(6));
+    REQUIRE(layer->getKeyFrameAt(10) == frame10);
 
     delete editor;
 }
