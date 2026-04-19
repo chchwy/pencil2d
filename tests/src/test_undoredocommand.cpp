@@ -61,7 +61,6 @@ TEST_CASE("PasteFramesCommand round-trip preserves displaced contiguous frames",
     {
         if (layer->getKeyFrameWhichCovers(pastePos) != nullptr)
         {
-            collisionPositions.append(pastePos);
             layer->newSelectionOfConnectedFrames(pastePos);
             layer->moveSelectedFrames(1);
         }
@@ -102,6 +101,94 @@ TEST_CASE("PasteFramesCommand round-trip preserves displaced contiguous frames",
     REQUIRE(layer->keyExists(11));
     REQUIRE(layer->keyExists(12));
     REQUIRE(layer->keyExists(13));
+
+    delete editor;
+}
+
+TEST_CASE("PasteFramesCommand cascading collisions preserve bitmap frame content", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+
+    LayerBitmap* layer = static_cast<LayerBitmap*>(object->addNewBitmapLayer());
+    REQUIRE(editor->setObject(object) == Status::OK);
+    editor->layers()->setCurrentLayer(0);
+
+    REQUIRE(layer->addNewKeyFrameAt(10));
+    REQUIRE(layer->addNewKeyFrameAt(11));
+    REQUIRE(layer->addNewKeyFrameAt(12));
+
+    BitmapImage* image10 = layer->getBitmapImageAtFrame(10);
+    BitmapImage* image11 = layer->getBitmapImageAtFrame(11);
+    BitmapImage* image12 = layer->getBitmapImageAtFrame(12);
+    REQUIRE(image10 != nullptr);
+    REQUIRE(image11 != nullptr);
+    REQUIRE(image12 != nullptr);
+
+    image10->drawLine(QPointF(0, 0), QPointF(10, 0), QPen(Qt::black, 1), QPainter::CompositionMode_SourceOver, true);
+    image11->drawLine(QPointF(0, 1), QPointF(10, 1), QPen(Qt::black, 1), QPainter::CompositionMode_SourceOver, true);
+    image12->drawLine(QPointF(0, 2), QPointF(10, 2), QPen(Qt::black, 1), QPainter::CompositionMode_SourceOver, true);
+
+    const QRect bounds10 = image10->bounds();
+    const QRect bounds11 = image11->bounds();
+    const QRect bounds12 = image12->bounds();
+
+    QList<QPair<int, KeyFrame*>> beforeFrames;
+    layer->foreachKeyFrame([&beforeFrames](KeyFrame* frame) {
+        beforeFrames.append(qMakePair(frame->pos(), frame->clone()));
+    });
+
+    const QList<int> pastePositions = {10, 11, 12};
+    for (int pastePos : pastePositions)
+    {
+        if (layer->getKeyFrameWhichCovers(pastePos) != nullptr)
+        {
+            layer->newSelectionOfConnectedFrames(pastePos);
+            layer->moveSelectedFrames(1);
+        }
+
+        KeyFrame* source = layer->getKeyFrameAt(1);
+        REQUIRE(source != nullptr);
+        REQUIRE(layer->addKeyFrame(pastePos, source->clone()));
+    }
+
+    QList<QPair<int, KeyFrame*>> afterFrames;
+    layer->foreachKeyFrame([&afterFrames](KeyFrame* frame) {
+        afterFrames.append(qMakePair(frame->pos(), frame->clone()));
+    });
+
+    PasteFramesCommand command(beforeFrames,
+                               afterFrames,
+                               layer->id(),
+                               "Paste",
+                               editor);
+
+    command.redo();
+
+    command.undo();
+    REQUIRE(layer->keyExists(10));
+    REQUIRE(layer->keyExists(11));
+    REQUIRE(layer->keyExists(12));
+    REQUIRE(!layer->keyExists(13));
+    REQUIRE(!layer->keyExists(14));
+    REQUIRE(!layer->keyExists(15));
+    REQUIRE(layer->getBitmapImageAtFrame(10)->bounds() == bounds10);
+    REQUIRE(layer->getBitmapImageAtFrame(11)->bounds() == bounds11);
+    REQUIRE(layer->getBitmapImageAtFrame(12)->bounds() == bounds12);
+
+    command.redo();
+    REQUIRE(layer->keyExists(10));
+    REQUIRE(layer->keyExists(11));
+    REQUIRE(layer->keyExists(12));
+    REQUIRE(layer->keyExists(13));
+    REQUIRE(layer->keyExists(14));
+    REQUIRE(layer->keyExists(15));
+    REQUIRE(layer->getBitmapImageAtFrame(13)->bounds() == bounds10);
+    REQUIRE(layer->getBitmapImageAtFrame(14)->bounds() == bounds11);
+    REQUIRE(layer->getBitmapImageAtFrame(15)->bounds() == bounds12);
 
     delete editor;
 }
