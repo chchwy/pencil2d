@@ -51,9 +51,10 @@ TEST_CASE("PasteFramesCommand round-trip preserves displaced contiguous frames",
     REQUIRE(!layer->keyExists(12));
     REQUIRE(!layer->keyExists(13));
 
-    QList<int> addedPositions;
-    QList<int> collisionPositions;
-    QList<QPair<int, KeyFrame*>> pastedClones;
+    QList<QPair<int, KeyFrame*>> beforeFrames;
+    layer->foreachKeyFrame([&beforeFrames](KeyFrame* frame) {
+        beforeFrames.append(qMakePair(frame->pos(), frame->clone()));
+    });
 
     const QList<int> pastePositions = {10, 11};
     for (int pastePos : pastePositions)
@@ -69,18 +70,20 @@ TEST_CASE("PasteFramesCommand round-trip preserves displaced contiguous frames",
         REQUIRE(source != nullptr);
         REQUIRE(layer->addKeyFrame(pastePos, source->clone()));
 
-        addedPositions.append(pastePos);
-        pastedClones.append(qMakePair(pastePos, source->clone()));
     }
+
+    QList<QPair<int, KeyFrame*>> afterFrames;
+    layer->foreachKeyFrame([&afterFrames](KeyFrame* frame) {
+        afterFrames.append(qMakePair(frame->pos(), frame->clone()));
+    });
 
     REQUIRE(layer->keyExists(10));
     REQUIRE(layer->keyExists(11));
     REQUIRE(layer->keyExists(12));
     REQUIRE(layer->keyExists(13));
 
-    PasteFramesCommand command(addedPositions,
-                               collisionPositions,
-                               pastedClones,
+    PasteFramesCommand command(beforeFrames,
+                               afterFrames,
                                layer->id(),
                                "Paste",
                                editor);

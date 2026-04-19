@@ -153,9 +153,8 @@ public:
     void removeKeyFrames(const QList<int>& positions, int layerId, const QString& description);
     void cutKeyFrames(const QList<int>& positions, int layerId, const QString& description);
     void deleteLayer(int layerIndex, int layerId, const QString& description);
-    void pasteFrames(const QList<int>& addedPositions,
-                     const QList<int>& collisionPositions,
-                     const QList<QPair<int, KeyFrame*>>& pastedClones,
+    void pasteFrames(const QList<QPair<int, KeyFrame*>>& beforeFrames,
+                     const QList<QPair<int, KeyFrame*>>& afterFrames,
                      int layerId,
                      const QString& description);
     void setExposure(int offset,

@@ -249,12 +249,10 @@ private:
 class PasteFramesCommand : public UndoRedoCommand
 {
 public:
-    // addedPositions: positions where new frames were inserted (owned by layer after paste)
-    // collisionPositions: positions where paste collided and shifted connected frames
-    // pastedClones: position->clone for redo (command owns these)
-    PasteFramesCommand(const QList<int>& addedPositions,
-                       const QList<int>& collisionPositions,
-                       const QList<QPair<int, KeyFrame*>>& pastedClones,
+    // beforeFrames/afterFrames: full layer snapshots for deterministic undo/redo
+    // Each pair is: key position -> cloned keyframe (owned by this command)
+    PasteFramesCommand(const QList<QPair<int, KeyFrame*>>& beforeFrames,
+                       const QList<QPair<int, KeyFrame*>>& afterFrames,
                        int layerId,
                        const QString& description,
                        Editor* editor,
@@ -265,10 +263,11 @@ public:
     void redo() override;
 
 private:
+    void applySnapshot(Layer* layer, const QList<QPair<int, KeyFrame*>>& snapshot) const;
+
     int mLayerId = 0;
-    QList<int> mAddedPositions;           // positions to remove on undo
-    QList<int> mCollisionPositions;       // paste positions that triggered a connected-frame shift
-    QList<QPair<int, KeyFrame*>> mPastedClones; // owned clones for redo
+    QList<QPair<int, KeyFrame*>> mBeforeFrames;
+    QList<QPair<int, KeyFrame*>> mAfterFrames;
 };
 
 class SetExposureCommand : public UndoRedoCommand

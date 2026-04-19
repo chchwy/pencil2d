@@ -199,15 +199,14 @@ void UndoRedoManager::deleteLayer(int layerIndex, int layerId, const QString& de
     pushCommand(cmd);
 }
 
-void UndoRedoManager::pasteFrames(const QList<int>& addedPositions,
-                                   const QList<int>& collisionPositions,
-                                   const QList<QPair<int, KeyFrame*>>& pastedClones,
-                                   int layerId,
-                                   const QString& description)
+void UndoRedoManager::pasteFrames(const QList<QPair<int, KeyFrame*>>& beforeFrames,
+                                  const QList<QPair<int, KeyFrame*>>& afterFrames,
+                                  int layerId,
+                                  const QString& description)
 {
     if (!mNewBackupSystemEnabled) { return; }
 
-    PasteFramesCommand* cmd = new PasteFramesCommand(addedPositions, collisionPositions, pastedClones, layerId, description, editor());
+    PasteFramesCommand* cmd = new PasteFramesCommand(beforeFrames, afterFrames, layerId, description, editor());
     pushCommand(cmd);
 }
 

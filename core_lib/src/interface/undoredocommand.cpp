@@ -488,9 +488,8 @@ void DeleteLayerCommand::redo()
     emit layerMgr->layerCountChanged(layerMgr->count());
 }
 
-PasteFramesCommand::PasteFramesCommand(const QList<int>& addedPositions,
-                                       const QList<int>& collisionPositions,
-                                       const QList<QPair<int, KeyFrame*>>& pastedClones,
+PasteFramesCommand::PasteFramesCommand(const QList<QPair<int, KeyFrame*>>& beforeFrames,
+                                       const QList<QPair<int, KeyFrame*>>& afterFrames,
                                        int layerId,
                                        const QString& description,
                                        Editor* editor,
@@ -498,17 +497,35 @@ PasteFramesCommand::PasteFramesCommand(const QList<int>& addedPositions,
     : UndoRedoCommand(editor, parent)
 {
     mLayerId = layerId;
-    mAddedPositions = addedPositions;
-    mCollisionPositions = collisionPositions;
-    mPastedClones = pastedClones;
+    mBeforeFrames = beforeFrames;
+    mAfterFrames = afterFrames;
 
     setText(description);
 }
 
 PasteFramesCommand::~PasteFramesCommand()
 {
-    for (auto& p : mPastedClones) {
+    for (auto& p : mBeforeFrames) {
         delete p.second;
+    }
+    for (auto& p : mAfterFrames) {
+        delete p.second;
+    }
+}
+
+void PasteFramesCommand::applySnapshot(Layer* layer, const QList<QPair<int, KeyFrame*>>& snapshot) const
+{
+    QList<int> existingPositions;
+    layer->foreachKeyFrame([&existingPositions](KeyFrame* frame) {
+        existingPositions.append(frame->pos());
+    });
+    std::sort(existingPositions.begin(), existingPositions.end(), std::greater<int>());
+    for (int pos : qAsConst(existingPositions)) {
+        layer->removeKeyFrame(pos);
+    }
+
+    for (const auto& p : qAsConst(snapshot)) {
+        layer->addKeyFrame(p.first, p.second->clone());
     }
 }
 
@@ -523,24 +540,7 @@ void PasteFramesCommand::undo()
     }
 
     layer->deselectAll();
-
-    // Remove in descending order to avoid coverage interactions.
-    QList<int> sortedAddedPositions = mAddedPositions;
-    std::sort(sortedAddedPositions.begin(), sortedAddedPositions.end(), std::greater<int>());
-    for (int pos : sortedAddedPositions) {
-        layer->removeKeyFrame(pos);
-    }
-
-    // Reverse collision shifts in reverse paste order.
-    for (int i = mCollisionPositions.count() - 1; i >= 0; --i) {
-        const int position = mCollisionPositions.at(i);
-        if (!layer->newSelectionOfConnectedFrames(position + 1)) {
-            continue;
-        }
-        layer->moveSelectedFrames(-1);
-    }
-
-    layer->deselectAll();
+    applySnapshot(layer, mBeforeFrames);
 
     emit editor()->framesModified();
     editor()->layers()->notifyAnimationLengthChanged();
@@ -559,18 +559,7 @@ void PasteFramesCommand::redo()
     }
 
     layer->deselectAll();
-
-    // Replay the original paste behavior deterministically.
-    for (auto& p : mPastedClones) {
-        const int position = p.first;
-        if (layer->getKeyFrameWhichCovers(position) != nullptr) {
-            layer->newSelectionOfConnectedFrames(position);
-            layer->moveSelectedFrames(1);
-        }
-
-        layer->addKeyFrame(p.first, p.second->clone());
-        layer->setFrameSelected(position, true);
-    }
+    applySnapshot(layer, mAfterFrames);
 
     emit editor()->framesModified();
     editor()->layers()->notifyAnimationLengthChanged();
