@@ -42,6 +42,7 @@ GNU General Public License for more details.
 #include "layercamera.h"
 #include "layersound.h"
 #include "layerbitmap.h"
+#include "layervector.h"
 #include "bitmapimage.h"
 #include "vectorimage.h"
 #include "soundclip.h"
@@ -834,7 +835,7 @@ void ActionCommands::duplicateLayer()
         toLayer->removeKeyFrame(1);
     }
 
-    mEditor->undoRedo()->addLayer(layerMgr->getIndex(toLayer), toLayer->id(), tr("Duplicate Layer"));
+    mEditor->undoRedo()->addLayer(layerMgr->getLastLayerIndex(), toLayer->id(), tr("Duplicate Layer"));
     mEditor->scrubTo(currFrame);
 }
 
@@ -905,7 +906,7 @@ Status ActionCommands::addNewBitmapLayer()
     if (ok && !text.isEmpty())
     {
         Layer* layer = mEditor->layers()->createBitmapLayer(text);
-        mEditor->undoRedo()->addLayer(mEditor->layers()->getIndex(layer), layer->id(), tr("Add Bitmap Layer"));
+        mEditor->undoRedo()->addLayer(mEditor->layers()->getLastLayerIndex(), layer->id(), tr("Add Bitmap Layer"));
     }
     return Status::OK;
 }
@@ -919,7 +920,7 @@ Status ActionCommands::addNewVectorLayer()
     if (ok && !text.isEmpty())
     {
         Layer* layer = mEditor->layers()->createVectorLayer(text);
-        mEditor->undoRedo()->addLayer(mEditor->layers()->getIndex(layer), layer->id(), tr("Add Vector Layer"));
+        mEditor->undoRedo()->addLayer(mEditor->layers()->getLastLayerIndex(), layer->id(), tr("Add Vector Layer"));
     }
     return Status::OK;
 }
@@ -933,7 +934,7 @@ Status ActionCommands::addNewCameraLayer()
     if (ok && !text.isEmpty())
     {
         Layer* layer = mEditor->layers()->createCameraLayer(text);
-        mEditor->undoRedo()->addLayer(mEditor->layers()->getIndex(layer), layer->id(), tr("Add Camera Layer"));
+        mEditor->undoRedo()->addLayer(mEditor->layers()->getLastLayerIndex(), layer->id(), tr("Add Camera Layer"));
     }
     return Status::OK;
 }
@@ -947,7 +948,7 @@ Status ActionCommands::addNewSoundLayer()
     if (ok && !strLayerName.isEmpty())
     {
         Layer* layer = mEditor->layers()->createSoundLayer(strLayerName);
-        mEditor->undoRedo()->addLayer(mEditor->layers()->getIndex(layer), layer->id(), tr("Add Sound Layer"));
+        mEditor->undoRedo()->addLayer(mEditor->layers()->getLastLayerIndex(), layer->id(), tr("Add Sound Layer"));
         mEditor->layers()->setCurrentLayer(layer);
    }
     return Status::OK;

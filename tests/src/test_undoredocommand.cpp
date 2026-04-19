@@ -28,6 +28,7 @@ GNU General Public License for more details.
 #include "vectorimage.h"
 #include "beziercurve.h"
 #include "selectionmanager.h"
+#include "undoredomanager.h"
 #include "undoredocommand.h"
 
 #include <QUndoStack>
@@ -1336,7 +1337,7 @@ TEST_CASE("AddLayerCommand removes and restores newly created layer", "[undo-red
     Layer* created = editor->layers()->createBitmapLayer("Bitmap Layer");
     REQUIRE(created != nullptr);
 
-    const int createdIndex = editor->layers()->getIndex(created);
+    const int createdIndex = editor->layers()->getLastLayerIndex();
     const int createdId = created->id();
     const int countAfterCreate = object->getLayerCount();
 
@@ -1437,6 +1438,80 @@ TEST_CASE("SwapLayersCommand swaps layer order and round-trips", "[undo-redo-new
     command.redo();
     REQUIRE(object->getLayer(left)->id() == vectorId);
     REQUIRE(object->getLayer(right)->id() == bitmapId);
+
+    delete editor;
+}
+
+TEST_CASE("SelectionManager applies axis lock and resets state", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+    object->addNewBitmapLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+
+    SelectionManager* select = editor->select();
+    REQUIRE(select != nullptr);
+
+    select->setSelection(QRectF(0.0, 0.0, 10.0, 20.0));
+    REQUIRE(select->mySelectionRect().isValid());
+
+    select->alignPositionToAxis(true);
+    select->setMoveMode(MoveMode::MIDDLE);
+    select->setDragOrigin(QPointF(0.0, 0.0));
+    select->adjustSelection(QPointF(3.0, 8.0), QPointF(0.0, 0.0), 0.0);
+
+    REQUIRE(select->myTranslation().x() == Approx(0.0));
+    REQUIRE(select->myTranslation().y() == Approx(8.0));
+
+    select->flipSelection(false);
+    REQUIRE(select->myScaleX() == Approx(-1.0));
+
+    select->resetSelectionProperties();
+    REQUIRE(!select->mySelectionRect().isValid());
+    REQUIRE(select->getMoveMode() == MoveMode::NONE);
+
+    delete editor;
+}
+
+TEST_CASE("UndoRedoManager tracks save-state ids and clean-state", "[undo-redo-new]")
+{
+    Editor* editor = new Editor;
+    REQUIRE(editor->init());
+
+    Object* object = new Object;
+    object->init();
+    object->addNewCameraLayer();
+    REQUIRE(editor->setObject(object) == Status::OK);
+
+    UndoRedoManager* undo = editor->undoRedo();
+    REQUIRE(undo != nullptr);
+
+    const SAVESTATE_ID first = undo->createState(UndoRedoRecordType::KEYFRAME_MOVE);
+    const SAVESTATE_ID second = undo->createState(UndoRedoRecordType::KEYFRAME_MOVE);
+    REQUIRE(second == first + 1);
+
+    UserSaveState userState;
+    userState.moveFramesState = MoveFramesSaveState(2, QList<int>{1, 2, 3});
+    undo->addUserState(first, userState);
+    undo->record(first, "Move Frames");
+
+    REQUIRE(!undo->hasUnsavedChanges());
+
+    Layer* added = editor->layers()->createBitmapLayer("Undo Test Layer");
+    REQUIRE(added != nullptr);
+    undo->addLayer(editor->layers()->getLastLayerIndex(), added->id(), "Add Bitmap Layer");
+
+    if (undo->isNewBackupSystemEnabled()) {
+        REQUIRE(undo->hasUnsavedChanges());
+    } else {
+        REQUIRE(!undo->hasUnsavedChanges());
+    }
+
+    REQUIRE(undo->save(object) == Status::OK);
+    REQUIRE(!undo->hasUnsavedChanges());
 
     delete editor;
 }
