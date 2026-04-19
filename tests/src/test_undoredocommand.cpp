@@ -473,13 +473,17 @@ TEST_CASE("KeyFrameRemoveCommand removes and restores keyframe", "[undo-redo-new
     editor->layers()->setCurrentLayer(0);
 
     REQUIRE(layer->addNewKeyFrameAt(5));
+    editor->scrubTo(5);
     KeyFrame* originalFrame = layer->getKeyFrameAt(5);
     REQUIRE(originalFrame != nullptr);
 
     // Constructor clones the keyframe before removal
     KeyFrameRemoveCommand command(originalFrame, layer->id(), "Remove Frame", editor);
 
-    // Constructor performs the removal
+    // Simulate caller mutation before command is pushed.
+    REQUIRE(layer->removeKeyFrame(5));
+
+    // The frame should already be removed by caller-side mutation.
     REQUIRE(!layer->keyExists(5));
 
     // Simulate QUndoStack push-time redo invocation (no-op)
@@ -512,11 +516,15 @@ TEST_CASE("KeyFrameAddCommand adds and removes keyframe", "[undo-redo-new]")
     editor->layers()->setCurrentLayer(0);
 
     REQUIRE(!layer->keyExists(10));
+    editor->scrubTo(10);
 
-    // Constructor adds a new keyframe
+    // Constructor captures state only; caller performs initial addition.
     KeyFrameAddCommand command(10, layer->id(), "Add Frame", editor);
 
-    // Constructor performs the addition
+    // Simulate caller mutation before command is pushed.
+    REQUIRE(layer->addNewKeyFrameAt(10));
+
+    // The frame should already be present by caller-side mutation.
     REQUIRE(layer->keyExists(10));
 
     // Simulate QUndoStack push-time redo invocation (no-op)
@@ -558,9 +566,14 @@ TEST_CASE("MoveKeyFramesCommand moves multiple frames forward", "[undo-redo-new]
     QList<int> positions = {5, 8, 12};
     MoveKeyFramesCommand command(3, positions, layer->id(), "Move Frames", editor);
 
-    // Constructor performs the move
+    // Simulate caller mutation before command is pushed.
+    layer->setFrameSelected(5, true);
+    layer->setFrameSelected(8, true);
+    layer->setFrameSelected(12, true);
+    REQUIRE(layer->moveSelectedFrames(3));
+
+    // Frames should already be moved by caller-side mutation.
     REQUIRE(!layer->keyExists(5));
-    REQUIRE(!layer->keyExists(8));
     REQUIRE(!layer->keyExists(12));
     REQUIRE(layer->getKeyFrameAt(8) == frame5);
     REQUIRE(layer->getKeyFrameAt(11) == frame8);
@@ -607,6 +620,11 @@ TEST_CASE("MoveKeyFramesCommand moves frames backward", "[undo-redo-new]")
     // Move frames backward by 5
     QList<int> positions = {10, 15};
     MoveKeyFramesCommand command(-5, positions, layer->id(), "Move Frames Back", editor);
+
+    // Simulate caller mutation before command is pushed.
+    layer->setFrameSelected(10, true);
+    layer->setFrameSelected(15, true);
+    REQUIRE(layer->moveSelectedFrames(-5));
 
     REQUIRE(layer->getKeyFrameAt(5) == frame10);
     REQUIRE(layer->getKeyFrameAt(10) == frame15);
