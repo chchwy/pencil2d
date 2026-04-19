@@ -319,11 +319,12 @@ void Editor::pasteToFrames()
 
     currentLayer->deselectAll();
 
-    int newPositionOffset = mFrame - clipboardFrames.cbegin()->first;
+    QList<QPair<int, KeyFrame*>> beforeFrames;
+    currentLayer->foreachKeyFrame([&beforeFrames](KeyFrame* frame) {
+        beforeFrames.append(qMakePair(frame->pos(), frame->clone()));
+    });
 
-    QList<int> addedPositions;
-    QList<int> collisionPositions;
-    QList<QPair<int, KeyFrame*>> pastedClones;
+    int newPositionOffset = mFrame - clipboardFrames.cbegin()->first;
 
     for (auto it = clipboardFrames.cbegin(); it != clipboardFrames.cend(); ++it)
     {
@@ -332,8 +333,6 @@ void Editor::pasteToFrames()
         KeyFrame* keyFrameNewPos = currentLayer->getKeyFrameWhichCovers(newPosition);
 
         if (keyFrameNewPos != nullptr) {
-            collisionPositions.append(newPosition);
-
             // Select and move any frames that may come into contact with the new position
             currentLayer->newSelectionOfConnectedFrames(newPosition);
             currentLayer->moveSelectedFrames(1);
@@ -344,8 +343,6 @@ void Editor::pasteToFrames()
         Q_ASSERT(key != nullptr);
 
         currentLayer->addKeyFrame(newPosition, key);
-        addedPositions.append(newPosition);
-        pastedClones.append(qMakePair(newPosition, key->clone()));
 
         if (currentLayer->type() == Layer::SOUND)
         {
@@ -356,8 +353,13 @@ void Editor::pasteToFrames()
         currentLayer->setFrameSelected(key->pos(), true);
     }
 
+    QList<QPair<int, KeyFrame*>> afterFrames;
+    currentLayer->foreachKeyFrame([&afterFrames](KeyFrame* frame) {
+        afterFrames.append(qMakePair(frame->pos(), frame->clone()));
+    });
+
     // Push after applying paste; command's first redo is skipped.
-    undoRedo()->pasteFrames(addedPositions, collisionPositions, pastedClones, currentLayer->id(), tr("Paste"));
+    undoRedo()->pasteFrames(beforeFrames, afterFrames, currentLayer->id(), tr("Paste"));
 
     layers()->notifyAnimationLengthChanged();
 }
