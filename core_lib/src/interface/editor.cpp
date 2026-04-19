@@ -169,7 +169,9 @@ void Editor::onCurrentLayerWillChange(int index)
     Q_ASSERT(newLayer && currentLayer);
     if (currentLayer->type() != newLayer->type()) {
         // We apply transform changes upon leaving a layer and deselect all
-        mScribbleArea->applyTransformedSelection();
+        if (mScribbleArea != nullptr) {
+            mScribbleArea->applyTransformedSelection();
+        }
 
         if (currentLayer->type() == Layer::VECTOR) {
             auto keyFrame = static_cast<VectorImage*>(currentLayer->getLastKeyFrameAtPosition(mFrame));
