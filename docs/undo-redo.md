@@ -73,20 +73,20 @@ The new command-based undo/redo system (`KeyFrameAddCommand`, `KeyFrameRemoveCom
 - [x] **Reverse Frame Order** — `app/src/actioncommands.cpp` L765–777
   Implemented via `ReverseFrameOrderCommand`. Captures the selected-frame positions at call time; both undo and redo call `applyReverse()` which re-establishes the selection and calls `reverseOrderOfSelection()` (self-inverse operation).
 
-- [ ] **Create Layer (Bitmap/Vector/Sound/Camera)** — `app/src/actioncommands.cpp` L871–922
-  Each `addNewXxxLayer()` path calls `Object::addNewXxxLayer()` with no undo.
+- [x] **Create Layer (Bitmap/Vector/Sound/Camera)** — `app/src/actioncommands.cpp` L871–922
+  Implemented via `AddLayerCommand` pushed from each `addNewXxxLayer()` path through `UndoRedoManager::addLayer()`. Undo removes the newly added layer and redo restores it.
 
-- [ ] **Duplicate Layer** — `app/src/actioncommands.cpp` L784–803
-  Creates new layer and copies all keyframes in a loop, no undo.
+- [x] **Duplicate Layer** — `app/src/actioncommands.cpp` L784–803
+  Implemented by wiring duplicate-layer creation to `UndoRedoManager::addLayer()` with `AddLayerCommand`, so the duplicated layer can be removed/restored by undo/redo.
 
-- [ ] **Duplicate Key (Frame)** — `app/src/actioncommands.cpp` L805–842
-  Clones the current keyframe and inserts at next empty position via `layer->addKeyFrame()`, no undo. Sound clips are also duplicated.
+- [x] **Duplicate Key (Frame)** — `app/src/actioncommands.cpp` L805–842
+  Implemented via `DuplicateKeyFrameCommand` pushed by `UndoRedoManager::duplicateKeyFrame()`. Undo removes the duplicated keyframe and redo recreates it (including sound clip processing on sound layers).
 
-- [ ] **Swap Layers** — `core_lib/src/interface/editor.cpp` L1006–1021
-  Calls `Object::swapLayers()` with no undo command.
+- [x] **Swap Layers** — `core_lib/src/interface/editor.cpp` L1006–1021
+  Implemented via `UndoRedoManager::swapLayers()` and `SwapLayersCommand` when the new backup system is enabled. Undo/redo round-trips the layer order by applying the inverse swap.
 
-- [ ] **Camera Tool — Transform View** — `core_lib/src/tool/cameratool.cpp` L448–500
-  Modifies camera translation, scaling, and rotation via `curCam->translate()/scale()/rotate()` on pointer drag. No `backup()` call; every drag permanently mutates the Camera keyframe.
+- [x] **Camera Tool — Transform View** — `core_lib/src/tool/cameratool.cpp` L448–500
+  Implemented via `CameraTransformCommand`: camera state is captured on pointer press, drag mutations apply live, and a single undo command is pushed on pointer release when state changed.
 
 - [ ] **Camera Tool — Transform Path** — `core_lib/src/tool/cameratool.cpp` L312–318
   Calls `layer->updatePathControlPointAtFrame(pos)` to move camera path waypoints. No undo.
