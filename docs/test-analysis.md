@@ -1,7 +1,7 @@
 # Test Coverage Analysis
 
-**Date:** 2026-03-30
-**Estimated Coverage:** ~7-10% by lines of code (15 test files, ~3,400 lines of test code vs ~33,900 lines of core code)
+**Date:** 2026-04-21
+**Estimated Coverage:** ~10-14% by lines of code (20 test files, ~5,400 lines of test code vs ~33,900 lines of core code)
 
 ## Current Test Infrastructure
 
@@ -20,6 +20,7 @@
 | FileManager | Good | File I/O, XML validation, project serialization |
 | ViewManager | Good | View transforms, translation, rotation, coordinate mapping |
 | ColorManager | Good | Color setting, save/load, indexed colors |
+| Util (path helpers) | Good | `closestCanonicalPath` and `validateDataPath` incl. path traversal, symlinks |
 | LayerManager | Basic | Layer management operations |
 | BitmapBucket | Moderate | Fill behavior, color tolerance, fill modes |
 | Tool settings / PropertyInfo | Moderate | Property insertion, defaults, persistence |
@@ -27,8 +28,9 @@
 
 ## Critical Gaps
 
-### 1. UndoRedoManager — Basic Tests Added
+### 1. UndoRedo — Well Tested
 
+**UndoRedoManager** (`test_undoredomanager.cpp`):
 - [x] Initialization (new system disabled by default, enabled via preference)
 - [x] `load()` clears the stack / returns OK
 - [x] `save()` marks stack as clean
@@ -40,9 +42,22 @@
 - [x] Multiple undos restore intermediate states in order
 - [x] Undo/redo cycle preserves full history
 - [x] Post-save modifications tracked; undo back to save point shows clean
-- [ ] Vector layer undo/redo (VectorReplaceCommand)
-- [ ] Selection transform undo/redo (TransformCommand)
 - [ ] Undo stack limit enforcement (UNDO_REDO_MAX_STEPS)
+
+**UndoRedo Commands** (`test_undoredocommand.cpp`, 1,018 lines, 21 test cases):
+- [x] `PasteFramesCommand` — round-trip preserves displaced contiguous frames
+- [x] `RemoveKeyFramesCommand` — restores and re-removes selected frames
+- [x] `DeleteLayerCommand` — restores deleted layer and id on undo
+- [x] `MoveFrameCommand` — forward/backward move, no-op at frame 1
+- [x] `ReverseFrameOrderCommand` — reverses frame content and round-trips
+- [x] `KeyFrameRemoveCommand` — removes and restores keyframe
+- [x] `KeyFrameAddCommand` — adds and removes keyframe
+- [x] `MoveKeyFramesCommand` — moves multiple frames forward and backward
+- [x] `SetExposureCommand` — extend/contract, add/subtract, single-frame, round-trip
+- [x] `InsertExposureCommand` — inserts blank exposure, shifts frames, round-trip
+- [x] `BitmapReplaceCommand` — replaces and restores bitmap image
+- [x] `VectorReplaceCommand` — replaces and restores vector image
+- [x] `TransformCommand` — applies and reverses selection transformation
 
 ### 2. SelectionManager — No Tests
 
@@ -61,7 +76,7 @@
 - [ ] Pressure curves
 - [ ] Blend modes
 
-### 5. Editor — No Tests
+### 5. Editor — Basic Tests Added
 
 - [x] Initialization and manager wiring (`tests/src/test_editor.cpp`)
 
@@ -87,7 +102,7 @@
 
 ## Recommended Priorities
 
-1. **UndoRedoManager** — basic tests added; vector/transform undo still needed
+1. **UndoRedoManager** — undo stack limit enforcement (`UNDO_REDO_MAX_STEPS`) still untested
 2. **SelectionManager** — math-heavy, regression-prone
 3. **VectorImage** — needs parity with BitmapImage tests
 4. **Tool computational logic** — extract and test without UI
