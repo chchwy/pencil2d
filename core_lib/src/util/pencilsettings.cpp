@@ -18,6 +18,7 @@ GNU General Public License for more details.
 
 #include <QStringList>
 #include <QDebug>
+#include "commandregistry.h"
 
 
 // ==== Singleton ====
@@ -47,40 +48,49 @@ void restoreToDefaultSetting() // TODO: finish reset list
 
 void checkExistingShortcuts()
 {
-    QSettings defaultKey(":resources/kb.ini", QSettings::IniFormat);
+    // Primary source of defaults: CommandRegistry (compiled-in).
+    // kb.ini is still loaded as a secondary fallback so that legacy
+    // entries survive until it is removed in a later phase.
+    const CommandRegistry& reg = CommandRegistry::instance();
 
-    QSettings curSetting( PENCIL2D, PENCIL2D );
-    foreach (QString pShortcutsKey, defaultKey.allKeys())
-    {
-        if ( ! curSetting.contains( pShortcutsKey ) )
-        {
-            curSetting.setValue(pShortcutsKey, defaultKey.value(pShortcutsKey));
-        }
-    }
+    QSettings curSetting(PENCIL2D, PENCIL2D);
 
+    // Populate missing shortcuts from the registry
     curSetting.beginGroup(SHORTCUTS_GROUP);
-    defaultKey.beginGroup(SHORTCUTS_GROUP);
-    foreach (QString pKey, curSetting.allKeys())
+    for (const CommandDefinition* def : reg.all())
     {
-        if ( !defaultKey.contains(pKey) )
+        QString cmdId = QString::fromLatin1(def->id);
+        if (!curSetting.contains(cmdId))
         {
-            curSetting.remove(pKey);
+            curSetting.setValue(cmdId, QString::fromLatin1(def->defaultShortcut));
         }
     }
-    defaultKey.endGroup();
+
+    // Remove shortcuts that no longer exist in the registry
+    for (const QString& key : curSetting.allKeys())
+    {
+        if (reg.find(key) == nullptr)
+        {
+            curSetting.remove(key);
+        }
+    }
     curSetting.endGroup();
     curSetting.sync();
 }
 
 void restoreShortcutsToDefault()
 {
-    QSettings defaultKey(":resources/kb.ini", QSettings::IniFormat);
+    const CommandRegistry& reg = CommandRegistry::instance();
 
-    QSettings curSetting( PENCIL2D, PENCIL2D );
+    QSettings curSetting(PENCIL2D, PENCIL2D);
     curSetting.remove("shortcuts");
 
-    foreach (QString pShortcutsKey, defaultKey.allKeys())
+    curSetting.beginGroup(SHORTCUTS_GROUP);
+    for (const CommandDefinition* def : reg.all())
     {
-        curSetting.setValue(pShortcutsKey, defaultKey.value(pShortcutsKey));
+        curSetting.setValue(QString::fromLatin1(def->id),
+                            QString::fromLatin1(def->defaultShortcut));
     }
+    curSetting.endGroup();
+    curSetting.sync();
 }

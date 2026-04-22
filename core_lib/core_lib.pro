@@ -104,6 +104,7 @@ HEADERS +=  \
     src/util/onionskinpainteroptions.h \
     src/util/onionskinpaintstate.h \
     src/util/painterutils.h \
+    src/util/commandregistry.h \
     src/util/pencildef.h \
     src/util/pencilerror.h \
     src/util/pencilsettings.h \
@@ -188,6 +189,7 @@ SOURCES +=  src/graphics/bitmap/bitmapimage.cpp \
     src/util/blitrect.cpp \
     src/util/cameraeasingtype.cpp \
     src/util/fileformat.cpp \
+    src/util/commandregistry.cpp \
     src/util/pencilerror.cpp \
     src/util/pencilsettings.cpp \
     src/util/log.cpp \

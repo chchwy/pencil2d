@@ -92,6 +92,7 @@ set(CORE_LIB_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/onionskinpainteroptions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/onionskinpaintstate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/painterutils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/commandregistry.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/pencildef.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/pencilerror.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/pencilsettings.h
@@ -178,6 +179,7 @@ set(CORE_LIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/cameraeasingtype.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/fileformat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/commandregistry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/pencilerror.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/pencilsettings.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/util/pointerevent.cpp
