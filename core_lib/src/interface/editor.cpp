@@ -147,14 +147,18 @@ void Editor::settingUpdated(SETTING setting)
         mAutosaveNumber = mPreferenceManager->getInt(SETTING::AUTO_SAVE_NUMBER);
         break;
     case SETTING::ONION_TYPE:
-        mScribbleArea->onOnionSkinTypeChanged();
+        if (mScribbleArea) {
+            mScribbleArea->onOnionSkinTypeChanged();
+        }
         emit updateTimeLineCached();
         break;
     case SETTING::FRAME_POOL_SIZE:
         mObject->setActiveFramePoolSize(mPreferenceManager->getInt(SETTING::FRAME_POOL_SIZE));
         break;
     case SETTING::LAYER_VISIBILITY:
-        mScribbleArea->setLayerVisibility(static_cast<LayerVisibility>(mPreferenceManager->getInt(SETTING::LAYER_VISIBILITY)));
+        if (mScribbleArea) {
+            mScribbleArea->setLayerVisibility(static_cast<LayerVisibility>(mPreferenceManager->getInt(SETTING::LAYER_VISIBILITY)));
+        }
         emit updateTimeLine();
         break;
     default:

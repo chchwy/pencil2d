@@ -1498,7 +1498,13 @@ TEST_CASE("UndoRedoManager tracks save-state ids and clean-state", "[undo-redo-n
     undo->addUserState(first, userState);
     undo->record(first, "Move Frames");
 
-    REQUIRE(!undo->hasUnsavedChanges());
+    // With new system OFF: record is a no-op, no unsaved changes.
+    // With new system ON: recording a move IS an unsaved change.
+    if (undo->isNewBackupSystemEnabled()) {
+        REQUIRE(undo->hasUnsavedChanges());
+    } else {
+        REQUIRE(!undo->hasUnsavedChanges());
+    }
 
     Layer* added = editor->layers()->createBitmapLayer("Undo Test Layer");
     REQUIRE(added != nullptr);
