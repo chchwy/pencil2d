@@ -27,6 +27,7 @@ GNU General Public License for more details.
 #include "toolmanager.h"
 #include "editor.h"
 #include "pencilsettings.h"
+#include "commandregistry.h"
 
 // ----------------------------------------------------------------------------------
 QString GetToolTips(QString strCommandName)
@@ -70,52 +71,52 @@ void ToolBoxWidget::initUI()
 #endif
 
     ui->pencilButton->setToolTip( tr( "Pencil Tool (%1): Sketch with pencil" )
-        .arg( GetToolTips( CMD_TOOL_PENCIL ) ) );
+        .arg( GetToolTips( CmdId::ToolPencil ) ) );
     ui->selectButton->setToolTip( tr( "Select Tool (%1): Select an object" )
-        .arg( GetToolTips( CMD_TOOL_SELECT ) ) );
+        .arg( GetToolTips( CmdId::ToolSelect ) ) );
     ui->moveButton->setToolTip( tr( "Move Tool (%1): Move an object" )
-        .arg( GetToolTips( CMD_TOOL_MOVE ) ) );
+        .arg( GetToolTips( CmdId::ToolMove ) ) );
     ui->handButton->setToolTip( tr( "Hand Tool (%1): Move the canvas" )
-        .arg( GetToolTips( CMD_TOOL_HAND ) ) );
+        .arg( GetToolTips( CmdId::ToolHand ) ) );
     ui->penButton->setToolTip( tr( "Pen Tool (%1): Sketch with pen" )
-        .arg( GetToolTips( CMD_TOOL_PEN ) ) );
+        .arg( GetToolTips( CmdId::ToolPen ) ) );
     ui->eraserButton->setToolTip( tr( "Eraser Tool (%1): Erase" )
-        .arg( GetToolTips( CMD_TOOL_ERASER ) ) );
+        .arg( GetToolTips( CmdId::ToolEraser ) ) );
     ui->polylineButton->setToolTip( tr( "Polyline Tool (%1): Create line/curves" )
-        .arg( GetToolTips( CMD_TOOL_POLYLINE ) ) );
+        .arg( GetToolTips( CmdId::ToolPolyline ) ) );
     ui->bucketButton->setToolTip( tr( "Paint Bucket Tool (%1): Fill selected area with a color" )
-        .arg( GetToolTips( CMD_TOOL_BUCKET ) ) );
+        .arg( GetToolTips( CmdId::ToolBucket ) ) );
     ui->brushButton->setToolTip( tr( "Brush Tool (%1): Paint smooth stroke with a brush" )
-        .arg( GetToolTips( CMD_TOOL_BRUSH ) ) );
+        .arg( GetToolTips( CmdId::ToolBrush ) ) );
     ui->eyedropperButton->setToolTip( tr( "Eyedropper Tool (%1): "
             "Set color from the stage<br>[ALT] for instant access" )
-        .arg( GetToolTips( CMD_TOOL_EYEDROPPER ) ) );
+        .arg( GetToolTips( CmdId::ToolEyedropper ) ) );
     ui->smudgeButton->setToolTip( tr( "Smudge Tool (%1):<br>Edit polyline/curves<br>"
             "Liquify bitmap pixels<br> (%1)+[Alt]: Smooth" )
-        .arg( GetToolTips( CMD_TOOL_SMUDGE ) ) );
+        .arg( GetToolTips( CmdId::ToolSmudge ) ) );
 
     ui->pencilButton->setWhatsThis( tr( "Pencil Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_PENCIL ) ) );
+        .arg( GetToolTips( CmdId::ToolPencil ) ) );
     ui->selectButton->setWhatsThis( tr( "Select Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_SELECT ) ) );
+        .arg( GetToolTips( CmdId::ToolSelect ) ) );
     ui->moveButton->setWhatsThis( tr( "Move Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_MOVE ) ) );
+        .arg( GetToolTips( CmdId::ToolMove ) ) );
     ui->handButton->setWhatsThis( tr( "Hand Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_HAND ) ) );
+        .arg( GetToolTips( CmdId::ToolHand ) ) );
     ui->penButton->setWhatsThis( tr( "Pen Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_PEN ) ) );
+        .arg( GetToolTips( CmdId::ToolPen ) ) );
     ui->eraserButton->setWhatsThis( tr( "Eraser Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_ERASER ) ) );
+        .arg( GetToolTips( CmdId::ToolEraser ) ) );
     ui->polylineButton->setWhatsThis( tr( "Polyline Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_POLYLINE ) ) );
+        .arg( GetToolTips( CmdId::ToolPolyline ) ) );
     ui->bucketButton->setWhatsThis( tr( "Paint Bucket Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_BUCKET ) ) );
+        .arg( GetToolTips( CmdId::ToolBucket ) ) );
     ui->brushButton->setWhatsThis( tr( "Brush Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_BRUSH ) ) );
+        .arg( GetToolTips( CmdId::ToolBrush ) ) );
     ui->eyedropperButton->setWhatsThis( tr( "Eyedropper Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_EYEDROPPER ) ) );
+        .arg( GetToolTips( CmdId::ToolEyedropper ) ) );
     ui->smudgeButton->setWhatsThis( tr( "Smudge Tool (%1)" )
-        .arg( GetToolTips( CMD_TOOL_SMUDGE ) ) );
+        .arg( GetToolTips( CmdId::ToolSmudge ) ) );
 
     connect(ui->pencilButton, &QToolButton::clicked, this, &ToolBoxWidget::pencilOn);
     connect(ui->eraserButton, &QToolButton::clicked, this, &ToolBoxWidget::eraserOn);

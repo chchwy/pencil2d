@@ -16,7 +16,6 @@ GNU General Public License for more details.
 #include "catch.hpp"
 
 #include "commandregistry.h"
-#include "pencildef.h"
 
 #include <QSet>
 
@@ -89,137 +88,137 @@ TEST_CASE("byCategory returns only commands of that category")
     }
 }
 
-TEST_CASE("Every CMD_* macro from pencildef.h is in the registry")
+TEST_CASE("Every CmdId constant is in the registry")
 {
     const CommandRegistry& reg = CommandRegistry::instance();
 
     // File
-    REQUIRE(reg.find(CMD_NEW_FILE) != nullptr);
-    REQUIRE(reg.find(CMD_OPEN_FILE) != nullptr);
-    REQUIRE(reg.find(CMD_SAVE_FILE) != nullptr);
-    REQUIRE(reg.find(CMD_SAVE_AS) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_IMAGE) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_IMAGE_SEQ) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_IMAGE_PREDEFINED_SET) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_MOVIE_VIDEO) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_ANIMATED_IMAGE) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_LAYERS) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_SOUND) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_MOVIE_AUDIO) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_PALETTE) != nullptr);
-    REQUIRE(reg.find(CMD_IMPORT_PALETTE_REPLACE) != nullptr);
-    REQUIRE(reg.find(CMD_EXPORT_IMAGE) != nullptr);
-    REQUIRE(reg.find(CMD_EXPORT_IMAGE_SEQ) != nullptr);
-    REQUIRE(reg.find(CMD_EXPORT_MOVIE) != nullptr);
-    REQUIRE(reg.find(CMD_EXPORT_GIF) != nullptr);
-    REQUIRE(reg.find(CMD_EXPORT_PALETTE) != nullptr);
+    REQUIRE(reg.find(CmdId::NewFile) != nullptr);
+    REQUIRE(reg.find(CmdId::OpenFile) != nullptr);
+    REQUIRE(reg.find(CmdId::SaveFile) != nullptr);
+    REQUIRE(reg.find(CmdId::SaveAs) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportImage) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportImageSequence) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportImagePredefinedSet) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportMovieVideo) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportAnimatedImage) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportLayers) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportSound) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportMovieAudio) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportPalette) != nullptr);
+    REQUIRE(reg.find(CmdId::ImportPaletteReplace) != nullptr);
+    REQUIRE(reg.find(CmdId::ExportImage) != nullptr);
+    REQUIRE(reg.find(CmdId::ExportImageSequence) != nullptr);
+    REQUIRE(reg.find(CmdId::ExportMovie) != nullptr);
+    REQUIRE(reg.find(CmdId::ExportGIF) != nullptr);
+    REQUIRE(reg.find(CmdId::ExportPalette) != nullptr);
 
     // Edit
-    REQUIRE(reg.find(CMD_UNDO) != nullptr);
-    REQUIRE(reg.find(CMD_REDO) != nullptr);
-    REQUIRE(reg.find(CMD_CUT) != nullptr);
-    REQUIRE(reg.find(CMD_COPY) != nullptr);
-    REQUIRE(reg.find(CMD_PASTE) != nullptr);
-    REQUIRE(reg.find(CMD_PASTE_FROM_PREVIOUS) != nullptr);
-    REQUIRE(reg.find(CMD_SELECT_ALL) != nullptr);
-    REQUIRE(reg.find(CMD_DESELECT_ALL) != nullptr);
-    REQUIRE(reg.find(CMD_CLEAR_FRAME) != nullptr);
-    REQUIRE(reg.find(CMD_SELECTION_FLIP_HORIZONTAL) != nullptr);
-    REQUIRE(reg.find(CMD_SELECTION_FLIP_VERTICAL) != nullptr);
-    REQUIRE(reg.find(CMD_PEGBAR_ALIGNMENT) != nullptr);
-    REQUIRE(reg.find(CMD_PREFERENCE) != nullptr);
+    REQUIRE(reg.find(CmdId::Undo) != nullptr);
+    REQUIRE(reg.find(CmdId::Redo) != nullptr);
+    REQUIRE(reg.find(CmdId::Cut) != nullptr);
+    REQUIRE(reg.find(CmdId::Copy) != nullptr);
+    REQUIRE(reg.find(CmdId::Paste) != nullptr);
+    REQUIRE(reg.find(CmdId::PasteFromPrevious) != nullptr);
+    REQUIRE(reg.find(CmdId::SelectAll) != nullptr);
+    REQUIRE(reg.find(CmdId::DeselectAll) != nullptr);
+    REQUIRE(reg.find(CmdId::ClearFrame) != nullptr);
+    REQUIRE(reg.find(CmdId::SelectionFlipH) != nullptr);
+    REQUIRE(reg.find(CmdId::SelectionFlipV) != nullptr);
+    REQUIRE(reg.find(CmdId::PegBarAlignment) != nullptr);
+    REQUIRE(reg.find(CmdId::Preferences) != nullptr);
 
     // View
-    REQUIRE(reg.find(CMD_RESET_WINDOWS) != nullptr);
-    REQUIRE(reg.find(CMD_LOCK_WINDOWS) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_IN) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_OUT) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_400) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_300) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_200) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_100) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_50) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_33) != nullptr);
-    REQUIRE(reg.find(CMD_ZOOM_25) != nullptr);
-    REQUIRE(reg.find(CMD_ROTATE_CLOCK) != nullptr);
-    REQUIRE(reg.find(CMD_ROTATE_ANTI_CLOCK) != nullptr);
-    REQUIRE(reg.find(CMD_RESET_ROTATION) != nullptr);
-    REQUIRE(reg.find(CMD_RESET_ZOOM_ROTATE) != nullptr);
-    REQUIRE(reg.find(CMD_CENTER_VIEW) != nullptr);
-    REQUIRE(reg.find(CMD_FLIP_HORIZONTAL) != nullptr);
-    REQUIRE(reg.find(CMD_FLIP_VERTICAL) != nullptr);
-    REQUIRE(reg.find(CMD_GRID) != nullptr);
-    REQUIRE(reg.find(CMD_OVERLAY_CENTER) != nullptr);
-    REQUIRE(reg.find(CMD_OVERLAY_THIRDS) != nullptr);
-    REQUIRE(reg.find(CMD_OVERLAY_GOLDEN_RATIO) != nullptr);
-    REQUIRE(reg.find(CMD_OVERLAY_SAFE_AREAS) != nullptr);
-    REQUIRE(reg.find(CMD_OVERLAY_ONE_POINT_PERSPECTIVE) != nullptr);
-    REQUIRE(reg.find(CMD_OVERLAY_TWO_POINT_PERSPECTIVE) != nullptr);
-    REQUIRE(reg.find(CMD_OVERLAY_THREE_POINT_PERSPECTIVE) != nullptr);
-    REQUIRE(reg.find(CMD_ONIONSKIN_PREV) != nullptr);
-    REQUIRE(reg.find(CMD_ONIONSKIN_NEXT) != nullptr);
-    REQUIRE(reg.find(CMD_TOGGLE_STATUS_BAR) != nullptr);
+    REQUIRE(reg.find(CmdId::ResetWindows) != nullptr);
+    REQUIRE(reg.find(CmdId::LockWindows) != nullptr);
+    REQUIRE(reg.find(CmdId::ZoomIn) != nullptr);
+    REQUIRE(reg.find(CmdId::ZoomOut) != nullptr);
+    REQUIRE(reg.find(CmdId::Zoom400) != nullptr);
+    REQUIRE(reg.find(CmdId::Zoom300) != nullptr);
+    REQUIRE(reg.find(CmdId::Zoom200) != nullptr);
+    REQUIRE(reg.find(CmdId::Zoom100) != nullptr);
+    REQUIRE(reg.find(CmdId::Zoom50) != nullptr);
+    REQUIRE(reg.find(CmdId::Zoom33) != nullptr);
+    REQUIRE(reg.find(CmdId::Zoom25) != nullptr);
+    REQUIRE(reg.find(CmdId::RotateClockwise) != nullptr);
+    REQUIRE(reg.find(CmdId::RotateAntiClockwise) != nullptr);
+    REQUIRE(reg.find(CmdId::ResetRotation) != nullptr);
+    REQUIRE(reg.find(CmdId::ResetZoomRotate) != nullptr);
+    REQUIRE(reg.find(CmdId::CenterView) != nullptr);
+    REQUIRE(reg.find(CmdId::FlipHorizontal) != nullptr);
+    REQUIRE(reg.find(CmdId::FlipVertical) != nullptr);
+    REQUIRE(reg.find(CmdId::Grid) != nullptr);
+    REQUIRE(reg.find(CmdId::OverlayCenter) != nullptr);
+    REQUIRE(reg.find(CmdId::OverlayThirds) != nullptr);
+    REQUIRE(reg.find(CmdId::OverlayGoldenRatio) != nullptr);
+    REQUIRE(reg.find(CmdId::OverlaySafeAreas) != nullptr);
+    REQUIRE(reg.find(CmdId::OverlayPerspective1) != nullptr);
+    REQUIRE(reg.find(CmdId::OverlayPerspective2) != nullptr);
+    REQUIRE(reg.find(CmdId::OverlayPerspective3) != nullptr);
+    REQUIRE(reg.find(CmdId::OnionSkinPrev) != nullptr);
+    REQUIRE(reg.find(CmdId::OnionSkinNext) != nullptr);
+    REQUIRE(reg.find(CmdId::ToggleStatusBar) != nullptr);
 
     // Animation
-    REQUIRE(reg.find(CMD_PLAY) != nullptr);
-    REQUIRE(reg.find(CMD_LOOP) != nullptr);
-    REQUIRE(reg.find(CMD_LOOP_CONTROL) != nullptr);
-    REQUIRE(reg.find(CMD_GOTO_NEXT_FRAME) != nullptr);
-    REQUIRE(reg.find(CMD_GOTO_PREV_FRAME) != nullptr);
-    REQUIRE(reg.find(CMD_GOTO_NEXT_KEY_FRAME) != nullptr);
-    REQUIRE(reg.find(CMD_GOTO_PREV_KEY_FRAME) != nullptr);
-    REQUIRE(reg.find(CMD_ADD_FRAME) != nullptr);
-    REQUIRE(reg.find(CMD_DUPLICATE_FRAME) != nullptr);
-    REQUIRE(reg.find(CMD_REMOVE_FRAME) != nullptr);
-    REQUIRE(reg.find(CMD_SELECTION_ADD_FRAME_EXPOSURE) != nullptr);
-    REQUIRE(reg.find(CMD_SELECTION_SUBTRACT_FRAME_EXPOSURE) != nullptr);
-    REQUIRE(reg.find(CMD_SELECTION_REPOSITION_FRAMES) != nullptr);
-    REQUIRE(reg.find(CMD_REVERSE_SELECTED_FRAMES) != nullptr);
-    REQUIRE(reg.find(CMD_REMOVE_SELECTED_FRAMES) != nullptr);
-    REQUIRE(reg.find(CMD_MOVE_FRAME_FORWARD) != nullptr);
-    REQUIRE(reg.find(CMD_MOVE_FRAME_BACKWARD) != nullptr);
-    REQUIRE(reg.find(CMD_FLIP_INBETWEEN) != nullptr);
-    REQUIRE(reg.find(CMD_FLIP_ROLLING) != nullptr);
+    REQUIRE(reg.find(CmdId::Play) != nullptr);
+    REQUIRE(reg.find(CmdId::Loop) != nullptr);
+    REQUIRE(reg.find(CmdId::LoopControl) != nullptr);
+    REQUIRE(reg.find(CmdId::GotoNextFrame) != nullptr);
+    REQUIRE(reg.find(CmdId::GotoPrevFrame) != nullptr);
+    REQUIRE(reg.find(CmdId::GotoNextKeyFrame) != nullptr);
+    REQUIRE(reg.find(CmdId::GotoPrevKeyFrame) != nullptr);
+    REQUIRE(reg.find(CmdId::AddFrame) != nullptr);
+    REQUIRE(reg.find(CmdId::DuplicateFrame) != nullptr);
+    REQUIRE(reg.find(CmdId::RemoveFrame) != nullptr);
+    REQUIRE(reg.find(CmdId::AddFrameExposure) != nullptr);
+    REQUIRE(reg.find(CmdId::SubtractFrameExposure) != nullptr);
+    REQUIRE(reg.find(CmdId::RepositionFrames) != nullptr);
+    REQUIRE(reg.find(CmdId::ReverseSelectedFrames) != nullptr);
+    REQUIRE(reg.find(CmdId::RemoveSelectedFrames) != nullptr);
+    REQUIRE(reg.find(CmdId::MoveFrameForward) != nullptr);
+    REQUIRE(reg.find(CmdId::MoveFrameBackward) != nullptr);
+    REQUIRE(reg.find(CmdId::FlipInBetween) != nullptr);
+    REQUIRE(reg.find(CmdId::FlipRolling) != nullptr);
 
     // Tools
-    REQUIRE(reg.find(CMD_TOOL_MOVE) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_SELECT) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_BRUSH) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_POLYLINE) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_SMUDGE) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_PEN) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_HAND) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_PENCIL) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_BUCKET) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_EYEDROPPER) != nullptr);
-    REQUIRE(reg.find(CMD_TOOL_ERASER) != nullptr);
-    REQUIRE(reg.find(CMD_RESET_ALL_TOOLS) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolMove) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolSelect) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolBrush) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolPolyline) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolSmudge) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolPen) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolHand) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolPencil) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolBucket) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolEyedropper) != nullptr);
+    REQUIRE(reg.find(CmdId::ToolEraser) != nullptr);
+    REQUIRE(reg.find(CmdId::ResetAllTools) != nullptr);
 
     // Layer
-    REQUIRE(reg.find(CMD_NEW_BITMAP_LAYER) != nullptr);
-    REQUIRE(reg.find(CMD_NEW_VECTOR_LAYER) != nullptr);
-    REQUIRE(reg.find(CMD_NEW_SOUND_LAYER) != nullptr);
-    REQUIRE(reg.find(CMD_NEW_CAMERA_LAYER) != nullptr);
-    REQUIRE(reg.find(CMD_DELETE_CUR_LAYER) != nullptr);
-    REQUIRE(reg.find(CMD_CHANGE_LINE_COLOR_KEYFRAME) != nullptr);
-    REQUIRE(reg.find(CMD_CHANGE_LINE_COLOR_LAYER) != nullptr);
-    REQUIRE(reg.find(CMD_CHANGE_LAYER_OPACITY) != nullptr);
-    REQUIRE(reg.find(CMD_CURRENT_LAYER_VISIBILITY) != nullptr);
-    REQUIRE(reg.find(CMD_RELATIVE_LAYER_VISIBILITY) != nullptr);
-    REQUIRE(reg.find(CMD_ALL_LAYER_VISIBILITY) != nullptr);
+    REQUIRE(reg.find(CmdId::NewBitmapLayer) != nullptr);
+    REQUIRE(reg.find(CmdId::NewVectorLayer) != nullptr);
+    REQUIRE(reg.find(CmdId::NewSoundLayer) != nullptr);
+    REQUIRE(reg.find(CmdId::NewCameraLayer) != nullptr);
+    REQUIRE(reg.find(CmdId::DeleteCurrentLayer) != nullptr);
+    REQUIRE(reg.find(CmdId::ChangeLineColorKeyframe) != nullptr);
+    REQUIRE(reg.find(CmdId::ChangeLineColorLayer) != nullptr);
+    REQUIRE(reg.find(CmdId::ChangeLayerOpacity) != nullptr);
+    REQUIRE(reg.find(CmdId::VisibilityCurrentOnly) != nullptr);
+    REQUIRE(reg.find(CmdId::VisibilityRelative) != nullptr);
+    REQUIRE(reg.find(CmdId::VisibilityAll) != nullptr);
 
     // Window
-    REQUIRE(reg.find(CMD_TOGGLE_TOOLBOX) != nullptr);
-    REQUIRE(reg.find(CMD_TOGGLE_TOOL_OPTIONS) != nullptr);
-    REQUIRE(reg.find(CMD_TOGGLE_COLOR_WHEEL) != nullptr);
-    REQUIRE(reg.find(CMD_TOGGLE_COLOR_LIBRARY) != nullptr);
-    REQUIRE(reg.find(CMD_TOGGLE_TIMELINE) != nullptr);
-    REQUIRE(reg.find(CMD_TOGGLE_COLOR_INSPECTOR) != nullptr);
-    REQUIRE(reg.find(CMD_TOGGLE_ONION_SKIN) != nullptr);
+    REQUIRE(reg.find(CmdId::ToggleToolBox) != nullptr);
+    REQUIRE(reg.find(CmdId::ToggleToolOptions) != nullptr);
+    REQUIRE(reg.find(CmdId::ToggleColorWheel) != nullptr);
+    REQUIRE(reg.find(CmdId::ToggleColorLibrary) != nullptr);
+    REQUIRE(reg.find(CmdId::ToggleTimeline) != nullptr);
+    REQUIRE(reg.find(CmdId::ToggleColorInspector) != nullptr);
+    REQUIRE(reg.find(CmdId::ToggleOnionSkin) != nullptr);
 
     // Help
-    REQUIRE(reg.find(CMD_HELP) != nullptr);
-    REQUIRE(reg.find(CMD_EXIT) != nullptr);
+    REQUIRE(reg.find(CmdId::Help) != nullptr);
+    REQUIRE(reg.find(CmdId::Exit) != nullptr);
 }
 
 TEST_CASE("All categories have at least one command")
@@ -256,23 +255,23 @@ TEST_CASE("Default shortcuts from registry match expected values")
 
     SECTION("Standard shortcuts")
     {
-        REQUIRE(QString::fromLatin1(reg.find(CMD_UNDO)->defaultShortcut) == "Ctrl+Z");
-        REQUIRE(QString::fromLatin1(reg.find(CMD_REDO)->defaultShortcut) == "Ctrl+Shift+Z");
-        REQUIRE(QString::fromLatin1(reg.find(CMD_CUT)->defaultShortcut) == "Ctrl+X");
-        REQUIRE(QString::fromLatin1(reg.find(CMD_COPY)->defaultShortcut) == "Ctrl+C");
-        REQUIRE(QString::fromLatin1(reg.find(CMD_PASTE)->defaultShortcut) == "Ctrl+V");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::Undo)->defaultShortcut) == "Ctrl+Z");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::Redo)->defaultShortcut) == "Ctrl+Shift+Z");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::Cut)->defaultShortcut) == "Ctrl+X");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::Copy)->defaultShortcut) == "Ctrl+C");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::Paste)->defaultShortcut) == "Ctrl+V");
     }
 
     SECTION("Tool shortcuts")
     {
-        REQUIRE(QString::fromLatin1(reg.find(CMD_TOOL_BRUSH)->defaultShortcut) == "B");
-        REQUIRE(QString::fromLatin1(reg.find(CMD_TOOL_ERASER)->defaultShortcut) == "E");
-        REQUIRE(QString::fromLatin1(reg.find(CMD_TOOL_PEN)->defaultShortcut) == "P");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::ToolBrush)->defaultShortcut) == "B");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::ToolEraser)->defaultShortcut) == "E");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::ToolPen)->defaultShortcut) == "P");
     }
 
     SECTION("Commands with no default shortcut")
     {
-        REQUIRE(QString::fromLatin1(reg.find(CMD_CLEAR_FRAME)->defaultShortcut) == "");
-        REQUIRE(QString::fromLatin1(reg.find(CMD_IMPORT_IMAGE)->defaultShortcut) == "");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::ClearFrame)->defaultShortcut) == "");
+        REQUIRE(QString::fromLatin1(reg.find(CmdId::ImportImage)->defaultShortcut) == "");
     }
 }
