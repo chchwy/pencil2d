@@ -37,7 +37,7 @@ QString GetToolTips(QString strCommandName)
     return QString("<b>%1</b>").arg(keySequence.toString()); // don't tr() this string.
 }
 
-ToolBoxWidget::ToolBoxWidget(QWidget* parent)
+ToolBoxWidget::ToolBoxWidget(QWidget *parent)
     : QWidget(parent), ui(new Ui::ToolBoxWidget)
 {
     ui->setupUi(this);
@@ -70,53 +70,53 @@ void ToolBoxWidget::initUI()
     ui->smudgeButton->setStyleSheet(sStyle);
 #endif
 
-    ui->pencilButton->setToolTip( tr( "Pencil Tool (%1): Sketch with pencil" )
-        .arg( GetToolTips( CmdId::ToolPencil ) ) );
-    ui->selectButton->setToolTip( tr( "Select Tool (%1): Select an object" )
-        .arg( GetToolTips( CmdId::ToolSelect ) ) );
-    ui->moveButton->setToolTip( tr( "Move Tool (%1): Move an object" )
-        .arg( GetToolTips( CmdId::ToolMove ) ) );
-    ui->handButton->setToolTip( tr( "Hand Tool (%1): Move the canvas" )
-        .arg( GetToolTips( CmdId::ToolHand ) ) );
-    ui->penButton->setToolTip( tr( "Pen Tool (%1): Sketch with pen" )
-        .arg( GetToolTips( CmdId::ToolPen ) ) );
-    ui->eraserButton->setToolTip( tr( "Eraser Tool (%1): Erase" )
-        .arg( GetToolTips( CmdId::ToolEraser ) ) );
-    ui->polylineButton->setToolTip( tr( "Polyline Tool (%1): Create line/curves" )
-        .arg( GetToolTips( CmdId::ToolPolyline ) ) );
-    ui->bucketButton->setToolTip( tr( "Paint Bucket Tool (%1): Fill selected area with a color" )
-        .arg( GetToolTips( CmdId::ToolBucket ) ) );
-    ui->brushButton->setToolTip( tr( "Brush Tool (%1): Paint smooth stroke with a brush" )
-        .arg( GetToolTips( CmdId::ToolBrush ) ) );
-    ui->eyedropperButton->setToolTip( tr( "Eyedropper Tool (%1): "
-            "Set color from the stage<br>[ALT] for instant access" )
-        .arg( GetToolTips( CmdId::ToolEyedropper ) ) );
-    ui->smudgeButton->setToolTip( tr( "Smudge Tool (%1):<br>Edit polyline/curves<br>"
-            "Liquify bitmap pixels<br> (%1)+[Alt]: Smooth" )
-        .arg( GetToolTips( CmdId::ToolSmudge ) ) );
+    ui->pencilButton->setToolTip(tr("Pencil Tool (%1): Sketch with pencil")
+                                     .arg(GetToolTips(CmdId::ToolPencil)));
+    ui->selectButton->setToolTip(tr("Select Tool (%1): Select an object")
+                                     .arg(GetToolTips(CmdId::ToolSelect)));
+    ui->moveButton->setToolTip(tr("Move Tool (%1): Move an object")
+                                   .arg(GetToolTips(CmdId::ToolMove)));
+    ui->handButton->setToolTip(tr("Hand Tool (%1): Move the canvas")
+                                   .arg(GetToolTips(CmdId::ToolHand)));
+    ui->penButton->setToolTip(tr("Pen Tool (%1): Sketch with pen")
+                                  .arg(GetToolTips(CmdId::ToolPen)));
+    ui->eraserButton->setToolTip(tr("Eraser Tool (%1): Erase")
+                                     .arg(GetToolTips(CmdId::ToolEraser)));
+    ui->polylineButton->setToolTip(tr("Polyline Tool (%1): Create line/curves")
+                                       .arg(GetToolTips(CmdId::ToolPolyline)));
+    ui->bucketButton->setToolTip(tr("Paint Bucket Tool (%1): Fill selected area with a color")
+                                     .arg(GetToolTips(CmdId::ToolBucket)));
+    ui->brushButton->setToolTip(tr("Brush Tool (%1): Paint smooth stroke with a brush")
+                                    .arg(GetToolTips(CmdId::ToolBrush)));
+    ui->eyedropperButton->setToolTip(tr("Eyedropper Tool (%1): "
+                                        "Set color from the stage<br>[ALT] for instant access")
+                                         .arg(GetToolTips(CmdId::ToolEyedropper)));
+    ui->smudgeButton->setToolTip(tr("Smudge Tool (%1):<br>Edit polyline/curves<br>"
+                                    "Liquify bitmap pixels<br> (%1)+[Alt]: Smooth")
+                                     .arg(GetToolTips(CmdId::ToolSmudge)));
 
-    ui->pencilButton->setWhatsThis( tr( "Pencil Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolPencil ) ) );
-    ui->selectButton->setWhatsThis( tr( "Select Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolSelect ) ) );
-    ui->moveButton->setWhatsThis( tr( "Move Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolMove ) ) );
-    ui->handButton->setWhatsThis( tr( "Hand Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolHand ) ) );
-    ui->penButton->setWhatsThis( tr( "Pen Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolPen ) ) );
-    ui->eraserButton->setWhatsThis( tr( "Eraser Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolEraser ) ) );
-    ui->polylineButton->setWhatsThis( tr( "Polyline Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolPolyline ) ) );
-    ui->bucketButton->setWhatsThis( tr( "Paint Bucket Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolBucket ) ) );
-    ui->brushButton->setWhatsThis( tr( "Brush Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolBrush ) ) );
-    ui->eyedropperButton->setWhatsThis( tr( "Eyedropper Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolEyedropper ) ) );
-    ui->smudgeButton->setWhatsThis( tr( "Smudge Tool (%1)" )
-        .arg( GetToolTips( CmdId::ToolSmudge ) ) );
+    ui->pencilButton->setWhatsThis(tr("Pencil Tool (%1)")
+                                       .arg(GetToolTips(CmdId::ToolPencil)));
+    ui->selectButton->setWhatsThis(tr("Select Tool (%1)")
+                                       .arg(GetToolTips(CmdId::ToolSelect)));
+    ui->moveButton->setWhatsThis(tr("Move Tool (%1)")
+                                     .arg(GetToolTips(CmdId::ToolMove)));
+    ui->handButton->setWhatsThis(tr("Hand Tool (%1)")
+                                     .arg(GetToolTips(CmdId::ToolHand)));
+    ui->penButton->setWhatsThis(tr("Pen Tool (%1)")
+                                    .arg(GetToolTips(CmdId::ToolPen)));
+    ui->eraserButton->setWhatsThis(tr("Eraser Tool (%1)")
+                                       .arg(GetToolTips(CmdId::ToolEraser)));
+    ui->polylineButton->setWhatsThis(tr("Polyline Tool (%1)")
+                                         .arg(GetToolTips(CmdId::ToolPolyline)));
+    ui->bucketButton->setWhatsThis(tr("Paint Bucket Tool (%1)")
+                                       .arg(GetToolTips(CmdId::ToolBucket)));
+    ui->brushButton->setWhatsThis(tr("Brush Tool (%1)")
+                                      .arg(GetToolTips(CmdId::ToolBrush)));
+    ui->eyedropperButton->setWhatsThis(tr("Eyedropper Tool (%1)")
+                                           .arg(GetToolTips(CmdId::ToolEyedropper)));
+    ui->smudgeButton->setWhatsThis(tr("Smudge Tool (%1)")
+                                       .arg(GetToolTips(CmdId::ToolSmudge)));
 
     connect(ui->pencilButton, &QToolButton::clicked, this, &ToolBoxWidget::pencilOn);
     connect(ui->eraserButton, &QToolButton::clicked, this, &ToolBoxWidget::eraserOn);
@@ -130,7 +130,7 @@ void ToolBoxWidget::initUI()
     connect(ui->brushButton, &QToolButton::clicked, this, &ToolBoxWidget::brushOn);
     connect(ui->smudgeButton, &QToolButton::clicked, this, &ToolBoxWidget::smudgeOn);
 
-    mFlowlayout = new ToolBoxLayout(nullptr, 3,3,3);
+    mFlowlayout = new ToolBoxLayout(nullptr, 3, 3, 3);
 
     mFlowlayout->addWidget(ui->pencilButton);
     mFlowlayout->addWidget(ui->eraserButton);
@@ -148,10 +148,10 @@ void ToolBoxWidget::initUI()
     ui->scrollAreaWidgetContents_2->setLayout(mFlowlayout);
 
     // Important to set the proper minimumSize;
-    ui->scrollArea->setMinimumSize(QSize(1,1));
+    ui->scrollArea->setMinimumSize(QSize(1, 1));
     setMinimumSize(mFlowlayout->minimumSize());
 
-    QButtonGroup* buttonGroup = new QButtonGroup(this);
+    QButtonGroup *buttonGroup = new QButtonGroup(this);
     buttonGroup->addButton(ui->pencilButton);
     buttonGroup->addButton(ui->eraserButton);
     buttonGroup->addButton(ui->selectButton);
@@ -191,9 +191,12 @@ void ToolBoxWidget::resizeEvent(QResizeEvent *event)
 void ToolBoxWidget::updateLayoutAlignment()
 {
     mFlowlayout->invalidate();
-    if (mFlowlayout->rows() > 1) {
+    if (mFlowlayout->rows() > 1)
+    {
         mFlowlayout->setAlignment(Qt::AlignJustify);
-    } else {
+    }
+    else
+    {
         mFlowlayout->setAlignment(Qt::AlignHCenter);
     }
 
@@ -206,7 +209,8 @@ void ToolBoxWidget::updateUI()
 
 void ToolBoxWidget::setActiveTool(ToolType toolType)
 {
-    switch (toolType) {
+    switch (toolType)
+    {
     case ToolType::BRUSH:
         brushOn();
         break;
@@ -263,9 +267,12 @@ void ToolBoxWidget::selectOn()
 
 void ToolBoxWidget::moveOn()
 {
-    if (mEditor->layers()->currentLayer()->type() == Layer::CAMERA) {
+    if (mEditor->layers()->currentLayer()->type() == Layer::CAMERA)
+    {
         toolOn(CAMERA, ui->moveButton);
-    } else {
+    }
+    else
+    {
         toolOn(MOVE, ui->moveButton);
     }
 }
@@ -320,9 +327,10 @@ void ToolBoxWidget::deselectAllTools()
     ui->smudgeButton->setChecked(false);
 }
 
-void ToolBoxWidget::toolOn(ToolType toolType, QToolButton* toolButton)
+void ToolBoxWidget::toolOn(ToolType toolType, QToolButton *toolButton)
 {
-    if (mEditor->tools()->currentTool()->type() == toolType) {
+    if (mEditor->tools()->currentTool()->type() == toolType)
+    {
         // Prevent un-checking the current tool and do nothing
         toolButton->setChecked(true);
         return;
