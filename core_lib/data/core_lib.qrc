@@ -1,5 +1,4 @@
 <RCC>
     <qresource prefix="/">
-        <file>resources/kb.ini</file>
     </qresource>
 </RCC>

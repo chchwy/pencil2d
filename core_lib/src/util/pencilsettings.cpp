@@ -48,9 +48,6 @@ void restoreToDefaultSetting() // TODO: finish reset list
 
 void checkExistingShortcuts()
 {
-    // Primary source of defaults: CommandRegistry (compiled-in).
-    // kb.ini is still loaded as a secondary fallback so that legacy
-    // entries survive until it is removed in a later phase.
     const CommandRegistry& reg = CommandRegistry::instance();
 
     QSettings curSetting(PENCIL2D, PENCIL2D);
