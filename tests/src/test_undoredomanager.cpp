@@ -16,6 +16,7 @@ GNU General Public License for more details.
 #include "catch.hpp"
 
 #include <QIcon>
+#include <QAction>
 
 #include "editor.h"
 #include "object.h"
@@ -51,10 +52,10 @@ static Object* makeObjectWithBitmapLayer()
 // Returns the color that was written.
 static QRgb recordPixelDraw(Editor* editor, QRgb color)
 {
-    const UndoSaveState* s = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
+    SAVESTATE_ID id = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
     LayerBitmap* layer = static_cast<LayerBitmap*>(editor->layers()->currentLayer());
     layer->getBitmapImageAtFrame(1)->setPixel(0, 0, color);
-    editor->undoRedo()->record(s, "draw pixel");
+    editor->undoRedo()->record(id, "draw pixel");
     return color;
 }
 
@@ -72,12 +73,14 @@ TEST_CASE("UndoRedoManager::init()")
     SECTION("new undo system is disabled by default")
     {
         // With the default preference (NEW_UNDO_REDO_SYSTEM_ON = false),
-        // state() must return nullptr.
+        // record() must be a no-op and not push to the undo stack.
         Editor* editor = new Editor;
         editor->init();
         editor->setObject(makeObjectWithBitmapLayer());
 
-        REQUIRE(editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY) == nullptr);
+        SAVESTATE_ID id = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+        editor->undoRedo()->record(id, "noop");
+        REQUIRE(editor->undoRedo()->hasUnsavedChanges() == false);
         delete editor;
     }
 
@@ -165,84 +168,92 @@ TEST_CASE("UndoRedoManager::clearStack()")
     }
 }
 
-TEST_CASE("UndoRedoManager::state()")
+TEST_CASE("UndoRedoManager::createState()")
 {
-    SECTION("returns nullptr when new system is disabled")
+    SECTION("record is a no-op when new system is disabled")
     {
         Editor* editor = new Editor;
         editor->init();
         editor->setObject(makeObjectWithBitmapLayer());
 
-        const UndoSaveState* s = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
-        REQUIRE(s == nullptr);
+        SAVESTATE_ID id = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+        editor->undoRedo()->record(id, "noop");
+        REQUIRE(editor->undoRedo()->hasUnsavedChanges() == false);
         delete editor;
     }
 
-    SECTION("returns nullptr for INVALID record type")
+    SECTION("createState returns a valid id for bitmap layer")
     {
         Editor* editor = makeEditorWithNewUndoSystem();
         editor->setObject(makeObjectWithBitmapLayer());
 
-        const UndoSaveState* s = editor->undoRedo()->state(UndoRedoRecordType::INVALID);
-        REQUIRE(s == nullptr);
+        SAVESTATE_ID id = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+        REQUIRE(id >= 0);
+
+        // Verify state can be recorded and marks the undo stack dirty
+        LayerBitmap* layer = static_cast<LayerBitmap*>(editor->layers()->currentLayer());
+        layer->getBitmapImageAtFrame(1)->setPixel(0, 0, qRgba(255, 0, 0, 255));
+        editor->undoRedo()->record(id, "draw");
+        REQUIRE(editor->undoRedo()->hasUnsavedChanges() == true);
         delete editor;
     }
 
-    SECTION("returns valid state on a bitmap layer")
+    SECTION("createState captures keyframe at the current frame")
     {
         Editor* editor = makeEditorWithNewUndoSystem();
         editor->setObject(makeObjectWithBitmapLayer());
 
-        const UndoSaveState* s = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
-        REQUIRE(s != nullptr);
-        REQUIRE(s->layerType == Layer::BITMAP);
-        REQUIRE(s->recordType == UndoRedoRecordType::KEYFRAME_MODIFY);
-        REQUIRE(s->selectionState != nullptr);
-        delete s;
-        delete editor;
-    }
+        // Frame 1 has a keyframe; creating state and recording should enable undo
+        LayerBitmap* layer = static_cast<LayerBitmap*>(editor->layers()->currentLayer());
+        const QRgb originalPixel = layer->getBitmapImageAtFrame(1)->pixel(0, 0);
 
-    SECTION("captures keyframe at the current frame")
-    {
-        Editor* editor = makeEditorWithNewUndoSystem();
-        editor->setObject(makeObjectWithBitmapLayer());
+        SAVESTATE_ID id = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+        layer->getBitmapImageAtFrame(1)->setPixel(0, 0, qRgba(255, 0, 0, 255));
+        editor->undoRedo()->record(id, "draw");
 
-        // Frame 1 has a keyframe (added by addNewBitmapLayer)
-        const UndoSaveState* s = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
-        REQUIRE(s != nullptr);
-        REQUIRE(s->keyframe != nullptr);
-        delete s;
+        QAction* undoAction = editor->undoRedo()->createUndoAction(nullptr, QIcon());
+        undoAction->trigger();
+        delete undoAction;
+
+        REQUIRE(layer->getBitmapImageAtFrame(1)->pixel(0, 0) == originalPixel);
         delete editor;
     }
 }
 
 TEST_CASE("UndoRedoManager::record()")
 {
-    SECTION("record with nullptr state is a no-op")
+    SECTION("record with invalid id is a no-op")
     {
         Editor* editor = makeEditorWithNewUndoSystem();
         editor->setObject(makeObjectWithBitmapLayer());
 
-        const UndoSaveState* s = nullptr;
-        editor->undoRedo()->record(s, "noop");
+        // -1 is never a valid SAVESTATE_ID (IDs start from 0)
+        editor->undoRedo()->record(-1, "noop");
 
         REQUIRE(editor->undoRedo()->hasUnsavedChanges() == false);
         delete editor;
     }
 
-    SECTION("record sets state pointer to nullptr")
+    SECTION("record consumes the state id")
     {
         Editor* editor = makeEditorWithNewUndoSystem();
         editor->setObject(makeObjectWithBitmapLayer());
 
-        const UndoSaveState* s = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
-        REQUIRE(s != nullptr);
-
+        SAVESTATE_ID id = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
         LayerBitmap* layer = static_cast<LayerBitmap*>(editor->layers()->currentLayer());
         layer->getBitmapImageAtFrame(1)->setPixel(0, 0, qRgba(255, 0, 0, 255));
-        editor->undoRedo()->record(s, "draw");
+        editor->undoRedo()->record(id, "draw");
 
-        REQUIRE(s == nullptr);
+        // Recording with the same id again should be a no-op (state was consumed)
+        layer->getBitmapImageAtFrame(1)->setPixel(0, 0, qRgba(0, 0, 255, 255));
+        editor->undoRedo()->record(id, "draw again");
+
+        // Only one undo step was pushed; undo should revert to original, not intermediate
+        QAction* undoAction = editor->undoRedo()->createUndoAction(nullptr, QIcon());
+        undoAction->trigger();
+        delete undoAction;
+
+        REQUIRE(layer->getBitmapImageAtFrame(1)->pixel(0, 0) != qRgba(0, 0, 255, 255));
         delete editor;
     }
 
@@ -287,9 +298,9 @@ TEST_CASE("UndoRedoManager - undo bitmap modification")
         const QRgb originalPixel = layer->getBitmapImageAtFrame(1)->pixel(0, 0);
         const QRgb newColor = qRgba(255, 0, 0, 255);
 
-        const UndoSaveState* s = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
+        SAVESTATE_ID id = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
         layer->getBitmapImageAtFrame(1)->setPixel(0, 0, newColor);
-        editor->undoRedo()->record(s, "draw red");
+        editor->undoRedo()->record(id, "draw red");
 
         REQUIRE(layer->getBitmapImageAtFrame(1)->pixel(0, 0) == newColor);
 
@@ -304,9 +315,9 @@ TEST_CASE("UndoRedoManager - undo bitmap modification")
     {
         const QRgb newColor = qRgba(0, 255, 0, 255);
 
-        const UndoSaveState* s = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
+        SAVESTATE_ID id = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
         layer->getBitmapImageAtFrame(1)->setPixel(0, 0, newColor);
-        editor->undoRedo()->record(s, "draw green");
+        editor->undoRedo()->record(id, "draw green");
 
         QAction* undoAction = editor->undoRedo()->createUndoAction(nullptr, QIcon());
         undoAction->trigger();
@@ -328,14 +339,14 @@ TEST_CASE("UndoRedoManager - undo bitmap modification")
         const QRgb color2 = qRgba(0, 0, 255, 255);
 
         // First modification
-        const UndoSaveState* s1 = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
+        SAVESTATE_ID id1 = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
         layer->getBitmapImageAtFrame(1)->setPixel(0, 0, color1);
-        editor->undoRedo()->record(s1, "draw red");
+        editor->undoRedo()->record(id1, "draw red");
 
-        // Second modification (get fresh pointer after first record)
-        const UndoSaveState* s2 = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
+        // Second modification (get fresh id after first record)
+        SAVESTATE_ID id2 = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
         layer->getBitmapImageAtFrame(1)->setPixel(0, 0, color2);
-        editor->undoRedo()->record(s2, "draw blue");
+        editor->undoRedo()->record(id2, "draw blue");
 
         REQUIRE(layer->getBitmapImageAtFrame(1)->pixel(0, 0) == color2);
 
@@ -357,13 +368,13 @@ TEST_CASE("UndoRedoManager - undo bitmap modification")
         const QRgb color1 = qRgba(100, 0, 0, 255);
         const QRgb color2 = qRgba(0, 100, 0, 255);
 
-        const UndoSaveState* s1 = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
+        SAVESTATE_ID id1 = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
         layer->getBitmapImageAtFrame(1)->setPixel(0, 0, color1);
-        editor->undoRedo()->record(s1, "first draw");
+        editor->undoRedo()->record(id1, "first draw");
 
-        const UndoSaveState* s2 = editor->undoRedo()->state(UndoRedoRecordType::KEYFRAME_MODIFY);
+        SAVESTATE_ID id2 = editor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
         layer->getBitmapImageAtFrame(1)->setPixel(0, 0, color2);
-        editor->undoRedo()->record(s2, "second draw");
+        editor->undoRedo()->record(id2, "second draw");
 
         QAction* undoAction = editor->undoRedo()->createUndoAction(nullptr, QIcon());
         QAction* redoAction = editor->undoRedo()->createRedoAction(nullptr, QIcon());
