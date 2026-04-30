@@ -19,6 +19,8 @@ GNU General Public License for more details.
 
 #include <QUuid>
 #include <QDir>
+#include <QDirIterator>
+#include <QFile>
 #include <QFileInfo>
 #include <QDateTime>
 #include <QSqlError>
@@ -29,6 +31,7 @@ GNU General Public License for more details.
 
 #include "log.h"
 #include "object.h"
+#include "layer.h"
 
 namespace {
 
@@ -234,6 +237,13 @@ Object* ProjectStorageBackendSqlite::loadProject()
     object->setDataDir(QDir(object->workingDir()).filePath("data"));
     object->loadDefaultPalette();
 
+    const Status restoreStatus = restoreAssetFilesToDirectory(object->dataDir());
+    if (!restoreStatus.ok())
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: unable to restore asset files.");
+        return nullptr;
+    }
+
     for (QDomNode node = root.firstChild(); !node.isNull(); node = node.nextSibling())
     {
         const QDomElement element = node.toElement();
@@ -365,6 +375,13 @@ Status ProjectStorageBackendSqlite::saveProject(const Object* object)
         return saveStatus;
     }
 
+    Status assetStatus = flushObjectAssets(object);
+    if (!assetStatus.ok())
+    {
+        mDatabase.rollback();
+        return assetStatus;
+    }
+
     if (!mDatabase.commit())
     {
         dd << QString("Failed to commit transaction: %1").arg(mDatabase.lastError().text());
@@ -450,6 +467,18 @@ Status ProjectStorageBackendSqlite::ensureSchema()
         return Status(Status::FAIL, dd);
     }
 
+    const QString createAssetFiles =
+        "CREATE TABLE IF NOT EXISTS asset_files ("
+        "path TEXT PRIMARY KEY,"
+        "content BLOB NOT NULL"
+        ");";
+
+    if (!query.exec(createAssetFiles))
+    {
+        dd << QString("Failed to create asset_files: %1").arg(query.lastError().text());
+        return Status(Status::FAIL, dd);
+    }
+
     return Status::OK;
 }
 
@@ -475,6 +504,141 @@ Status ProjectStorageBackendSqlite::saveMainDocumentXml(const QString& xmlConten
     {
         dd << QString("Failed to upsert project_document: %1").arg(query.lastError().text());
         return Status(Status::FAIL, dd);
+    }
+
+    return Status::OK;
+}
+
+Status ProjectStorageBackendSqlite::flushObjectAssets(const Object* object)
+{
+    DebugDetails dd;
+    dd << "[SQLite backend flushObjectAssets]";
+
+    const int layerCount = object->getLayerCount();
+    QStringList attachedFiles;
+    for (int i = 0; i < layerCount; ++i)
+    {
+        Layer* layer = object->getLayer(i);
+        if (layer == nullptr)
+        {
+            continue;
+        }
+
+        Status presaveStatus = layer->presave(object->dataDir());
+        if (!presaveStatus.ok())
+        {
+            dd.collect(presaveStatus.details());
+            return Status(Status::FAIL, dd);
+        }
+
+        Status saveStatus = layer->save(object->dataDir(), attachedFiles, [] {});
+        if (!saveStatus.ok())
+        {
+            dd.collect(saveStatus.details());
+            return Status(Status::FAIL, dd);
+        }
+    }
+
+    return saveAssetFilesFromDirectory(object->dataDir());
+}
+
+Status ProjectStorageBackendSqlite::saveAssetFilesFromDirectory(const QString& dataDirPath)
+{
+    DebugDetails dd;
+    dd << "[SQLite backend saveAssetFilesFromDirectory]";
+
+    QSqlQuery clearQuery(mDatabase);
+    if (!clearQuery.exec("DELETE FROM asset_files;"))
+    {
+        dd << QString("Failed to clear asset_files: %1").arg(clearQuery.lastError().text());
+        return Status(Status::FAIL, dd);
+    }
+
+    QDir baseDir(dataDirPath);
+    if (!baseDir.exists())
+    {
+        return Status::OK;
+    }
+
+    QSqlQuery insertQuery(mDatabase);
+    insertQuery.prepare(
+        "INSERT INTO asset_files (path, content) VALUES (:path, :content) "
+        "ON CONFLICT(path) DO UPDATE SET content = excluded.content;");
+
+    QDirIterator it(dataDirPath, QDir::Files, QDirIterator::Subdirectories);
+    while (it.hasNext())
+    {
+        const QString absolutePath = it.next();
+        const QString relativePath = baseDir.relativeFilePath(absolutePath);
+
+        QFile file(absolutePath);
+        if (!file.open(QIODevice::ReadOnly))
+        {
+            dd << QString("Cannot read asset file: %1").arg(absolutePath);
+            return Status(Status::ERROR_FILE_CANNOT_OPEN, dd);
+        }
+
+        const QByteArray content = file.readAll();
+        file.close();
+
+        insertQuery.bindValue(":path", relativePath);
+        insertQuery.bindValue(":content", content);
+        if (!insertQuery.exec())
+        {
+            dd << QString("Failed to store asset '%1': %2").arg(relativePath, insertQuery.lastError().text());
+            return Status(Status::FAIL, dd);
+        }
+    }
+
+    return Status::OK;
+}
+
+Status ProjectStorageBackendSqlite::restoreAssetFilesToDirectory(const QString& dataDirPath)
+{
+    DebugDetails dd;
+    dd << "[SQLite backend restoreAssetFilesToDirectory]";
+
+    if (!QDir().mkpath(dataDirPath))
+    {
+        dd << QString("Cannot create data directory: %1").arg(dataDirPath);
+        return Status(Status::FAIL, dd);
+    }
+
+    QSqlQuery query(mDatabase);
+    if (!query.exec("SELECT path, content FROM asset_files;"))
+    {
+        dd << QString("Failed to load asset files: %1").arg(query.lastError().text());
+        return Status(Status::FAIL, dd);
+    }
+
+    while (query.next())
+    {
+        const QString relativePath = query.value(0).toString();
+        const QByteArray content = query.value(1).toByteArray();
+
+        const QString fullPath = QDir(dataDirPath).filePath(relativePath);
+        QFileInfo fileInfo(fullPath);
+        if (!QDir().mkpath(fileInfo.path()))
+        {
+            dd << QString("Cannot create asset subdirectory: %1").arg(fileInfo.path());
+            return Status(Status::FAIL, dd);
+        }
+
+        QFile file(fullPath);
+        if (!file.open(QIODevice::WriteOnly))
+        {
+            dd << QString("Cannot write asset file: %1").arg(fullPath);
+            return Status(Status::ERROR_FILE_CANNOT_OPEN, dd);
+        }
+
+        if (file.write(content) != content.size())
+        {
+            file.close();
+            dd << QString("Failed to write full content to: %1").arg(fullPath);
+            return Status(Status::FAIL, dd);
+        }
+
+        file.close();
     }
 
     return Status::OK;

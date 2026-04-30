@@ -41,6 +41,9 @@ private:
     Status ensureSchema();
     Status executePragma(const QString& pragmaSql);
     Status saveMainDocumentXml(const QString& xmlContent);
+    Status flushObjectAssets(const Object* object);
+    Status saveAssetFilesFromDirectory(const QString& dataDirPath);
+    Status restoreAssetFilesToDirectory(const QString& dataDirPath);
 
 private:
     QString mConnectionName;
