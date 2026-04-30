@@ -140,8 +140,6 @@ QDomElement LayerVector::createDomElement(QDomDocument& doc) const
         VectorImage* image = getVectorImageAtFrame(keyframe->pos());
         imageTag.setAttribute("opacity", image->getOpacity());
         layerElem.appendChild(imageTag);
-
-        Q_ASSERT(QFileInfo(keyframe->fileName()).fileName() == fileName(keyframe));
     });
 
     return layerElem;

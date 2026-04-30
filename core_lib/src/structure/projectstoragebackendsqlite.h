@@ -38,6 +38,7 @@ public:
     Status verify() override;
 
 private:
+    Status validateSchemaVersion();
     Status ensureSchema();
     Status executePragma(const QString& pragmaSql);
     Status saveMainDocumentXml(const QString& xmlContent);

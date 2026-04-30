@@ -35,6 +35,8 @@ GNU General Public License for more details.
 
 namespace {
 
+constexpr int kCurrentSqliteSchemaVersion = 1;
+
 void extractProjectData(const QDomElement& element, ObjectData& data)
 {
     const QString tagName = element.tagName();
@@ -453,7 +455,8 @@ Status ProjectStorageBackendSqlite::ensureSchema()
         return Status(Status::FAIL, dd);
     }
 
-    if (!query.exec("INSERT OR IGNORE INTO schema_version (id, version) VALUES (1, 1);"))
+    if (!query.exec(QString("INSERT OR IGNORE INTO schema_version (id, version) VALUES (1, %1);")
+                    .arg(kCurrentSqliteSchemaVersion)))
     {
         dd << QString("Failed to initialize schema_version: %1").arg(query.lastError().text());
         return Status(Status::FAIL, dd);
@@ -485,7 +488,50 @@ Status ProjectStorageBackendSqlite::ensureSchema()
         return Status(Status::FAIL, dd);
     }
 
-    return Status::OK;
+    return validateSchemaVersion();
+}
+
+Status ProjectStorageBackendSqlite::validateSchemaVersion()
+{
+    DebugDetails dd;
+    dd << "[SQLite backend validateSchemaVersion]";
+
+    QSqlQuery query(mDatabase);
+    if (!query.exec("SELECT version FROM schema_version WHERE id = 1;"))
+    {
+        dd << QString("Failed to read schema version: %1").arg(query.lastError().text());
+        return Status(Status::FAIL, dd);
+    }
+
+    if (!query.next())
+    {
+        dd << "schema_version row is missing.";
+        return Status(Status::FAIL, dd,
+                      QObject::tr("SQLite Project Format"),
+                      QObject::tr("This SQLite project is missing schema version information."));
+    }
+
+    const int schemaVersion = query.value(0).toInt();
+    if (schemaVersion == kCurrentSqliteSchemaVersion)
+    {
+        return Status::OK;
+    }
+
+    if (schemaVersion > kCurrentSqliteSchemaVersion)
+    {
+        dd << QString("Unsupported future schema version: %1").arg(schemaVersion);
+        return Status(Status::NOT_SUPPORTED, dd,
+                      QObject::tr("SQLite Project Format"),
+                      QObject::tr("This SQLite project uses schema version %1, but this build supports version %2.")
+                          .arg(schemaVersion)
+                          .arg(kCurrentSqliteSchemaVersion));
+    }
+
+    dd << QString("No migration path from schema version %1 to %2.").arg(schemaVersion).arg(kCurrentSqliteSchemaVersion);
+    return Status(Status::NOT_SUPPORTED, dd,
+                  QObject::tr("SQLite Project Format"),
+                  QObject::tr("This SQLite project uses older schema version %1, and migration is not implemented yet.")
+                      .arg(schemaVersion));
 }
 
 Status ProjectStorageBackendSqlite::saveMainDocumentXml(const QString& xmlContent)

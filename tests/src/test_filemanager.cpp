@@ -19,6 +19,9 @@ GNU General Public License for more details.
 #include <QTemporaryFile>
 #include <QImage>
 #include <QFile>
+#include <QUuid>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include "qminiz.h"
 #include "fileformat.h"
 #include "filemanager.h"
@@ -536,6 +539,68 @@ TEST_CASE("FileManager SQLite File-saving")
         REQUIRE(QFile::exists(loadedClip->fileName()));
 
         delete loaded;
+    }
+}
+
+TEST_CASE("FileManager SQLite Schema Versioning")
+{
+    auto updateSchemaVersion = [](const QString& dbPath, int schemaVersion)
+    {
+        const QString connectionName = QString("sqlite_test_%1").arg(QUuid::createUuid().toString(QUuid::Id128));
+        QSqlDatabase database = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        database.setDatabaseName(dbPath);
+        REQUIRE(database.open());
+
+        QSqlQuery query(database);
+        REQUIRE(query.exec(QString("INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, %1);").arg(schemaVersion)));
+        REQUIRE(query.exec("SELECT version FROM schema_version WHERE id = 1;"));
+        REQUIRE(query.next());
+        REQUIRE(query.value(0).toInt() == schemaVersion);
+
+        database.close();
+        database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(connectionName);
+    };
+
+    SECTION("Load rejects future schema version")
+    {
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_SCHEMA_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        const QString projectPath = testDir.filePath("future_schema.pcsq");
+
+        FileManager fm;
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+        REQUIRE(fm.save(source, projectPath).ok());
+        delete source;
+
+        updateSchemaVersion(projectPath, 999);
+
+        Object* loaded = fm.load(projectPath);
+        REQUIRE(loaded == nullptr);
+        REQUIRE(fm.error().code() == Status::NOT_SUPPORTED);
+    }
+
+    SECTION("Save rejects future schema version")
+    {
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_SCHEMA_SAVE_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        const QString projectPath = testDir.filePath("future_schema_save.pcsq");
+
+        FileManager fm;
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+
+        REQUIRE(fm.save(source, projectPath).ok());
+        updateSchemaVersion(projectPath, 999);
+
+        Status saveStatus = fm.save(source, projectPath);
+        REQUIRE(saveStatus.code() == Status::NOT_SUPPORTED);
+        delete source;
     }
 }
 
