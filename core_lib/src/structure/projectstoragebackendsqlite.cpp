@@ -23,6 +23,7 @@ GNU General Public License for more details.
 #include <QFile>
 #include <QFileInfo>
 #include <QDateTime>
+#include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
@@ -101,6 +102,66 @@ ObjectData loadProjectData(const QDomElement& projectDataElem)
         extractProjectData(element, data);
     }
     return data;
+}
+
+void collectReferencedAssetPaths(const QDomElement& element, QSet<QString>& referencedPaths)
+{
+    if (element.hasAttribute("src"))
+    {
+        const QString rawPath = element.attribute("src");
+        if (!rawPath.isEmpty())
+        {
+            referencedPaths.insert(rawPath);
+        }
+    }
+
+    for (QDomNode node = element.firstChild(); !node.isNull(); node = node.nextSibling())
+    {
+        const QDomElement childElement = node.toElement();
+        if (childElement.isNull())
+        {
+            continue;
+        }
+
+        collectReferencedAssetPaths(childElement, referencedPaths);
+    }
+
+}
+
+Status validateReferencedAssets(const QDomElement& rootElement, QSqlDatabase& database)
+{
+    DebugDetails dd;
+    dd << "[SQLite backend validateReferencedAssets]";
+
+    QSet<QString> referencedPaths;
+    collectReferencedAssetPaths(rootElement, referencedPaths);
+
+    if (referencedPaths.isEmpty())
+    {
+        return Status::OK;
+    }
+
+    QSet<QString> storedPaths;
+    QSqlQuery query(database);
+    if (!query.exec("SELECT path FROM asset_files;"))
+    {
+        dd << QString("Failed to load asset file index: %1").arg(query.lastError().text());
+        return Status(Status::FAIL, dd);
+    }
+
+    while (query.next())
+    {
+        storedPaths.insert(query.value(0).toString());
+    }
+
+    if (!storedPaths.isEmpty())
+    {
+        return Status::OK;
+    }
+
+    dd << "Project document references external assets, but asset_files is empty.";
+    return Status(Status::FAIL, dd);
+
 }
 
 }
@@ -243,6 +304,13 @@ Object* ProjectStorageBackendSqlite::loadProject()
     if (!restoreStatus.ok())
     {
         FILEMANAGER_LOG("SQLite loadProject failed: unable to restore asset files.");
+        return nullptr;
+    }
+
+    const Status assetValidationStatus = validateReferencedAssets(root, mDatabase);
+    if (!assetValidationStatus.ok())
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: referenced asset files are missing or invalid.");
         return nullptr;
     }
 

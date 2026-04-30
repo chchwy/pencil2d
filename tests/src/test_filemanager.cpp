@@ -412,6 +412,21 @@ TEST_CASE("FileManager File-saving")
 
 TEST_CASE("FileManager SQLite File-saving")
 {
+    auto executeSql = [](const QString& dbPath, const QString& sql)
+    {
+        const QString connectionName = QString("sqlite_test_assets_%1").arg(QUuid::createUuid().toString(QUuid::Id128));
+        QSqlDatabase database = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        database.setDatabaseName(dbPath);
+        REQUIRE(database.open());
+
+        QSqlQuery query(database);
+        REQUIRE(query.exec(sql));
+
+        database.close();
+        database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(connectionName);
+    };
+
     SECTION("Bitmap frames persist across SQLite save/load")
     {
         FileManager fm;
@@ -452,6 +467,38 @@ TEST_CASE("FileManager SQLite File-saving")
         REQUIRE(image->height() > 1);
 
         delete loaded;
+    }
+
+    SECTION("Load rejects bitmap projects with missing asset rows")
+    {
+        FileManager fm;
+
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+        source->addNewBitmapLayer();
+
+        LayerBitmap* sourceLayer = dynamic_cast<LayerBitmap*>(source->getLayer(1));
+        REQUIRE(sourceLayer != nullptr);
+        REQUIRE(sourceLayer->addNewKeyFrameAt(2));
+
+        BitmapImage* sourceImage = sourceLayer->getBitmapImageAtFrame(2);
+        REQUIRE(sourceImage != nullptr);
+        sourceImage->drawRect(QRectF(0, 0, 10, 10), QPen(QColor(255, 0, 0)), QBrush(Qt::red), QPainter::CompositionMode_SourceOver, false);
+
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_MISSING_ASSET_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        QString projectPath = testDir.path() + "/sqlite_missing_asset_row.pcsq";
+        Status saveStatus = fm.save(source, projectPath);
+        REQUIRE(saveStatus.ok());
+        delete source;
+
+        executeSql(projectPath, "DELETE FROM asset_files;");
+
+        Object* loaded = fm.load(projectPath);
+        REQUIRE(loaded == nullptr);
+        REQUIRE(fm.error().code() == Status::ERROR_INVALID_PENCIL_FILE);
     }
 
     SECTION("Vector frames persist across SQLite save/load")
