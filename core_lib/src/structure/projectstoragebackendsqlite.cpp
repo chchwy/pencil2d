@@ -292,6 +292,12 @@ Status ProjectStorageBackendSqlite::saveProject(const Object* object)
         return schemaStatus;
     }
 
+    Status assetStatus = flushObjectAssets(object);
+    if (!assetStatus.ok())
+    {
+        return assetStatus;
+    }
+
     QDomDocument xmlDoc("PencilDocument");
     QDomElement root = xmlDoc.createElement("document");
     QDomProcessingInstruction encoding =
@@ -375,7 +381,7 @@ Status ProjectStorageBackendSqlite::saveProject(const Object* object)
         return saveStatus;
     }
 
-    Status assetStatus = flushObjectAssets(object);
+    assetStatus = saveAssetFilesFromDirectory(object->dataDir());
     if (!assetStatus.ok())
     {
         mDatabase.rollback();
@@ -539,7 +545,7 @@ Status ProjectStorageBackendSqlite::flushObjectAssets(const Object* object)
         }
     }
 
-    return saveAssetFilesFromDirectory(object->dataDir());
+    return Status::OK;
 }
 
 Status ProjectStorageBackendSqlite::saveAssetFilesFromDirectory(const QString& dataDirPath)

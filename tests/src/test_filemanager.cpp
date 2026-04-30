@@ -401,6 +401,51 @@ TEST_CASE("FileManager File-saving")
     }
 }
 
+TEST_CASE("FileManager SQLite File-saving")
+{
+    SECTION("Bitmap frames persist across SQLite save/load")
+    {
+        FileManager fm;
+
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+        source->addNewBitmapLayer();
+
+        LayerBitmap* sourceLayer = dynamic_cast<LayerBitmap*>(source->getLayer(1));
+        REQUIRE(sourceLayer != nullptr);
+        REQUIRE(sourceLayer->addNewKeyFrameAt(2));
+
+        BitmapImage* sourceImage = sourceLayer->getBitmapImageAtFrame(2);
+        REQUIRE(sourceImage != nullptr);
+        sourceImage->drawRect(QRectF(0, 0, 10, 10), QPen(QColor(255, 0, 0)), QBrush(Qt::red), QPainter::CompositionMode_SourceOver, false);
+
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        QString projectPath = testDir.path() + "/sqlite_roundtrip.pcsq";
+        Status saveStatus = fm.save(source, projectPath);
+        REQUIRE(saveStatus.ok());
+        delete source;
+
+        Object* loaded = fm.load(projectPath);
+        REQUIRE(loaded != nullptr);
+
+        LayerBitmap* loadedLayer = dynamic_cast<LayerBitmap*>(loaded->getLayer(1));
+        REQUIRE(loadedLayer != nullptr);
+
+        BitmapImage* loadedImage = loadedLayer->getBitmapImageAtFrame(2);
+        REQUIRE(loadedImage != nullptr);
+        QImage* image = loadedImage->image();
+        REQUIRE(image != nullptr);
+        REQUIRE_FALSE(image->isNull());
+        REQUIRE(image->width() > 1);
+        REQUIRE(image->height() > 1);
+
+        delete loaded;
+    }
+}
+
 TEST_CASE("Empty Sound Frames")
 {
     SECTION("Invalid src value")
