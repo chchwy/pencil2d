@@ -619,6 +619,21 @@ TEST_CASE("FileManager SQLite Schema Versioning")
         QSqlDatabase::removeDatabase(connectionName);
     };
 
+    auto executeSql = [](const QString& dbPath, const QString& sql)
+    {
+        const QString connectionName = QString("sqlite_test_exec_%1").arg(QUuid::createUuid().toString(QUuid::Id128));
+        QSqlDatabase database = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        database.setDatabaseName(dbPath);
+        REQUIRE(database.open());
+
+        QSqlQuery query(database);
+        REQUIRE(query.exec(sql));
+
+        database.close();
+        database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(connectionName);
+    };
+
     SECTION("Load rejects future schema version")
     {
         QTemporaryDir testDir("PENCIL_TEST_SQLITE_SCHEMA_XXXXXXXX");
@@ -692,6 +707,50 @@ TEST_CASE("FileManager SQLite Schema Versioning")
         database = QSqlDatabase();
         QSqlDatabase::removeDatabase(connectionName);
         delete source;
+    }
+
+    SECTION("Load recreates missing schema_version row")
+    {
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_SCHEMA_RECOVER_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        const QString projectPath = testDir.filePath("missing_schema_row_load.pcsq");
+
+        FileManager fm;
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+        const int sourceLayerCount = source->getLayerCount();
+
+        REQUIRE(fm.save(source, projectPath).ok());
+        executeSql(projectPath, "DELETE FROM schema_version WHERE id = 1;");
+        delete source;
+
+        Object* loaded = fm.load(projectPath);
+        REQUIRE(loaded != nullptr);
+        REQUIRE(loaded->getLayerCount() == sourceLayerCount);
+        delete loaded;
+    }
+
+    SECTION("Load rejects missing project document row")
+    {
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_SCHEMA_CORRUPT_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        const QString projectPath = testDir.filePath("missing_project_document_row.pcsq");
+
+        FileManager fm;
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+
+        REQUIRE(fm.save(source, projectPath).ok());
+        executeSql(projectPath, "DELETE FROM project_document WHERE id = 1;");
+        delete source;
+
+        Object* loaded = fm.load(projectPath);
+        REQUIRE(loaded == nullptr);
+        REQUIRE(fm.error().code() == Status::ERROR_INVALID_PENCIL_FILE);
     }
 }
 
