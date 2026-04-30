@@ -18,6 +18,7 @@ GNU General Public License for more details.
 #include "projectstoragebackendsqlite.h"
 
 #include <QUuid>
+#include <QDir>
 #include <QFileInfo>
 #include <QDateTime>
 #include <QSqlError>
@@ -28,6 +29,76 @@ GNU General Public License for more details.
 
 #include "log.h"
 #include "object.h"
+
+namespace {
+
+void extractProjectData(const QDomElement& element, ObjectData& data)
+{
+    const QString tagName = element.tagName();
+    if (tagName == "currentFrame")
+    {
+        data.setCurrentFrame(element.attribute("value").toInt());
+    }
+    else if (tagName == "currentColor")
+    {
+        const int r = element.attribute("r", "255").toInt();
+        const int g = element.attribute("g", "255").toInt();
+        const int b = element.attribute("b", "255").toInt();
+        const int a = element.attribute("a", "255").toInt();
+        data.setCurrentColor(QColor(r, g, b, a));
+    }
+    else if (tagName == "currentLayer")
+    {
+        data.setCurrentLayer(element.attribute("value", "0").toInt());
+    }
+    else if (tagName == "currentView")
+    {
+        const double m11 = element.attribute("m11", "1").toDouble();
+        const double m12 = element.attribute("m12", "0").toDouble();
+        const double m21 = element.attribute("m21", "0").toDouble();
+        const double m22 = element.attribute("m22", "1").toDouble();
+        const double dx = element.attribute("dx", "0").toDouble();
+        const double dy = element.attribute("dy", "0").toDouble();
+        data.setCurrentView(QTransform(m11, m12, m21, m22, dx, dy));
+    }
+    else if (tagName == "fps" || tagName == "currentFps")
+    {
+        data.setFrameRate(element.attribute("value", "12").toInt());
+    }
+    else if (tagName == "isLoop")
+    {
+        data.setLooping(element.attribute("value", "false") == "true");
+    }
+    else if (tagName == "isRangedPlayback")
+    {
+        data.setRangedPlayback(element.attribute("value", "false") == "true");
+    }
+    else if (tagName == "markInFrame")
+    {
+        data.setMarkInFrameNumber(element.attribute("value", "0").toInt());
+    }
+    else if (tagName == "markOutFrame")
+    {
+        data.setMarkOutFrameNumber(element.attribute("value", "15").toInt());
+    }
+}
+
+ObjectData loadProjectData(const QDomElement& projectDataElem)
+{
+    ObjectData data;
+    for (QDomNode node = projectDataElem.firstChild(); !node.isNull(); node = node.nextSibling())
+    {
+        const QDomElement element = node.toElement();
+        if (element.isNull())
+        {
+            continue;
+        }
+        extractProjectData(element, data);
+    }
+    return data;
+}
+
+}
 
 ProjectStorageBackendSqlite::ProjectStorageBackendSqlite()
 {
@@ -106,8 +177,86 @@ Status ProjectStorageBackendSqlite::close()
 
 Object* ProjectStorageBackendSqlite::loadProject()
 {
-    FILEMANAGER_LOG("SQLite loadProject is not implemented yet.");
-    return nullptr;
+    DebugDetails dd;
+    dd << "[SQLite backend loadProject]";
+
+    if (!mDatabase.isOpen())
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: database is not open.");
+        return nullptr;
+    }
+
+    QSqlQuery query(mDatabase);
+    query.prepare("SELECT main_xml FROM project_document WHERE id = 1;");
+    if (!query.exec())
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: cannot query project_document.");
+        return nullptr;
+    }
+
+    if (!query.next())
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: no project document found.");
+        return nullptr;
+    }
+
+    const QString xmlContent = query.value(0).toString();
+    if (xmlContent.isEmpty())
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: empty XML content.");
+        return nullptr;
+    }
+
+    QDomDocument xmlDoc;
+    if (!xmlDoc.setContent(xmlContent))
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: invalid XML content.");
+        return nullptr;
+    }
+
+    const QDomDocumentType type = xmlDoc.doctype();
+    if (!(type.name() == "PencilDocument" || type.name() == "MyObject"))
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: invalid XML doctype.");
+        return nullptr;
+    }
+
+    const QDomElement root = xmlDoc.documentElement();
+    if (root.isNull() || root.tagName() != "document")
+    {
+        FILEMANAGER_LOG("SQLite loadProject failed: invalid XML root.");
+        return nullptr;
+    }
+
+    std::unique_ptr<Object> object(new Object);
+    object->setFilePath(mProjectPath);
+    object->createWorkingDir();
+    object->setDataDir(QDir(object->workingDir()).filePath("data"));
+    object->loadDefaultPalette();
+
+    for (QDomNode node = root.firstChild(); !node.isNull(); node = node.nextSibling())
+    {
+        const QDomElement element = node.toElement();
+        if (element.isNull())
+        {
+            continue;
+        }
+
+        if (element.tagName() == "object")
+        {
+            if (!object->loadXML(element, [] {}))
+            {
+                FILEMANAGER_LOG("SQLite loadProject failed: unable to load object payload.");
+                return nullptr;
+            }
+        }
+        else if (element.tagName() == "projectdata" || element.tagName() == "editor")
+        {
+            object->setData(loadProjectData(element));
+        }
+    }
+
+    return object.release();
 }
 
 Status ProjectStorageBackendSqlite::saveProject(const Object* object)

@@ -266,11 +266,11 @@ Object* FileManager::loadSqliteProject(const QString& fileName)
     if (object == nullptr)
     {
         DebugDetails dd;
-        dd << "SQLite backend could not load this project yet.";
-        mError = Status(Status::NOT_IMPLEMENTED_YET,
+        dd << "SQLite backend failed to load this project.";
+        mError = Status(Status::ERROR_INVALID_PENCIL_FILE,
                         dd,
                         tr("SQLite Project Format"),
-                        tr("Loading SQLite projects is not implemented yet."));
+                        tr("This SQLite project could not be loaded."));
         return nullptr;
     }
 
