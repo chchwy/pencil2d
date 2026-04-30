@@ -59,6 +59,8 @@ set(CORE_LIB_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/object.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/objectdata.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/pegbaraligner.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/projectstoragebackend.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/projectstoragebackendsqlite.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/soundclip.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/tool/basetool.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/tool/brushtool.h
@@ -155,6 +157,7 @@ set(CORE_LIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/objectdata.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/pegbaraligner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/projectstoragebackendsqlite.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/soundclip.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/tool/basetool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/tool/brushtool.cpp

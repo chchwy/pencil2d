@@ -54,6 +54,7 @@ target_link_libraries(pencil2d_tests PRIVATE
     Qt6::Xml
     Qt6::Multimedia
     Qt6::Svg
+    Qt6::Sql
 )
 
 # Platform-specific libraries

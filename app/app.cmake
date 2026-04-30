@@ -274,6 +274,7 @@ target_link_libraries(pencil2d PRIVATE
     Qt6::Multimedia
     Qt6::Svg
     Qt6::Network
+    Qt6::Sql
 )
 
 # Platform-specific libraries

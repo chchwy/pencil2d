@@ -8,7 +8,7 @@
 
 TEMPLATE = app
 CONFIG += precompile_header lrelease embed_translations
-QT += core widgets gui xml multimedia svg network
+QT += core widgets gui xml multimedia svg network sql
 
 TARGET = pencil2d
 

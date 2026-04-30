@@ -25,6 +25,7 @@ GNU General Public License for more details.
 #include "fileformat.h"
 #include "object.h"
 #include "layercamera.h"
+#include "projectstoragebackendsqlite.h"
 #include "util.h"
 
 FileManager::FileManager(QObject* parent) : QObject(parent)
@@ -41,6 +42,11 @@ Object* FileManager::load(const QString& sFileName)
     {
         handleOpenProjectError(Status::FILE_NOT_FOUND, dd);
         return nullptr;
+    }
+
+    if (isSqliteFormat(sFileName))
+    {
+        return loadSqliteProject(sFileName);
     }
 
     progressForward();
@@ -233,6 +239,63 @@ bool FileManager::isArchiveFormat(const QString& fileName) const
     return true;
 }
 
+bool FileManager::isSqliteFormat(const QString& fileName) const
+{
+    return QFileInfo(fileName).suffix().compare(PFF_SQLITE_BIG_LETTER_EXTENSION, Qt::CaseInsensitive) == 0;
+}
+
+Object* FileManager::loadSqliteProject(const QString& fileName)
+{
+    ProjectStorageBackendSqlite sqliteBackend;
+
+    Status openStatus = sqliteBackend.open(fileName, false);
+    if (!openStatus.ok())
+    {
+        mError = openStatus;
+        return nullptr;
+    }
+
+    Status verifyStatus = sqliteBackend.verify();
+    if (!verifyStatus.ok())
+    {
+        mError = verifyStatus;
+        return nullptr;
+    }
+
+    Object* object = sqliteBackend.loadProject();
+    if (object == nullptr)
+    {
+        DebugDetails dd;
+        dd << "SQLite backend could not load this project yet.";
+        mError = Status(Status::NOT_IMPLEMENTED_YET,
+                        dd,
+                        tr("SQLite Project Format"),
+                        tr("Loading SQLite projects is not implemented yet."));
+        return nullptr;
+    }
+
+    return object;
+}
+
+Status FileManager::saveSqliteProject(const Object* object, const QString& fileName)
+{
+    ProjectStorageBackendSqlite sqliteBackend;
+
+    Status openStatus = sqliteBackend.open(fileName, true);
+    if (!openStatus.ok())
+    {
+        return openStatus;
+    }
+
+    Status saveStatus = sqliteBackend.saveProject(object);
+    if (!saveStatus.ok())
+    {
+        return saveStatus;
+    }
+
+    return sqliteBackend.verify();
+}
+
 Status FileManager::save(const Object* object, const QString& sFileName)
 {
     DebugDetails dd;
@@ -249,6 +312,11 @@ Status FileManager::save(const Object* object, const QString& sFileName)
         return Status(Status::INVALID_ARGUMENT, dd,
                       tr("Invalid Save Path"),
                       tr("The path is empty."));
+    }
+
+    if (isSqliteFormat(sFileName))
+    {
+        return saveSqliteProject(object, sFileName);
     }
 
     const int totalCount = object->totalKeyFrameCount();

@@ -8,7 +8,7 @@
 
 TEMPLATE = lib
 CONFIG += staticlib precompile_header
-QT += core widgets gui xml multimedia svg
+QT += core widgets gui xml multimedia svg sql
 
 RESOURCES += data/core_lib.qrc
 
@@ -70,6 +70,8 @@ HEADERS +=  \
     src/structure/layersound.h \
     src/structure/layervector.h \
     src/structure/pegbaraligner.h \
+    src/structure/projectstoragebackend.h \
+    src/structure/projectstoragebackendsqlite.h \
     src/structure/soundclip.h \
     src/structure/object.h \
     src/structure/objectdata.h \
@@ -164,6 +166,7 @@ SOURCES +=  src/graphics/bitmap/bitmapimage.cpp \
     src/structure/layervector.cpp \
     src/structure/object.cpp \
     src/structure/pegbaraligner.cpp \
+    src/structure/projectstoragebackendsqlite.cpp \
     src/structure/soundclip.cpp \
     src/structure/objectdata.cpp \
     src/structure/filemanager.cpp \

@@ -26,13 +26,15 @@ GNU General Public License for more details.
 #define PFF_OLD_BIG_LETTER_EXTENSION	"PCL"
 #define PFF_EXTENSION				    ".pclx"
 #define PFF_BIG_LETTER_EXTENSION	    "PCLX"
+#define PFF_SQLITE_EXTENSION           ".pcsq"
+#define PFF_SQLITE_BIG_LETTER_EXTENSION "PCSQ"
 #define PFF_BACKUP_IDENTIFIER           "backup"
 
 #define PFF_OPEN_PROJECT_EXT_FILTER \
-    QCoreApplication::translate("FileFormat", "Pencil2D formats") + " (*.pclx *.pcl);;" + QCoreApplication::translate("FileFormat", "Pencil2D Project") + " (*.pclx);;" + QCoreApplication::translate("FileFormat", "Legacy Pencil2D Project") + " (*.pcl)"
+    QCoreApplication::translate("FileFormat", "Pencil2D formats") + " (*.pclx *.pcl *.pcsq);;" + QCoreApplication::translate("FileFormat", "Pencil2D Project") + " (*.pclx);;" + QCoreApplication::translate("FileFormat", "Legacy Pencil2D Project") + " (*.pcl);;" + QCoreApplication::translate("FileFormat", "Pencil2D SQLite Project") + " (*.pcsq)"
 
 #define PFF_SAVE_PROJECT_EXT_FILTER \
-    QCoreApplication::translate("FileFormat", "Pencil2D Project") + " (*.pclx);;" + QCoreApplication::translate("FileFormat", "Legacy Pencil2D Project") + " (*.pcl)"
+    QCoreApplication::translate("FileFormat", "Pencil2D Project") + " (*.pclx);;" + QCoreApplication::translate("FileFormat", "Legacy Pencil2D Project") + " (*.pcl);;" + QCoreApplication::translate("FileFormat", "Pencil2D SQLite Project") + " (*.pcsq)"
 
 #define PFF_MOVIE_EXT \
     QCoreApplication::translate("FileFormat", "Movie formats") + "(*.avi *.mpg *.mpeg *.mov *.mp4 *.mkv *.ogv *.swf *.flv *.webm *.wmv);;" \
