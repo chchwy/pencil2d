@@ -19,11 +19,15 @@ GNU General Public License for more details.
 
 #include <QUuid>
 #include <QFileInfo>
+#include <QDateTime>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
+#include <QDomDocument>
+#include <QTextStream>
 
 #include "log.h"
+#include "object.h"
 
 ProjectStorageBackendSqlite::ProjectStorageBackendSqlite()
 {
@@ -108,24 +112,123 @@ Object* ProjectStorageBackendSqlite::loadProject()
 
 Status ProjectStorageBackendSqlite::saveProject(const Object* object)
 {
-    Q_UNUSED(object)
-
     DebugDetails dd;
-    dd << "SQLite saveProject is not implemented yet.";
-    return Status(Status::NOT_IMPLEMENTED_YET, dd,
-                  QObject::tr("SQLite Project Format"),
-                  QObject::tr("Saving to SQLite is not implemented yet."));
+    dd << "[SQLite backend saveProject]";
+
+    if (object == nullptr)
+    {
+        dd << "Object parameter is null.";
+        return Status(Status::INVALID_ARGUMENT, dd);
+    }
+
+    if (!mDatabase.isOpen())
+    {
+        dd << "Database is not open.";
+        return Status(Status::ERROR_FILE_CANNOT_OPEN, dd);
+    }
+
+    Status schemaStatus = ensureSchema();
+    if (!schemaStatus.ok())
+    {
+        return schemaStatus;
+    }
+
+    QDomDocument xmlDoc("PencilDocument");
+    QDomElement root = xmlDoc.createElement("document");
+    QDomProcessingInstruction encoding =
+        xmlDoc.createProcessingInstruction("xml", "version=\"1.0\" encoding=\"UTF-8\"");
+    xmlDoc.appendChild(encoding);
+    xmlDoc.appendChild(root);
+
+    const ObjectData* data = object->data();
+
+    QDomElement projectData = xmlDoc.createElement("projectdata");
+
+    QDomElement currentFrameTag = xmlDoc.createElement("currentFrame");
+    currentFrameTag.setAttribute("value", data->getCurrentFrame());
+    projectData.appendChild(currentFrameTag);
+
+    QDomElement currentColorTag = xmlDoc.createElement("currentColor");
+    QColor currentColor = data->getCurrentColor();
+    currentColorTag.setAttribute("r", currentColor.red());
+    currentColorTag.setAttribute("g", currentColor.green());
+    currentColorTag.setAttribute("b", currentColor.blue());
+    currentColorTag.setAttribute("a", currentColor.alpha());
+    projectData.appendChild(currentColorTag);
+
+    QDomElement currentLayerTag = xmlDoc.createElement("currentLayer");
+    currentLayerTag.setAttribute("value", data->getCurrentLayer());
+    projectData.appendChild(currentLayerTag);
+
+    QDomElement currentViewTag = xmlDoc.createElement("currentView");
+    QTransform view = data->getCurrentView();
+    currentViewTag.setAttribute("m11", view.m11());
+    currentViewTag.setAttribute("m12", view.m12());
+    currentViewTag.setAttribute("m21", view.m21());
+    currentViewTag.setAttribute("m22", view.m22());
+    currentViewTag.setAttribute("dx", view.dx());
+    currentViewTag.setAttribute("dy", view.dy());
+    projectData.appendChild(currentViewTag);
+
+    QDomElement fpsTag = xmlDoc.createElement("fps");
+    fpsTag.setAttribute("value", data->getFrameRate());
+    projectData.appendChild(fpsTag);
+
+    QDomElement isLoopTag = xmlDoc.createElement("isLoop");
+    isLoopTag.setAttribute("value", data->isLooping() ? "true" : "false");
+    projectData.appendChild(isLoopTag);
+
+    QDomElement rangedPlaybackTag = xmlDoc.createElement("isRangedPlayback");
+    rangedPlaybackTag.setAttribute("value", data->isRangedPlayback() ? "true" : "false");
+    projectData.appendChild(rangedPlaybackTag);
+
+    QDomElement markInTag = xmlDoc.createElement("markInFrame");
+    markInTag.setAttribute("value", data->getMarkInFrameNumber());
+    projectData.appendChild(markInTag);
+
+    QDomElement markOutTag = xmlDoc.createElement("markOutFrame");
+    markOutTag.setAttribute("value", data->getMarkOutFrameNumber());
+    projectData.appendChild(markOutTag);
+
+    root.appendChild(projectData);
+
+    QDomElement objectElement = object->saveXML(xmlDoc);
+    root.appendChild(objectElement);
+
+    QDomElement versionElem = xmlDoc.createElement("version");
+    versionElem.appendChild(xmlDoc.createTextNode(QString(APP_VERSION)));
+    root.appendChild(versionElem);
+
+    QString xmlContent;
+    QTextStream xmlStream(&xmlContent, QIODevice::WriteOnly);
+    xmlDoc.save(xmlStream, 2);
+
+    if (!mDatabase.transaction())
+    {
+        dd << QString("Failed to begin transaction: %1").arg(mDatabase.lastError().text());
+        return Status(Status::FAIL, dd);
+    }
+
+    Status saveStatus = saveMainDocumentXml(xmlContent);
+    if (!saveStatus.ok())
+    {
+        mDatabase.rollback();
+        return saveStatus;
+    }
+
+    if (!mDatabase.commit())
+    {
+        dd << QString("Failed to commit transaction: %1").arg(mDatabase.lastError().text());
+        mDatabase.rollback();
+        return Status(Status::FAIL, dd);
+    }
+
+    return Status::OK;
 }
 
 Status ProjectStorageBackendSqlite::incrementalSave(const Object* object)
 {
-    Q_UNUSED(object)
-
-    DebugDetails dd;
-    dd << "SQLite incrementalSave is not implemented yet.";
-    return Status(Status::NOT_IMPLEMENTED_YET, dd,
-                  QObject::tr("SQLite Project Format"),
-                  QObject::tr("Autosave to SQLite is not implemented yet."));
+    return saveProject(object);
 }
 
 Status ProjectStorageBackendSqlite::verify()
@@ -181,6 +284,47 @@ Status ProjectStorageBackendSqlite::ensureSchema()
     if (!query.exec("INSERT OR IGNORE INTO schema_version (id, version) VALUES (1, 1);"))
     {
         dd << QString("Failed to initialize schema_version: %1").arg(query.lastError().text());
+        return Status(Status::FAIL, dd);
+    }
+
+    const QString createProjectDocument =
+        "CREATE TABLE IF NOT EXISTS project_document ("
+        "id INTEGER PRIMARY KEY CHECK(id = 1),"
+        "app_version TEXT NOT NULL,"
+        "saved_at_utc TEXT NOT NULL,"
+        "main_xml TEXT NOT NULL"
+        ");";
+
+    if (!query.exec(createProjectDocument))
+    {
+        dd << QString("Failed to create project_document: %1").arg(query.lastError().text());
+        return Status(Status::FAIL, dd);
+    }
+
+    return Status::OK;
+}
+
+Status ProjectStorageBackendSqlite::saveMainDocumentXml(const QString& xmlContent)
+{
+    DebugDetails dd;
+    dd << "[SQLite backend saveMainDocumentXml]";
+
+    QSqlQuery query(mDatabase);
+    query.prepare(
+        "INSERT INTO project_document (id, app_version, saved_at_utc, main_xml) "
+        "VALUES (1, :appVersion, :savedAtUtc, :mainXml) "
+        "ON CONFLICT(id) DO UPDATE SET "
+        "app_version = excluded.app_version, "
+        "saved_at_utc = excluded.saved_at_utc, "
+        "main_xml = excluded.main_xml;");
+
+    query.bindValue(":appVersion", QString(APP_VERSION));
+    query.bindValue(":savedAtUtc", QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+    query.bindValue(":mainXml", xmlContent);
+
+    if (!query.exec())
+    {
+        dd << QString("Failed to upsert project_document: %1").arg(query.lastError().text());
         return Status(Status::FAIL, dd);
     }
 

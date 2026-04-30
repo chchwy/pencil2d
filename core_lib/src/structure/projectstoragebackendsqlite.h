@@ -40,6 +40,7 @@ public:
 private:
     Status ensureSchema();
     Status executePragma(const QString& pragmaSql);
+    Status saveMainDocumentXml(const QString& xmlContent);
 
 private:
     QString mConnectionName;
