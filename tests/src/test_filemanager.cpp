@@ -602,6 +602,40 @@ TEST_CASE("FileManager SQLite Schema Versioning")
         REQUIRE(saveStatus.code() == Status::NOT_SUPPORTED);
         delete source;
     }
+
+    SECTION("Save migrates schema version 0 to current version")
+    {
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_SCHEMA_MIGRATE_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        const QString projectPath = testDir.filePath("schema_zero_save.pcsq");
+
+        FileManager fm;
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+
+        REQUIRE(fm.save(source, projectPath).ok());
+        updateSchemaVersion(projectPath, 0);
+
+        Status saveStatus = fm.save(source, projectPath);
+        REQUIRE(saveStatus.ok());
+
+        const QString connectionName = QString("sqlite_test_verify_%1").arg(QUuid::createUuid().toString(QUuid::Id128));
+        QSqlDatabase database = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        database.setDatabaseName(projectPath);
+        REQUIRE(database.open());
+
+        QSqlQuery query(database);
+        REQUIRE(query.exec("SELECT version FROM schema_version WHERE id = 1;"));
+        REQUIRE(query.next());
+        REQUIRE(query.value(0).toInt() == 1);
+
+        database.close();
+        database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(connectionName);
+        delete source;
+    }
 }
 
 TEST_CASE("Empty Sound Frames")

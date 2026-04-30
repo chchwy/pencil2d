@@ -38,6 +38,9 @@ public:
     Status verify() override;
 
 private:
+    Status initializeSchemaVersionTable();
+    Status ensureProjectTables();
+    Status migrateSchema(int fromVersion);
     Status validateSchemaVersion();
     Status ensureSchema();
     Status executePragma(const QString& pragmaSql);
