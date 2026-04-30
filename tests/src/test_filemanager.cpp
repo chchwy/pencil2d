@@ -18,6 +18,7 @@ GNU General Public License for more details.
 #include <QTemporaryDir>
 #include <QTemporaryFile>
 #include <QImage>
+#include <QFile>
 #include "qminiz.h"
 #include "fileformat.h"
 #include "filemanager.h"
@@ -25,6 +26,11 @@ GNU General Public License for more details.
 #include "object.h"
 #include "bitmapimage.h"
 #include "layerbitmap.h"
+#include "layervector.h"
+#include "layersound.h"
+#include "soundclip.h"
+#include "vectorimage.h"
+#include "beziercurve.h"
 
 
 TEST_CASE("FileManager Initial Test")
@@ -441,6 +447,93 @@ TEST_CASE("FileManager SQLite File-saving")
         REQUIRE_FALSE(image->isNull());
         REQUIRE(image->width() > 1);
         REQUIRE(image->height() > 1);
+
+        delete loaded;
+    }
+
+    SECTION("Vector frames persist across SQLite save/load")
+    {
+        FileManager fm;
+
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+        source->addNewVectorLayer();
+
+        LayerVector* sourceLayer = dynamic_cast<LayerVector*>(source->getLayer(1));
+        REQUIRE(sourceLayer != nullptr);
+        REQUIRE(sourceLayer->addNewKeyFrameAt(2));
+
+        VectorImage* sourceImage = sourceLayer->getVectorImageAtFrame(2);
+        REQUIRE(sourceImage != nullptr);
+
+        QList<QPointF> points;
+        points << QPointF(0.0, 0.0) << QPointF(20.0, 0.0) << QPointF(40.0, 10.0);
+        BezierCurve curve(points, false);
+        sourceImage->addCurve(curve, 1.0, false);
+
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_VECTOR_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        QString projectPath = testDir.path() + "/sqlite_vector_roundtrip.pcsq";
+        Status saveStatus = fm.save(source, projectPath);
+        REQUIRE(saveStatus.ok());
+        delete source;
+
+        Object* loaded = fm.load(projectPath);
+        REQUIRE(loaded != nullptr);
+
+        LayerVector* loadedLayer = dynamic_cast<LayerVector*>(loaded->getLayer(1));
+        REQUIRE(loadedLayer != nullptr);
+
+        VectorImage* loadedImage = loadedLayer->getVectorImageAtFrame(2);
+        REQUIRE(loadedImage != nullptr);
+        REQUIRE_FALSE(loadedImage->isEmpty());
+
+        delete loaded;
+    }
+
+    SECTION("Sound clips persist across SQLite save/load")
+    {
+        FileManager fm;
+
+        QTemporaryDir testDir("PENCIL_TEST_SQLITE_SOUND_XXXXXXXX");
+        REQUIRE(testDir.isValid());
+
+        // Minimal WAV-like payload is sufficient for persistence tests.
+        QString sourceSoundPath = testDir.filePath("source.wav");
+        QFile soundFile(sourceSoundPath);
+        REQUIRE(soundFile.open(QIODevice::WriteOnly));
+        QByteArray soundPayload("RIFF");
+        soundPayload.append("TESTWAVEFMT ");
+        REQUIRE(soundFile.write(soundPayload) == soundPayload.size());
+        soundFile.close();
+
+        Object* source = new Object;
+        source->init();
+        source->addNewCameraLayer();
+        source->addNewSoundLayer();
+
+        LayerSound* sourceLayer = dynamic_cast<LayerSound*>(source->getLayer(1));
+        REQUIRE(sourceLayer != nullptr);
+        Status soundStatus = sourceLayer->loadSoundClipAtFrame("TestClip", sourceSoundPath, 2);
+        REQUIRE(soundStatus.ok());
+
+        QString projectPath = testDir.path() + "/sqlite_sound_roundtrip.pcsq";
+        Status saveStatus = fm.save(source, projectPath);
+        REQUIRE(saveStatus.ok());
+        delete source;
+
+        Object* loaded = fm.load(projectPath);
+        REQUIRE(loaded != nullptr);
+
+        LayerSound* loadedLayer = dynamic_cast<LayerSound*>(loaded->getLayer(1));
+        REQUIRE(loadedLayer != nullptr);
+
+        SoundClip* loadedClip = loadedLayer->getSoundClipWhichCovers(2);
+        REQUIRE(loadedClip != nullptr);
+        REQUIRE_FALSE(loadedClip->fileName().isEmpty());
+        REQUIRE(QFile::exists(loadedClip->fileName()));
 
         delete loaded;
     }
