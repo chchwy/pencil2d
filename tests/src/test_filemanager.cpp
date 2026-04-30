@@ -542,6 +542,63 @@ TEST_CASE("FileManager SQLite File-saving")
     }
 }
 
+TEST_CASE("FileManager PCLX to SQLite Conversion")
+{
+    SECTION("Empty fixture converts from PCLX to SQLite")
+    {
+        QTemporaryDir tempDir;
+        REQUIRE(tempDir.isValid());
+
+        FileManager fm;
+        const QString pclxPath = QtResourceToFile(":/empty.pclx", "empty.pclx", tempDir);
+        Object* source = fm.load(pclxPath);
+        REQUIRE(source != nullptr);
+        REQUIRE(source->getLayerCount() == 4);
+
+        QList<Layer::LAYER_TYPE> sourceLayerTypes;
+        for (int i = 0; i < source->getLayerCount(); ++i)
+        {
+            sourceLayerTypes.append(source->getLayer(i)->type());
+        }
+
+        const QString pcsqPath = tempDir.filePath("empty-converted.pcsq");
+        Status saveStatus = fm.save(source, pcsqPath);
+        REQUIRE(saveStatus.ok());
+        delete source;
+
+        Object* converted = fm.load(pcsqPath);
+        REQUIRE(converted != nullptr);
+        REQUIRE(converted->getLayerCount() == 4);
+        for (int i = 0; i < converted->getLayerCount(); ++i)
+        {
+            REQUIRE(converted->getLayer(i)->type() == sourceLayerTypes.at(i));
+        }
+        delete converted;
+    }
+
+    SECTION("Unicode-named PCLX converts from PCLX to SQLite")
+    {
+        QTemporaryDir tempDir;
+        REQUIRE(tempDir.isValid());
+
+        FileManager fm;
+        const QString pclxPath = QtResourceToFile(":/cjk-test.pclx", "構わない.pclx", tempDir);
+        Object* source = fm.load(pclxPath);
+        REQUIRE(source != nullptr);
+        REQUIRE(source->getLayerCount() == 4);
+
+        const QString pcsqPath = tempDir.filePath("構わない-converted.pcsq");
+        Status saveStatus = fm.save(source, pcsqPath);
+        REQUIRE(saveStatus.ok());
+        delete source;
+
+        Object* converted = fm.load(pcsqPath);
+        REQUIRE(converted != nullptr);
+        REQUIRE(converted->getLayerCount() == 4);
+        delete converted;
+    }
+}
+
 TEST_CASE("FileManager SQLite Schema Versioning")
 {
     auto updateSchemaVersion = [](const QString& dbPath, int schemaVersion)
