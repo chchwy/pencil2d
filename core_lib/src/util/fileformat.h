@@ -84,6 +84,7 @@ GNU General Public License for more details.
 #define PFF_XML_FILE_NAME 		"main.xml"
 #define PFF_TMP_DECOMPRESS_EXT 	"Y2xD"
 #define PFF_PALETTE_FILE        "palette.xml"
+#define PFF_WORKING_DIR_LOCK_FILE "pencil2d.lock"
 
 bool removePFFTmpDirectory(const QString& dirName);
 QString retrieveProjectNameFromTempPath(const QString& path);

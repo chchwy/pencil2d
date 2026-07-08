@@ -24,6 +24,7 @@ GNU General Public License for more details.
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
+#include <QLockFile>
 #include <QDateTime>
 #include <QImageWriter>
 #include <QRegularExpression>
@@ -185,6 +186,15 @@ void Object::createWorkingDir()
     dir.mkpath(strWorkingDir);
     mWorkingDirPath = strWorkingDir;
 
+    // Mark the working dir as owned by this process, so that the startup
+    // recovery scan of other instances leaves it alone.
+    mWorkingDirLock.reset(new QLockFile(QDir(strWorkingDir).filePath(PFF_WORKING_DIR_LOCK_FILE)));
+    mWorkingDirLock->setStaleLockTime(0); // stale = owning process is gone, never by age
+    if (!mWorkingDirLock->tryLock(0))
+    {
+        qWarning() << "Could not lock the working directory:" << strWorkingDir;
+    }
+
     QDir dataDir(strWorkingDir + PFF_DATA_DIR);
     dataDir.mkpath(".");
 
@@ -193,6 +203,10 @@ void Object::createWorkingDir()
 
 void Object::deleteWorkingDir() const
 {
+    // Release the lock before deleting the dir, otherwise the open lock
+    // file keeps the directory from being removed on Windows.
+    mWorkingDirLock.reset();
+
     if (!mWorkingDirPath.isEmpty())
     {
         QDir dir(mWorkingDirPath);
@@ -212,6 +226,14 @@ void Object::setWorkingDir(const QString& path)
         qWarning() << "setWorkingDir: directory does not exist:" << path;
     }
     mWorkingDirPath = path;
+
+    // Take ownership of an adopted working dir (e.g. a recovered project).
+    mWorkingDirLock.reset(new QLockFile(QDir(path).filePath(PFF_WORKING_DIR_LOCK_FILE)));
+    mWorkingDirLock->setStaleLockTime(0);
+    if (!mWorkingDirLock->tryLock(0))
+    {
+        qWarning() << "Could not lock the working directory:" << path;
+    }
 }
 
 int Object::getMaxLayerID()

@@ -51,6 +51,10 @@ public:
     QStringList searchForUnsavedProjects();
     Object* recoverUnsavedProject(QString projectIntermediatePath);
 
+    /** Returns the newest existing backup file (name.backupN.ext) next to
+     *  the given project file, or an empty string if there is none. */
+    QString findMostRecentBackup(const QString& fileName) const;
+
 signals:
     void progressChanged(int progress);
     void progressRangeChanged(int maxValue);
@@ -81,6 +85,7 @@ private:
 
 private: // Project recovery
     bool isProjectRecoverable(const QString& projectFolder);
+    bool isWorkingDirInUse(const QString& projectFolder);
     Status recoverObject(Object* object);
     Status rebuildMainXML(Object* object);
     Status rebuildLayerXmlTag(QDomDocument& doc, QDomElement& elemObject,

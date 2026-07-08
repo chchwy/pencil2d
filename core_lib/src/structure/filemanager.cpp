@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <QLockFile>
 #include <QVersionNumber>
 #include "qminiz.h"
 #include "fileformat.h"
@@ -654,6 +655,36 @@ int FileManager::countExistingBackups(const QString& fileName) const
     return backupCount;
 }
 
+QString FileManager::findMostRecentBackup(const QString& fileName) const
+{
+    QFileInfo fileInfo(fileName);
+    const QString baseFileName = fileInfo.completeBaseName();
+    const QString suffix = fileInfo.suffix();
+
+    // Backup files look like "name.backupN.ext"; pick the highest N.
+    int bestNumber = -1;
+    QString bestPath;
+    const QDir directory(fileInfo.absoluteDir());
+    for (const QFileInfo& dirFileInfo : directory.entryInfoList(QDir::Filter::Files))
+    {
+        const QString name = dirFileInfo.fileName();
+        if (!name.startsWith(baseFileName + "." PFF_BACKUP_IDENTIFIER) || dirFileInfo.suffix() != suffix)
+        {
+            continue;
+        }
+        QString numberPart = name.mid((baseFileName + "." PFF_BACKUP_IDENTIFIER).length());
+        numberPart.chop(suffix.length() + 1); // remove ".ext"
+        bool isNumber = false;
+        const int number = numberPart.toInt(&isNumber);
+        if (isNumber && number > bestNumber)
+        {
+            bestNumber = number;
+            bestPath = dirFileInfo.absoluteFilePath();
+        }
+    }
+    return bestPath;
+}
+
 QString FileManager::backupPreviousFile(const QString& fileName)
 {
     if (!QFile::exists(fileName))
@@ -944,13 +975,39 @@ QStringList FileManager::searchForUnsavedProjects()
     for (const QString& path : entries)
     {
         QString fullPath = pencil2DTempDir.filePath(path);
+
+        if (isWorkingDirInUse(fullPath))
+        {
+            // The dir belongs to another live Pencil2D instance;
+            // it is neither debris nor recoverable.
+            continue;
+        }
+
         if (isProjectRecoverable(fullPath))
         {
             qDebug() << "Found debris at" << fullPath;
             recoverables.append(fullPath);
         }
+        else
+        {
+            // Orphaned working dir with nothing worth recovering: clean it
+            // up so leaked temp dirs don't accumulate forever.
+            QDir(fullPath).removeRecursively();
+        }
     }
     return recoverables;
+}
+
+bool FileManager::isWorkingDirInUse(const QString& projectFolder)
+{
+    QLockFile lock(QDir(projectFolder).filePath(PFF_WORKING_DIR_LOCK_FILE));
+    lock.setStaleLockTime(0); // stale = owning process is gone, never by age
+    if (!lock.tryLock(0))
+    {
+        return true;
+    }
+    lock.unlock();
+    return false;
 }
 
 bool FileManager::isProjectRecoverable(const QString& projectFolder)
@@ -972,8 +1029,6 @@ bool FileManager::isProjectRecoverable(const QString& projectFolder)
 
 Object* FileManager::recoverUnsavedProject(QString intermeidatePath)
 {
-    qDebug() << "TODO: recover project" << intermeidatePath;
-
     QDir projectDir(intermeidatePath);
     const QString mainXMLPath = projectDir.filePath(PFF_XML_FILE_NAME);
     const QString dataFolder = projectDir.filePath(PFF_DATA_DIR);
@@ -996,15 +1051,14 @@ Object* FileManager::recoverUnsavedProject(QString intermeidatePath)
 Status FileManager::recoverObject(Object* object)
 {
     // Check whether the main.xml is fine, if not we should make a valid one.
-    bool mainXmlOK = true;
+    QDomDocument xmlDoc;
 
     QFile file(object->mainXMLFile());
-    mainXmlOK &= file.exists();
-    mainXmlOK &= file.open(QFile::ReadOnly);
+    // The content has to be parsed while the file is still open.
+    bool mainXmlOK = file.exists()
+        && file.open(QFile::ReadOnly)
+        && !!xmlDoc.setContent(&file);
     file.close();
-
-    QDomDocument xmlDoc;
-    mainXmlOK &= !!xmlDoc.setContent(&file);
 
     QDomDocumentType type = xmlDoc.doctype();
     mainXmlOK &= (type.name() == "PencilDocument" || type.name() == "MyObject");
@@ -1018,12 +1072,18 @@ Status FileManager::recoverObject(Object* object)
     if (mainXmlOK == false)
     {
         // the main.xml is broken, try to rebuild one
-        rebuildMainXML(object);
+        Status stRebuild = rebuildMainXML(object);
+        if (!stRebuild.ok())
+        {
+            return stRebuild;
+        }
 
         // Load the newly built main.xml
-        QFile file(object->mainXMLFile());
-        file.open(QFile::ReadOnly);
-        xmlDoc.setContent(&file);
+        QFile rebuiltFile(object->mainXMLFile());
+        if (!rebuiltFile.open(QFile::ReadOnly) || !xmlDoc.setContent(&rebuiltFile))
+        {
+            return Status::ERROR_INVALID_XML_FILE;
+        }
         root = xmlDoc.documentElement();
         objectTag = root.firstChildElement("object");
     }
