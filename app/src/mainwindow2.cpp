@@ -770,6 +770,23 @@ bool MainWindow2::openObject(const QString& strFilePath)
     {
         ErrorDialog errorDialog(s.title(), s.description(), s.details().str());
         errorDialog.exec();
+
+        // The main file could not be opened; offer the newest automatic
+        // backup (created by previous saves) if one exists.
+        FileManager fm;
+        const QString backupPath = fm.findMostRecentBackup(strFilePath);
+        if (!backupPath.isEmpty())
+        {
+            const int ret = QMessageBox::question(this,
+                tr("Restore from backup?"),
+                tr("A backup of this project was found:\n%1\n\nDo you want to try opening it instead?").arg(QFileInfo(backupPath).fileName()),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+            if (ret == QMessageBox::Yes && openObject(backupPath))
+            {
+                return true;
+            }
+        }
+
         emptyDocumentWhenErrorOccurred();
         return false;
     }
