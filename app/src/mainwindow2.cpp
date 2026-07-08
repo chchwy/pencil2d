@@ -800,7 +800,13 @@ bool MainWindow2::saveObject(QString strSavedFileName)
     progress.setWindowModality(Qt::WindowModal);
     progress.show();
 
-    mEditor->prepareSave();
+    Status stPrepare = mEditor->prepareSave();
+    if (!stPrepare.ok())
+    {
+        // Not fatal for the document data itself; the save continues, but
+        // the problem must not disappear silently.
+        qWarning() << "prepareSave reported a problem:" << stPrepare.details().str();
+    }
 
     FileManager fm(this);
 

@@ -594,7 +594,7 @@ Status MovieExporter::executeFFmpeg(const QString& cmd, const QStringList& args,
             status = Status::FAIL;
             status.setTitle(tr("Something went wrong"));
             status.setDescription(tr("Looks like our video backend did not exit normally. Your movie may not have exported correctly. Please try again and report this if it persists."));
-            dd << QString("Exit status: ").append(QProcess::NormalExit ? "NormalExit": "CrashExit")
+            dd << QString("Exit status: ").append(ffmpeg.exitStatus() == QProcess::NormalExit ? "NormalExit": "CrashExit")
                << QString("Exit code: %1").arg(ffmpeg.exitCode());
             status.setDetails(dd);
             return status;
@@ -731,7 +731,7 @@ Status MovieExporter::executeFFMpegPipe(const QString& cmd, const QStringList& a
             status = Status::FAIL;
             status.setTitle(tr("Something went wrong"));
             status.setDescription(tr("Looks like our video backend did not exit normally. Your movie may not have exported correctly. Please try again and report this if it persists."));
-            dd << QString("Exit status: ").append(QProcess::NormalExit ? "NormalExit": "CrashExit")
+            dd << QString("Exit status: ").append(ffmpeg.exitStatus() == QProcess::NormalExit ? "NormalExit": "CrashExit")
                << QString("Exit code: %1").arg(ffmpeg.exitCode());
             status.setDetails(dd);
             return status;

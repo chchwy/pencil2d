@@ -174,8 +174,11 @@ Status MiniZ::uncompressFolder(QString zipFilePath, QString destPath)
     QDir baseDir(sBaseDir);
     if (!baseDir.exists())
     {
-        bool ok = baseDir.mkpath(".");
-        Q_ASSERT(ok);
+        if (!baseDir.mkpath("."))
+        {
+            dd << QString("Error: Cannot create the destination directory: %1").arg(sBaseDir);
+            return Status(Status::FAIL, dd);
+        }
     }
 
     baseDir.makeAbsolute();
@@ -212,9 +215,11 @@ Status MiniZ::uncompressFolder(QString zipFilePath, QString destPath)
             dd << QString("Make Dir: ").append(sFolderPath);
 
             bool mkDirOK = baseDir.mkpath(sFolderPath);
-            Q_ASSERT(mkDirOK);
             if (!mkDirOK)
-                dd << "Make Dir failed.";
+            {
+                ok = false;
+                dd << QString("Error: Cannot create directory: %1").arg(sFolderPath);
+            }
         }
     }
 
@@ -227,8 +232,12 @@ Status MiniZ::uncompressFolder(QString zipFilePath, QString destPath)
             if (QString(stat->m_filename) == "mimetype") continue;
             QString sFullPath = baseDir.filePath(QString::fromUtf8(stat->m_filename));
             dd << QString("Unzip file: ").append(sFullPath);
-            bool b = QFileInfo(sFullPath).absoluteDir().mkpath(".");
-            Q_ASSERT(b);
+            if (!QFileInfo(sFullPath).absoluteDir().mkpath("."))
+            {
+                ok = false;
+                dd << QString("Error: Cannot create the parent directory of: %1").arg(sFullPath);
+                continue;
+            }
 
             bool extractOK = mz_zip_reader_extract_to_file(mz, i, sFullPath.toUtf8(), 0);
             if (!extractOK)

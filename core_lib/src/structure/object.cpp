@@ -196,15 +196,21 @@ void Object::deleteWorkingDir() const
     if (!mWorkingDirPath.isEmpty())
     {
         QDir dir(mWorkingDirPath);
-        bool ok = dir.removeRecursively();
-        Q_ASSERT(ok);
+        if (!dir.removeRecursively())
+        {
+            // Not fatal: the temp dir is leaked and will be cleaned up
+            // by a later startup scan.
+            qWarning() << "Could not remove the working directory:" << mWorkingDirPath;
+        }
     }
 }
 
 void Object::setWorkingDir(const QString& path)
 {
-    QDir dir(path);
-    Q_ASSERT(dir.exists());
+    if (!QDir(path).exists())
+    {
+        qWarning() << "setWorkingDir: directory does not exist:" << path;
+    }
     mWorkingDirPath = path;
 }
 
