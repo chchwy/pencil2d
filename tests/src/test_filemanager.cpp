@@ -515,6 +515,34 @@ TEST_CASE("Working dir lock file")
         REQUIRE(!probe.tryLock(0)); // held by this (live) process
     }
 
+    SECTION("A loaded .pclx project keeps holding its working-dir lock")
+    {
+        FileManager fm;
+        Object* o = new Object;
+        o->init();
+        o->addNewCameraLayer();
+        o->addNewBitmapLayer();
+
+        QTemporaryDir testDir("PENCIL_TEST_XXXXXXXX");
+        const QString animationPath = testDir.path() + "/locked.pclx";
+        REQUIRE(fm.save(o, animationPath).ok());
+        delete o;
+
+        Object* loaded = fm.load(animationPath);
+        REQUIRE(loaded != nullptr);
+
+        // Regression: unzip used to wipe the fresh working dir (including
+        // the lock file), leaving the project unprotected for the session.
+        const QString lockPath = QDir(loaded->workingDir()).filePath(PFF_WORKING_DIR_LOCK_FILE);
+        REQUIRE(QFile::exists(lockPath));
+
+        QLockFile probe(lockPath);
+        probe.setStaleLockTime(0);
+        REQUIRE(!probe.tryLock(0));
+
+        delete loaded;
+    }
+
     SECTION("Recovery scan skips the working dir of a live instance")
     {
         Object o;
