@@ -742,13 +742,20 @@ Status FileManager::writeKeyFrameFiles(const Object* object, const QString& data
     const int numLayers = object->getLayerCount();
     dd << QString("Total layer count: %1").arg(numLayers);
 
+    bool saveLayersOK = true;
     for (int i = 0; i < numLayers; ++i)
     {
         Layer* layer = object->getLayer(i);
-        layer->presave(dataFolder);
+        Status stPresave = layer->presave(dataFolder);
+        if (!stPresave.ok())
+        {
+            // A half-finished presave leaves keyframe files under their
+            // temporary names; continuing would zip a mismatched data dir.
+            saveLayersOK = false;
+            dd.collect(stPresave.details());
+            dd << QString("\nError: Failed to presave Layer[%1] %2").arg(i).arg(layer->name());
+        }
     }
-
-    bool saveLayersOK = true;
     for (int i = 0; i < numLayers; ++i)
     {
         Layer* layer = object->getLayer(i);
@@ -918,9 +925,10 @@ Status FileManager::copyDir(const QDir src, const QDir dst)
 
 Status FileManager::unzip(const QString& strZipFile, const QString& strUnzipTarget)
 {
-    // removes the previous directory first  - better approach
-    removePFFTmpDirectory(strUnzipTarget);
-
+    // Do NOT wipe the target dir here: it is a freshly created working dir
+    // which already holds this instance's pencil2d.lock; deleting it would
+    // leave the project unprotected against the recovery scan of other
+    // instances for the rest of the session.
     Status s = MiniZ::uncompressFolder(strZipFile, strUnzipTarget);
 
     mstrLastTempFolder = strUnzipTarget;
