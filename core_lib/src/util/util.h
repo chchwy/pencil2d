@@ -21,6 +21,8 @@ GNU General Public License for more details.
 #include <functional>
 #include <QtGlobal>
 
+#include "pencilerror.h"
+
 class QAbstractSpinBox;
 class QLineF;
 class QRect;
@@ -111,5 +113,25 @@ QString closestCanonicalPath(const QString& path);
  * @return The closest canonical resolved path, or empty if the path did not pass validation or contains dangling symbolic links.
  */
 QString validateDataPath(const QString& filePath, const QString& dataDirPath);
+
+/**
+ * Atomically replaces the file at finalPath with the file at tmpPath.
+ *
+ * The temporary file is flushed to stable storage (fsync/FlushFileBuffers)
+ * before the rename, so after this function returns OK the destination is
+ * guaranteed to contain the complete new content even across a crash or
+ * power loss. If the function fails, the destination file is left untouched.
+ *
+ * Both paths must be on the same filesystem (in practice: the same
+ * directory), otherwise the rename is not atomic and may fail.
+ *
+ * The temporary file is not removed on failure; callers decide whether to
+ * keep it for diagnosis or delete it.
+ *
+ * @param tmpPath Path to the fully-written temporary file.
+ * @param finalPath Destination path to replace.
+ * @return Status::OK on success, otherwise a failure Status with details.
+ */
+Status atomicReplace(const QString& tmpPath, const QString& finalPath);
 
 #endif // UTIL_H
