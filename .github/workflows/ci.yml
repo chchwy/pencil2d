@@ -164,3 +164,33 @@ jobs:
       - name: Stop container (Linux)
         if: runner.os == 'Linux'
         run: docker stop "ci_${{github.sha}}"
+
+  cmake:
+    # Parallel CMake build so the secondary build system can no longer
+    # drift unnoticed (missing test files, Qt6-only breakage, ...).
+    # This will become the primary build once qmake is retired (roadmap P1).
+    name: CMake / Qt 6 / Linux x86_64
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build libgl1-mesa-dev \
+            qt6-base-dev qt6-svg-dev qt6-multimedia-dev \
+            qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools
+
+      - name: Configure build
+        run: cmake -S . -B build-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Pencil2D
+        run: cmake --build build-cmake
+
+      - name: Run tests
+        env:
+          QT_QPA_PLATFORM: minimal
+        run: ctest --test-dir build-cmake --output-on-failure
