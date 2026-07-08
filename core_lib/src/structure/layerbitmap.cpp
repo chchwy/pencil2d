@@ -129,17 +129,24 @@ Status LayerBitmap::presave(const QString& sDataFolder)
         }
     });
 
+    DebugDetails dd;
     for (BitmapImage* b : movedOnlyBitmaps)
     {
         // Move to temporary locations first to avoid overwritting anything we shouldn't be
         // Ex: Frame A moves from 1 -> 2, Frame B moves from 2 -> 3. Make sure A does not overwrite B
         QString tmpPath = dataFolder.filePath(QString::asprintf("t_%03d.%03d.png", id(), b->pos()));
+        bool moveOk;
         if (QFileInfo(b->fileName()).dir() != dataFolder) {
             // Copy instead of move if the data folder itself has changed
-            QFile::copy(b->fileName(), tmpPath);
+            moveOk = QFile::copy(b->fileName(), tmpPath);
         }
         else {
-            QFile::rename(b->fileName(), tmpPath);
+            moveOk = QFile::rename(b->fileName(), tmpPath);
+        }
+        if (!moveOk)
+        {
+            dd << QString("Error: Failed to move keyframe file %1 to %2").arg(b->fileName(), tmpPath);
+            return Status(Status::FAIL, dd);
         }
         b->setFileName(tmpPath);
     }
@@ -147,9 +154,17 @@ Status LayerBitmap::presave(const QString& sDataFolder)
     for (BitmapImage* b : movedOnlyBitmaps)
     {
         QString dest = filePath(b, dataFolder);
-        QFile::remove(dest);
+        if (QFile::exists(dest) && !QFile::remove(dest))
+        {
+            dd << QString("Error: Failed to remove stale keyframe file %1").arg(dest);
+            return Status(Status::FAIL, dd);
+        }
 
-        QFile::rename(b->fileName(), dest);
+        if (!QFile::rename(b->fileName(), dest))
+        {
+            dd << QString("Error: Failed to move keyframe file %1 to %2").arg(b->fileName(), dest);
+            return Status(Status::FAIL, dd);
+        }
         b->setFileName(dest);
     }
 

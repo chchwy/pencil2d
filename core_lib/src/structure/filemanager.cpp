@@ -63,12 +63,25 @@ Object* FileManager::load(const QString& sFileName)
 
         if (!QFile::copy(sFileName, strMainXMLFile))
         {
-            dd << "Failed to copy main xml file";
+            dd << "Error: Failed to copy main xml file to the working dir";
+            handleOpenProjectError(Status::ERROR_FILE_CANNOT_OPEN, dd);
+            return nullptr;
         }
-        Status st = copyDir(sFileName + "." + PFF_OLD_DATA_DIR, strDataFolder);
-        if (!st.ok())
+        const QString oldDataDir = sFileName + "." + PFF_OLD_DATA_DIR;
+        if (QDir(oldDataDir).exists())
         {
-            dd.collect(st.details());
+            Status st = copyDir(oldDataDir, strDataFolder);
+            if (!st.ok())
+            {
+                dd.collect(st.details());
+                dd << "Error: Failed to copy the data directory to the working dir";
+                handleOpenProjectError(Status::ERROR_FILE_CANNOT_OPEN, dd);
+                return nullptr;
+            }
+        }
+        else
+        {
+            dd << "No data directory found next to the .pcl file";
         }
     }
     else
@@ -215,7 +228,9 @@ bool FileManager::loadObject(Object* object, const QDomElement& root)
         }
         else
         {
-            Q_ASSERT(false);
+            // Unknown elements may come from a newer or damaged file;
+            // ignore them instead of crashing debug builds.
+            qWarning() << "Ignoring unknown element in main XML:" << element.tagName();
         }
     }
     return ok;
@@ -302,7 +317,13 @@ Status FileManager::save(const Object* object, const QString& sFileName)
         dd << QString("Working dir: %1").arg(sTempWorkingFolder);
         dd << fileFormat.arg(".pclx");
 
-        Q_ASSERT(QDir(sTempWorkingFolder).exists());
+        if (!QDir(sTempWorkingFolder).exists())
+        {
+            dd << QString("Error: The working directory has disappeared: %1").arg(sTempWorkingFolder);
+            return Status(Status::FAIL, dd,
+                          tr("Internal Error"),
+                          tr("An internal error occurred. The project could not be saved."));
+        }
 
         sMainXMLFile = QDir(sTempWorkingFolder).filePath(PFF_XML_FILE_NAME);
         sDataFolder = QDir(sTempWorkingFolder).filePath(PFF_OLD_DATA_DIR);
@@ -870,7 +891,6 @@ Status FileManager::unzip(const QString& strZipFile, const QString& strUnzipTarg
     removePFFTmpDirectory(strUnzipTarget);
 
     Status s = MiniZ::uncompressFolder(strZipFile, strUnzipTarget);
-    Q_ASSERT(s.ok());
 
     mstrLastTempFolder = strUnzipTarget;
     return s;
@@ -941,8 +961,7 @@ bool FileManager::isProjectRecoverable(const QString& projectFolder)
     // There must be a subfolder called "data"
     if (!dir.exists("data")) { return false; }
 
-    bool ok = dir.cd("data");
-    Q_ASSERT(ok);
+    if (!dir.cd("data")) { return false; }
 
     QStringList nameFiler;
     nameFiler << "*.png" << "*.vec" << "*.xml";
@@ -1063,6 +1082,10 @@ Status FileManager::rebuildMainXML(Object* object)
     {
         const QStringList& frames = keyFrameGroups.value(layerIndex);
         Status st = rebuildLayerXmlTag(xmlDoc, elemObject, layerIndex, frames);
+        if (!st.ok())
+        {
+            return st;
+        }
     }
 
     QTextStream fout(&file);
@@ -1084,7 +1107,10 @@ Status FileManager::rebuildLayerXmlTag(QDomDocument& doc,
                                        const int layerIndex,
                                        const QStringList& frames)
 {
-    Q_ASSERT(frames.length() > 0);
+    if (frames.isEmpty())
+    {
+        return Status::INVALID_ARGUMENT;
+    }
 
     Layer::LAYER_TYPE type = frames[0].endsWith(".png") ? Layer::BITMAP : Layer::VECTOR;
 
@@ -1127,9 +1153,8 @@ QString FileManager::recoverLayerName(Layer::LAYER_TYPE type, int index)
     case Layer::SOUND:
         return tr("Sound Layer %1").arg(index);
     default:
-        Q_ASSERT(false);
+        return tr("Layer %1").arg(index);
     }
-    return "";
 }
 
 int FileManager::layerIndexFromFilename(const QString& filename)
