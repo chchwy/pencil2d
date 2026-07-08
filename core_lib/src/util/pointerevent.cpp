@@ -273,7 +273,12 @@ QTabletEvent::TabletDevice PointerEvent::device() const
 {
     if (mTabletEvent)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+        // device() is deprecated since 5.15 in favor of deviceType()
+        return mTabletEvent->deviceType();
+#else
         return mTabletEvent->device();
+#endif
     }
     return QTabletEvent::TabletDevice::NoDevice;
 }
