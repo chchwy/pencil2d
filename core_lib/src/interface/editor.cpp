@@ -1019,12 +1019,20 @@ bool Editor::canSwapLayers(int layerIndexLeft, int layerIndexRight) const
     return mObject->canSwapLayers(layerIndexLeft, layerIndexRight);
 }
 
-void Editor::prepareSave()
+Status Editor::prepareSave()
 {
+    Status result = Status::OK;
+    DebugDetails dd;
     for (auto mgr : mAllManagers)
     {
-        mgr->save(mObject.get());
+        Status st = mgr->save(mObject.get());
+        if (!st.ok())
+        {
+            dd.collect(st.details());
+            result = Status(Status::FAIL, dd);
+        }
     }
+    return result;
 }
 
 void Editor::clearCurrentFrame()

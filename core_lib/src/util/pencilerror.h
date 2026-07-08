@@ -36,7 +36,16 @@ private:
     QStringList mDetails;
 };
 
-class Status
+// Make the compiler flag any call site that silently discards a returned
+// Status. [[nodiscard]] on the class requires C++17, which only the Qt6
+// build guarantees, so it is a no-op on the C++11 (Qt5) build.
+#if (defined(__cplusplus) && __cplusplus >= 201703L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#define PENCIL_NODISCARD [[nodiscard]]
+#else
+#define PENCIL_NODISCARD
+#endif
+
+class PENCIL_NODISCARD Status
 {
     Q_DECLARE_TR_FUNCTIONS(Status)
 public:
