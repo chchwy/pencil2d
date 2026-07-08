@@ -30,6 +30,7 @@ GNU General Public License for more details.
 
 class QProgressDialog;
 class QFile;
+class QLockFile;
 class LayerBitmap;
 class LayerVector;
 class LayerCamera;
@@ -181,6 +182,10 @@ private:
 
     ObjectData mData;
     mutable std::unique_ptr<ActiveFramePool> mActiveFramePool;
+
+    // Held for the lifetime of the working dir so other instances (and the
+    // startup recovery scan) can tell that the dir belongs to a live process.
+    mutable std::unique_ptr<QLockFile> mWorkingDirLock;
 };
 
 
