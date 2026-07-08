@@ -18,6 +18,7 @@ GNU General Public License for more details.
 #include <QTemporaryDir>
 #include <QTemporaryFile>
 #include <QImage>
+#include <QLockFile>
 #include "qminiz.h"
 #include "fileformat.h"
 #include "filemanager.h"
@@ -437,5 +438,231 @@ TEST_CASE("Empty Sound Frames")
 
             delete newObj;
         }
+    }
+}
+
+TEST_CASE("Atomic save data safety")
+{
+    SECTION("Successful save leaves no tmp files next to the project")
+    {
+        FileManager fm;
+
+        Object* o = new Object;
+        o->init();
+        o->addNewCameraLayer();
+        o->addNewBitmapLayer();
+
+        QTemporaryDir testDir("PENCIL_TEST_XXXXXXXX");
+        const QString animationPath = testDir.path() + "/atomic.pclx";
+        Status st = fm.save(o, animationPath);
+        delete o;
+
+        REQUIRE(st.ok());
+        REQUIRE(QFile::exists(animationPath));
+
+        const QStringList leftovers = QDir(testDir.path()).entryList(QStringList("*.tmp.*"), QDir::Files);
+        REQUIRE(leftovers.isEmpty());
+    }
+
+    SECTION("Failed save leaves the existing project file untouched")
+    {
+        FileManager fm;
+
+        Object* o = new Object;
+        o->init();
+        o->addNewCameraLayer();
+        o->addNewBitmapLayer();
+        LayerBitmap* layer = static_cast<LayerBitmap*>(o->getLayer(1));
+        REQUIRE(layer->addNewKeyFrameAt(2));
+        layer->getBitmapImageAtFrame(2)->drawRect(
+            QRectF(0, 0, 10, 10), QPen(QColor(255, 0, 0)), QBrush(Qt::red),
+            QPainter::CompositionMode_SourceOver, false);
+
+        QTemporaryDir testDir("PENCIL_TEST_XXXXXXXX");
+        const QString animationPath = testDir.path() + "/keepme.pclx";
+        REQUIRE(fm.save(o, animationPath).ok());
+        const qint64 goodSize = QFileInfo(animationPath).size();
+
+        // Sabotage the save: the working dir is gone, so the next save must
+        // fail *before* it touches the existing project file.
+        QDir(o->workingDir()).removeRecursively();
+        Status st = fm.save(o, animationPath);
+        delete o;
+
+        REQUIRE(!st.ok());
+        REQUIRE(QFile::exists(animationPath));
+        REQUIRE(QFileInfo(animationPath).size() == goodSize);
+
+        // The intact file must still load.
+        Object* reloaded = fm.load(animationPath);
+        REQUIRE(reloaded != nullptr);
+        delete reloaded;
+    }
+}
+
+TEST_CASE("Working dir lock file")
+{
+    SECTION("A live Object holds a lock on its working dir")
+    {
+        Object o;
+        o.init();
+
+        const QString lockPath = QDir(o.workingDir()).filePath(PFF_WORKING_DIR_LOCK_FILE);
+        REQUIRE(QFile::exists(lockPath));
+
+        QLockFile probe(lockPath);
+        probe.setStaleLockTime(0);
+        REQUIRE(!probe.tryLock(0)); // held by this (live) process
+    }
+
+    SECTION("Recovery scan skips the working dir of a live instance")
+    {
+        Object o;
+        o.init();
+
+        // Make the dir look recoverable content-wise.
+        QImage img(4, 4, QImage::Format_ARGB32_Premultiplied);
+        img.fill(Qt::red);
+        REQUIRE(img.save(QDir(o.dataDir()).filePath("001.001.png")));
+
+        FileManager fm;
+        const QStringList found = fm.searchForUnsavedProjects();
+        const QString myDir = QDir(o.workingDir()).absolutePath();
+        for (const QString& path : found)
+        {
+            REQUIRE(QDir(path).absolutePath() != myDir);
+        }
+    }
+}
+
+TEST_CASE("Recovery scan")
+{
+    QDir tempDir = QDir::temp();
+    REQUIRE(tempDir.mkpath("Pencil2D"));
+    tempDir.cd("Pencil2D");
+
+    SECTION("Finds an orphaned working dir with content")
+    {
+        const QString orphanName = QString("P0Orphan_%1_%2").arg(PFF_TMP_DECOMPRESS_EXT, uniqueString(8));
+        const QString orphanPath = tempDir.filePath(orphanName);
+        REQUIRE(QDir().mkpath(orphanPath + "/data"));
+
+        QImage img(4, 4, QImage::Format_ARGB32_Premultiplied);
+        img.fill(Qt::blue);
+        REQUIRE(img.save(orphanPath + "/data/001.001.png"));
+
+        FileManager fm;
+        const QStringList found = fm.searchForUnsavedProjects();
+
+        bool foundOrphan = false;
+        for (const QString& path : found)
+        {
+            if (QDir(path).absolutePath() == QDir(orphanPath).absolutePath())
+                foundOrphan = true;
+        }
+        REQUIRE(foundOrphan);
+
+        QDir(orphanPath).removeRecursively(); // clean up
+    }
+
+    SECTION("Garbage-collects an orphaned working dir without content")
+    {
+        const QString orphanName = QString("P0Empty_%1_%2").arg(PFF_TMP_DECOMPRESS_EXT, uniqueString(8));
+        const QString orphanPath = tempDir.filePath(orphanName);
+        REQUIRE(QDir().mkpath(orphanPath + "/data"));
+
+        FileManager fm;
+        fm.searchForUnsavedProjects();
+
+        REQUIRE(!QDir(orphanPath).exists());
+    }
+
+    SECTION("Recovery preserves layer names from an intact main.xml")
+    {
+        // Build a project and save it in the old .pcl format, which writes
+        // the main XML and data dir to plain visible paths.
+        FileManager fm;
+        Object* o = new Object;
+        o->init();
+        o->addNewCameraLayer();
+        o->addNewBitmapLayer();
+        o->getLayer(1)->setName("VerySpecificLayerName");
+        LayerBitmap* layer = static_cast<LayerBitmap*>(o->getLayer(1));
+        REQUIRE(layer->addNewKeyFrameAt(2));
+        layer->getBitmapImageAtFrame(2)->drawRect(
+            QRectF(0, 0, 10, 10), QPen(QColor(0, 255, 0)), QBrush(Qt::green),
+            QPainter::CompositionMode_SourceOver, false);
+
+        QTemporaryDir testDir("PENCIL_TEST_XXXXXXXX");
+        const QString pclPath = testDir.path() + "/recovery.pcl";
+        REQUIRE(fm.save(o, pclPath).ok());
+        delete o;
+
+        // Assemble an orphaned working dir from the saved parts.
+        const QString orphanName = QString("P0Recover_%1_%2").arg(PFF_TMP_DECOMPRESS_EXT, uniqueString(8));
+        const QString orphanPath = tempDir.filePath(orphanName);
+        REQUIRE(QDir().mkpath(orphanPath + "/data"));
+        REQUIRE(QFile::copy(pclPath, orphanPath + "/" + PFF_XML_FILE_NAME));
+        QDir dataSrc(pclPath + "." + PFF_OLD_DATA_DIR);
+        for (const QString& f : dataSrc.entryList(QDir::Files))
+        {
+            REQUIRE(QFile::copy(dataSrc.filePath(f), orphanPath + "/data/" + f));
+        }
+
+        Object* recovered = fm.recoverUnsavedProject(orphanPath);
+        REQUIRE(recovered != nullptr);
+
+        // An intact main.xml must be used as-is; the heuristic rebuild would
+        // have renamed the layer to a generic "Bitmap Layer N".
+        bool foundLayer = false;
+        for (int i = 0; i < recovered->getLayerCount(); ++i)
+        {
+            if (recovered->getLayer(i)->name() == "VerySpecificLayerName")
+                foundLayer = true;
+        }
+        REQUIRE(foundLayer);
+
+        delete recovered; // also removes the adopted working dir
+    }
+}
+
+TEST_CASE("findMostRecentBackup")
+{
+    QTemporaryDir testDir("PENCIL_TEST_XXXXXXXX");
+    auto touch = [&](const QString& name)
+    {
+        QFile f(testDir.path() + "/" + name);
+        REQUIRE(f.open(QIODevice::WriteOnly));
+        f.write("x");
+        f.close();
+    };
+
+    FileManager fm;
+    const QString projectPath = testDir.path() + "/proj.pclx";
+
+    SECTION("Returns empty when no backup exists")
+    {
+        touch("proj.pclx");
+        REQUIRE(fm.findMostRecentBackup(projectPath).isEmpty());
+    }
+
+    SECTION("Returns the highest-numbered backup")
+    {
+        touch("proj.pclx");
+        touch("proj.backup1.pclx");
+        touch("proj.backup3.pclx");
+        touch("proj.backup2.pclx");
+
+        const QString best = fm.findMostRecentBackup(projectPath);
+        REQUIRE(QFileInfo(best).fileName() == "proj.backup3.pclx");
+    }
+
+    SECTION("Ignores backups of other projects and other extensions")
+    {
+        touch("proj.pclx");
+        touch("other.backup5.pclx");
+        touch("proj.backup7.pcl");
+
+        REQUIRE(fm.findMostRecentBackup(projectPath).isEmpty());
     }
 }

@@ -190,3 +190,61 @@ TEST_CASE("validateDataPath")
     }
 #endif
 }
+
+TEST_CASE("atomicReplace")
+{
+    QTemporaryDir dir;
+    REQUIRE(dir.isValid());
+
+    auto writeFile = [](const QString& path, const QByteArray& content)
+    {
+        QFile f(path);
+        REQUIRE(f.open(QIODevice::WriteOnly));
+        f.write(content);
+        f.close();
+    };
+    auto readFile = [](const QString& path) -> QByteArray
+    {
+        QFile f(path);
+        REQUIRE(f.open(QIODevice::ReadOnly));
+        return f.readAll();
+    };
+
+    SECTION("Replaces an existing destination atomically")
+    {
+        const QString tmpPath = dir.filePath("project.pclx.tmp.1234");
+        const QString finalPath = dir.filePath("project.pclx");
+        writeFile(finalPath, "old content");
+        writeFile(tmpPath, "new content");
+
+        Status st = atomicReplace(tmpPath, finalPath);
+
+        REQUIRE(st.ok());
+        REQUIRE(readFile(finalPath) == "new content");
+        REQUIRE(!QFile::exists(tmpPath)); // tmp was renamed away
+    }
+
+    SECTION("Creates the destination when it does not exist yet")
+    {
+        const QString tmpPath = dir.filePath("fresh.pclx.tmp.1234");
+        const QString finalPath = dir.filePath("fresh.pclx");
+        writeFile(tmpPath, "first save");
+
+        Status st = atomicReplace(tmpPath, finalPath);
+
+        REQUIRE(st.ok());
+        REQUIRE(readFile(finalPath) == "first save");
+    }
+
+    SECTION("Fails and leaves the destination untouched when tmp is missing")
+    {
+        const QString tmpPath = dir.filePath("does-not-exist.tmp");
+        const QString finalPath = dir.filePath("precious.pclx");
+        writeFile(finalPath, "precious data");
+
+        Status st = atomicReplace(tmpPath, finalPath);
+
+        REQUIRE(!st.ok());
+        REQUIRE(readFile(finalPath) == "precious data");
+    }
+}
