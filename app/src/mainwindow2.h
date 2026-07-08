@@ -196,6 +196,10 @@ private:
     // Whether to suppress the auto save dialog due to internal work
     bool mSuppressAutoSaveDialog = false;
 
+    // Guards against the autosave timer firing while a save is already
+    // running (the progress dialog pumps the event loop)
+    bool mSavingInProgress = false;
+
     Ui::MainWindow2* ui = nullptr;
 };
 

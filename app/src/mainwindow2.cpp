@@ -155,8 +155,22 @@ MainWindow2::MainWindow2(QWidget* parent) :
 
 void MainWindow2::autoSaveTimeout()
 {
+    // A manual save pumps the event loop through its progress dialog, so
+    // this timer can fire in the middle of one. Saving the same Object
+    // from two interleaved save operations shuffles keyframe files around
+    // concurrently, so skip this round instead.
+    if (mSavingInProgress) { return; }
+    mSavingInProgress = true;
+    OnScopeExit(mSavingInProgress = false);
+
     FileManager fm;
-    fm.writeToWorkingFolder(mEditor->object());
+    Status st = fm.writeToWorkingFolder(mEditor->object());
+    if (!st.ok())
+    {
+        qWarning() << "Autosave to the working folder failed:" << st.details().str();
+        // Non-intrusive warning; a modal dialog must not interrupt drawing.
+        ui->statusBar->showMessage(tr("Autosave failed. Please save your project manually to avoid losing changes."), 15000);
+    }
 }
 
 MainWindow2::~MainWindow2()
@@ -795,6 +809,9 @@ bool MainWindow2::openObject(const QString& strFilePath)
 
 bool MainWindow2::saveObject(QString strSavedFileName)
 {
+    mSavingInProgress = true;
+    OnScopeExit(mSavingInProgress = false);
+
     QProgressDialog progress(tr("Saving document..."), tr("Abort"), 0, 100, this);
     hideQuestionMark(progress);
     progress.setWindowModality(Qt::WindowModal);
