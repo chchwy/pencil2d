@@ -18,6 +18,7 @@ GNU General Public License for more details.
 #include "filemanager.h"
 
 #include <ctime>
+#include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
 #include <QVersionNumber>
@@ -358,8 +359,16 @@ Status FileManager::save(const Object* object, const QString& sFileName)
                           tr("An internal error occurred. The project could not be saved."));
         }
 
+        // Zip to a temporary file in the destination directory, verify it,
+        // then atomically swap it in. The existing project file is never
+        // touched until the new archive is known to be complete and valid.
+        const QString sTmpZipFile = sFileName + ".tmp." + QString::number(QCoreApplication::applicationPid());
+        ScopeGuard tmpZipGuard([&] {
+            QFile::remove(sTmpZipFile);
+        });
+
         dd << "Miniz: Zipping...";
-        Status stMiniz = MiniZ::compressFolder(sFileName, sTempWorkingFolder, filesToZip, "application/x-pencil2d-pclx");
+        Status stMiniz = MiniZ::compressFolder(sTmpZipFile, sTempWorkingFolder, filesToZip, "application/x-pencil2d-pclx");
         if (!stMiniz.ok())
         {
             dd.collect(stMiniz.details());
@@ -368,8 +377,28 @@ Status FileManager::save(const Object* object, const QString& sFileName)
                           tr("Miniz Error"),
                           tr("An internal error occurred. The project may not have been saved successfully."));
         }
+
+        Status stSanity = MiniZ::sanityCheck(sTmpZipFile);
+        if (!stSanity.ok())
+        {
+            dd.collect(stSanity.details());
+            dd << "\nError: The newly written zip failed the sanity check";
+            return Status(Status::ERROR_MINIZ_FAIL, dd,
+                          tr("Miniz Error"),
+                          tr("An internal error occurred. The project may not have been saved successfully."));
+        }
+
+        Status stReplace = atomicReplace(sTmpZipFile, sFileName);
+        if (!stReplace.ok())
+        {
+            dd.collect(stReplace.details());
+            dd << "\nError: Could not move the new project file into place";
+            return Status(Status::FAIL, dd,
+                          tr("Cannot Save File"),
+                          tr("The updated project file could not be moved to \"%1\". Your previous project file is unchanged.").arg(sFileName));
+        }
+        tmpZipGuard.dismiss();
         dd << "Miniz: Zip file saved successfully";
-        Q_ASSERT(stMiniz.ok());
 
         if (saveOk) {
             dd << "Project saved successfully, deleting backup";
@@ -701,14 +730,18 @@ Status FileManager::writeMainXml(const Object* object, const QString& mainXmlPat
     DebugDetails dd;
     dd << "\n[XML WRITE diagnostics]\n";
 
-    QFile file(mainXmlPath);
+    // Write to a temporary file first and atomically swap it in afterwards,
+    // so a crash mid-write can never leave a truncated main XML behind.
+    const QString tmpXmlPath = mainXmlPath + ".tmp." + QString::number(QCoreApplication::applicationPid());
+    QFile file(tmpXmlPath);
     if (!file.open(QFile::WriteOnly | QFile::Text))
     {
-        dd << QString("Error: Failed to open Main XML at: %1, \nReason: %2").arg(mainXmlPath).arg(file.errorString());
+        dd << QString("Error: Failed to open Main XML at: %1, \nReason: %2").arg(tmpXmlPath).arg(file.errorString());
         return Status(Status::ERROR_FILE_CANNOT_OPEN, dd);
     }
-    ScopeGuard fileScopeGuard([&] {
+    ScopeGuard tmpXmlGuard([&] {
         file.close();
+        QFile::remove(tmpXmlPath);
     });
 
     QDomDocument xmlDoc("PencilDocument");
@@ -739,6 +772,21 @@ Status FileManager::writeMainXml(const Object* object, const QString& mainXmlPat
     QTextStream out(&file);
     xmlDoc.save(out, indentSize);
     out.flush();
+    file.close();
+
+    if (out.status() != QTextStream::Ok || file.error() != QFile::NoError)
+    {
+        dd << QString("Error: Failed to write Main XML at: %1, \nReason: %2").arg(tmpXmlPath).arg(file.errorString());
+        return Status(Status::ERROR_FILE_CANNOT_OPEN, dd);
+    }
+
+    Status stReplace = atomicReplace(tmpXmlPath, mainXmlPath);
+    if (!stReplace.ok())
+    {
+        dd.collect(stReplace.details());
+        dd << QString("Error: Failed to move Main XML into place at: %1").arg(mainXmlPath);
+        return Status(Status::FAIL, dd);
+    }
 
     dd << "Done writing main xml file: " << mainXmlPath;
 

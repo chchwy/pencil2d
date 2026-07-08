@@ -19,8 +19,20 @@ GNU General Public License for more details.
 #include <QDebug>
 #include <QApplication>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QStandardPaths>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <io.h>
+#else
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
 
 static inline bool clipLineToEdge(qreal& t0, qreal& t1, qreal p, qreal q)
 {
@@ -194,4 +206,91 @@ QString validateDataPath(const QString& filePath, const QString& dataDirPath)
     // the file resolve outside of the data directory and the file should not be loaded.
     qWarning() << "validateDataPath: rejected path outside data directory:" << filePath;
     return QString();
+}
+
+/**
+ * Flushes the file at the given path to stable storage.
+ *
+ * Opening for read-write is required: POSIX allows fsync to fail on
+ * read-only descriptors and FlushFileBuffers needs write access.
+ */
+static bool syncFileToDisk(const QString& path, QString& errorOut)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadWrite))
+    {
+        errorOut = QString("Cannot open file for syncing: %1").arg(file.errorString());
+        return false;
+    }
+
+#ifdef Q_OS_WIN
+    HANDLE handle = reinterpret_cast<HANDLE>(_get_osfhandle(file.handle()));
+    if (handle == INVALID_HANDLE_VALUE || !FlushFileBuffers(handle))
+    {
+        errorOut = QString("FlushFileBuffers failed with error code %1").arg(GetLastError());
+        return false;
+    }
+#else
+#ifdef Q_OS_MAC
+    // On macOS, fsync only flushes to the drive, not through the drive's
+    // cache; F_FULLFSYNC is the real durability barrier.
+    if (fcntl(file.handle(), F_FULLFSYNC) != 0 && fsync(file.handle()) != 0)
+#else
+    if (fsync(file.handle()) != 0)
+#endif
+    {
+        errorOut = QString("fsync failed: %1").arg(QString::fromLocal8Bit(strerror(errno)));
+        return false;
+    }
+#endif
+    return true;
+}
+
+Status atomicReplace(const QString& tmpPath, const QString& finalPath)
+{
+    DebugDetails dd;
+    dd << QString("Atomic replace: %1 -> %2").arg(tmpPath, finalPath);
+
+    if (!QFile::exists(tmpPath))
+    {
+        dd << "Error: temporary file does not exist";
+        return Status(Status::FILE_NOT_FOUND, dd);
+    }
+
+    QString syncError;
+    if (!syncFileToDisk(tmpPath, syncError))
+    {
+        dd << QString("Error: %1").arg(syncError);
+        return Status(Status::FAIL, dd);
+    }
+
+#ifdef Q_OS_WIN
+    const std::wstring tmpNative = QDir::toNativeSeparators(tmpPath).toStdWString();
+    const std::wstring finalNative = QDir::toNativeSeparators(finalPath).toStdWString();
+    if (!MoveFileExW(tmpNative.c_str(), finalNative.c_str(),
+                     MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+    {
+        dd << QString("Error: MoveFileExW failed with error code %1").arg(GetLastError());
+        return Status(Status::FAIL, dd);
+    }
+#else
+    if (::rename(QFile::encodeName(tmpPath).constData(),
+                 QFile::encodeName(finalPath).constData()) != 0)
+    {
+        dd << QString("Error: rename failed: %1").arg(QString::fromLocal8Bit(strerror(errno)));
+        return Status(Status::FAIL, dd);
+    }
+
+    // Sync the parent directory so the rename itself is durable.
+    const QByteArray dirPath = QFile::encodeName(QFileInfo(finalPath).absolutePath());
+    int dirFd = ::open(dirPath.constData(), O_RDONLY);
+    if (dirFd >= 0)
+    {
+        fsync(dirFd);
+        ::close(dirFd);
+    }
+#endif
+
+    dd << "Atomic replace succeeded";
+    return Status(Status::OK, dd);
 }
