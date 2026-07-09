@@ -335,6 +335,51 @@ TEST_CASE("Creating a layer is undoable")
     REQUIRE(scene.editor->layers()->getIndex(restored) == countBefore);
 }
 
+TEST_CASE("Deleting a layer is undoable and earlier history survives it")
+{
+    UndoRedoTestScene scene;
+
+    // Create a second layer (recorded), draw on it (recorded), delete it
+    // (recorded) — then unwind the whole stack and play it forward again.
+    Layer* extraLayer = scene.editor->layers()->createBitmapLayer("Extra");
+    const int extraLayerId = extraLayer->id();
+
+    BitmapImage* image = static_cast<LayerBitmap*>(extraLayer)->getBitmapImageAtFrame(1);
+    UndoTransaction transaction = scene.editor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
+    image->setPixel(3, 4, red);
+    transaction.commit("stroke");
+
+    REQUIRE(scene.editor->layers()->deleteLayer(1) == Status::OK);
+    REQUIRE(scene.editor->layers()->findLayerById(extraLayerId) == nullptr);
+
+    // Undo the deletion: the layer is back, same id, drawing intact.
+    scene.undoAction->trigger();
+    Layer* restored = scene.editor->layers()->findLayerById(extraLayerId);
+    REQUIRE(restored != nullptr);
+    REQUIRE(static_cast<LayerBitmap*>(restored)->getBitmapImageAtFrame(1)->constScanLine(3, 4) == red);
+
+    // Undo the stroke on the restored layer — the #864/#1412 scenario:
+    // history recorded before a layer deletion used to be lost for good.
+    scene.undoAction->trigger();
+    REQUIRE(static_cast<LayerBitmap*>(restored)->getBitmapImageAtFrame(1)->constScanLine(3, 4) == 0);
+
+    // Undo the layer creation itself.
+    scene.undoAction->trigger();
+    REQUIRE(scene.editor->layers()->findLayerById(extraLayerId) == nullptr);
+    REQUIRE(scene.editor->layers()->count() == 1);
+
+    // And forward again: create, stroke, delete.
+    scene.redoAction->trigger();
+    restored = scene.editor->layers()->findLayerById(extraLayerId);
+    REQUIRE(restored != nullptr);
+
+    scene.redoAction->trigger();
+    REQUIRE(static_cast<LayerBitmap*>(restored)->getBitmapImageAtFrame(1)->constScanLine(3, 4) == red);
+
+    scene.redoAction->trigger();
+    REQUIRE(scene.editor->layers()->findLayerById(extraLayerId) == nullptr);
+}
+
 TEST_CASE("Adding a keyframe through the editor is undoable")
 {
     UndoRedoTestScene scene;

@@ -158,6 +158,29 @@ private:
     VectorImage redoVector;
 };
 
+class LayerRemoveCommand : public UndoRedoCommand
+{
+public:
+    /** Takes ownership of the removed layer; the layer must already have
+     *  been taken out of the document (LayerManager::takeLayer). */
+    LayerRemoveCommand(Layer* takenLayer,
+                       int layerIndex,
+                       const QString& description,
+                       Editor* editor,
+                       QUndoCommand* parent = nullptr);
+    ~LayerRemoveCommand() override;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int layerId = 0;
+    int layerIndex = 0;
+
+    /// Holds the layer while it is removed from the document.
+    std::unique_ptr<Layer> takenLayer;
+};
+
 class LayerAddCommand : public UndoRedoCommand
 {
 public:

@@ -27,6 +27,7 @@ GNU General Public License for more details.
 #include "pencildef.h"
 #include "editor.h"
 #include "object.h"
+#include "undoredomanager.h"
 #include "viewmanager.h"
 #include "layermanager.h"
 #include "scribblearea.h"
@@ -930,9 +931,15 @@ Status ActionCommands::deleteCurrentLayer()
         return Status::CANCELED;
     }
 
+    // With the new undo/redo system the deletion is undoable, so don't
+    // claim otherwise.
+    const QString warningText = mEditor->undoRedo()->isNewBackupSystemEnabled()
+        ? tr("Are you sure you want to delete layer: %1?").arg(strLayerName)
+        : tr("Are you sure you want to delete layer: %1? This cannot be undone.").arg(strLayerName);
+
     int ret = QMessageBox::warning(mParent,
                                    tr("Delete Layer", "Windows title of Delete current layer pop-up."),
-                                   tr("Are you sure you want to delete layer: %1? This cannot be undone.").arg(strLayerName),
+                                   warningText,
                                    QMessageBox::Ok | QMessageBox::Cancel,
                                    QMessageBox::Ok);
     if (ret == QMessageBox::Ok)
