@@ -133,7 +133,7 @@ private:
 
     RadialOffsetTool mWidthSizingTool;
     RadialOffsetTool mFeatherSizingTool;
-    SAVESTATE_ID mUndoSaveStateId = 0;
+    UndoTransaction mUndoTransaction;
 };
 
 #endif // STROKETOOL_H

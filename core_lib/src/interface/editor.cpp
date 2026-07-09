@@ -931,12 +931,12 @@ KeyFrame* Editor::addKeyFrame(const int layerNumber, int frameIndex)
     Q_ASSERT(ok); // We already ensured that there is no keyframe at frameIndex, so this should always succeed
     scrubTo(frameIndex); // currentFrameChanged() emit inside.
 
-    SAVESTATE_ID saveStateId = undoRedo()->createState(UndoRedoRecordType::KEYFRAME_ADD);
+    UndoTransaction transaction = undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_ADD, layer->id(), frameIndex);
     emit frameModified(frameIndex);
     layers()->notifyAnimationLengthChanged();
     KeyFrame* newFrame = layer->getKeyFrameAt(frameIndex);
 
-    undoRedo()->record(saveStateId, tr("Add frame"));
+    transaction.commit(tr("Add frame"));
 
     return newFrame;
 }
@@ -958,7 +958,7 @@ void Editor::removeKey()
         return;
     }
 
-    SAVESTATE_ID saveStateId =  undoRedo()->createState(UndoRedoRecordType::KEYFRAME_REMOVE);
+    UndoTransaction transaction = undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_REMOVE);
     backup(tr("Remove frame"));
 
     deselectAll();
@@ -966,7 +966,7 @@ void Editor::removeKey()
     layers()->notifyAnimationLengthChanged();
     emit layers()->currentLayerChanged(layers()->currentLayerIndex()); // trigger timeline repaint.
 
-    undoRedo()->record(saveStateId, tr("Remove frame"));
+    transaction.commit(tr("Remove frame"));
 }
 
 void Editor::scrubNextKeyFrame()

@@ -69,7 +69,7 @@ private:
     MoveMode mPerspMode;
     QPointF mOffset;
 
-    SAVESTATE_ID mUndoSaveStateId = 0;
+    UndoTransaction mUndoTransaction;
 };
 
 #endif

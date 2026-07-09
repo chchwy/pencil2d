@@ -1067,13 +1067,13 @@ void TimeLineCells::mouseReleaseEvent(QMouseEvent* event)
             int offset = frameNumber - posUnderCursor;
 
             if (currentLayer->canMoveSelectedFramesToOffset(offset)) {
-                SAVESTATE_ID saveStateId = mEditor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MOVE);
+                UndoTransaction transaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MOVE, currentLayer->id(), mEditor->currentFrame());
                 UserSaveState userState;
                 userState.moveFramesState = MoveFramesSaveState(offset, currentLayer->selectedKeyFramesPositions());
-                mEditor->undoRedo()->addUserState(saveStateId, userState);
+                transaction.setUserState(userState);
 
                 currentLayer->moveSelectedFrames(offset);
-                mEditor->undoRedo()->record(saveStateId, tr("Move Frames"));
+                transaction.commit(tr("Move Frames"));
             }
             mEditor->layers()->notifyAnimationLengthChanged();
             emit mEditor->framesModified();

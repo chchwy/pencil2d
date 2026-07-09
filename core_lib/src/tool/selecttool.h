@@ -70,7 +70,7 @@ private:
 
     QPixmap mCursorPixmap = QPixmap(24, 24);
 
-    SAVESTATE_ID mUndoStateId = 0;
+    UndoTransaction mUndoTransaction;
 };
 
 #endif
