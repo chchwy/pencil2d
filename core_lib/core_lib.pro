@@ -55,6 +55,7 @@ HEADERS +=  \
     src/managers/toolmanager.h \
     src/managers/playbackmanager.h \
     src/managers/undoredomanager.h \
+    src/managers/undotransaction.h \
     src/managers/viewmanager.h \
     src/managers/preferencemanager.h \
     src/managers/soundmanager.h \
@@ -152,6 +153,7 @@ SOURCES +=  src/graphics/bitmap/bitmapimage.cpp \
     src/managers/preferencemanager.cpp \
     src/managers/playbackmanager.cpp \
     src/managers/undoredomanager.cpp \
+    src/managers/undotransaction.cpp \
     src/managers/viewmanager.cpp \
     src/managers/soundmanager.cpp \
     src/movieimporter.cpp \

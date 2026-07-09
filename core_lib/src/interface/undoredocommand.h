@@ -57,7 +57,8 @@ class KeyFrameRemoveCommand : public UndoRedoCommand
 {
 public:
     KeyFrameRemoveCommand(const KeyFrame* undoKeyFrame,
-                        int undoLayerId,
+                        int layerId,
+                        int redoPosition,
                         const QString& description,
                         Editor* editor,
                         QUndoCommand* parent = nullptr
@@ -69,8 +70,7 @@ public:
 
 private:
 
-    int undoLayerId = 0;
-    int redoLayerId = 0;
+    int layerId = 0;
 
     KeyFrame* undoKeyFrame = nullptr;
     int redoPosition = 0;
@@ -79,8 +79,8 @@ private:
 class KeyFrameAddCommand : public UndoRedoCommand
 {
 public:
-    KeyFrameAddCommand(int undoPosition,
-                        int undoLayerId,
+    KeyFrameAddCommand(int position,
+                        int layerId,
                         const QString& description,
                         Editor* editor,
                         QUndoCommand* parent = nullptr);
@@ -91,11 +91,8 @@ public:
 
 private:
 
-    int undoLayerId = 0;
-    int redoLayerId = 0;
-
-    int undoPosition = 0;
-    int redoPosition = 0;
+    int layerId = 0;
+    int position = 0;
 };
 
 class MoveKeyFramesCommand : public UndoRedoCommand
@@ -103,7 +100,7 @@ class MoveKeyFramesCommand : public UndoRedoCommand
 public:
     MoveKeyFramesCommand(int offset,
                          QList<int> listOfPositions,
-                         int undoLayerId,
+                         int layerId,
                          const QString& description,
                          Editor* editor,
                          QUndoCommand* parent = nullptr);
@@ -112,8 +109,7 @@ public:
     void redo() override;
 
 private:
-    int undoLayerId = 0;
-    int redoLayerId = 0;
+    int layerId = 0;
 
     int frameOffset = 0;
     QList<int> positions;
@@ -123,8 +119,9 @@ class BitmapReplaceCommand : public UndoRedoCommand
 {
 
 public:
-    BitmapReplaceCommand(const BitmapImage* backupBitmap,
-                  const int undoLayerId,
+    BitmapReplaceCommand(const BitmapImage* undoBitmap,
+                  const BitmapImage* redoBitmap,
+                  const int layerId,
                   const QString& description,
                   Editor* editor,
                   QUndoCommand* parent = nullptr);
@@ -133,8 +130,7 @@ public:
     void redo() override;
 
 private:
-    int undoLayerId = 0;
-    int redoLayerId = 0;
+    int layerId = 0;
 
     BitmapImage undoBitmap;
     BitmapImage redoBitmap;
@@ -144,7 +140,8 @@ class VectorReplaceCommand : public UndoRedoCommand
 {
 public:
     VectorReplaceCommand(const VectorImage* undoVector,
-                     const int undoLayerId,
+                     const VectorImage* redoVector,
+                     const int layerId,
                      const QString& description,
                      Editor* editor,
                      QUndoCommand* parent = nullptr);
@@ -153,8 +150,7 @@ public:
     void redo() override;
 
 private:
-    int undoLayerId = 0;
-    int redoLayerId = 0;
+    int layerId = 0;
 
     VectorImage undoVector;
     VectorImage redoVector;

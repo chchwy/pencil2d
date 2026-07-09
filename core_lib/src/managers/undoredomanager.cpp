@@ -99,30 +99,32 @@ void UndoRedoManager::record(SAVESTATE_ID saveStateId, const QString& descriptio
         return;
     }
 
-    UndoSaveState* saveState = mSaveStates.take(saveStateId);
-    if (!saveState) { return; }
+    std::unique_ptr<UndoSaveState> saveState(mSaveStates.take(saveStateId));
+    record(std::move(saveState), description);
+}
 
-    if (!mNewBackupSystemEnabled) {
-        clearState(saveState);
+void UndoRedoManager::record(std::unique_ptr<UndoSaveState> state, const QString& description)
+{
+    if (state == nullptr || !mNewBackupSystemEnabled) {
         return;
     }
 
-    switch (saveState->recordType)
+    switch (state->recordType)
     {
         case UndoRedoRecordType::KEYFRAME_MODIFY: {
-            replaceKeyFrame(*saveState, description);
+            replaceKeyFrame(*state, description);
             break;
         }
         case UndoRedoRecordType::KEYFRAME_REMOVE: {
-            removeKeyFrame(*saveState, description);
+            removeKeyFrame(*state, description);
             break;
         }
         case UndoRedoRecordType::KEYFRAME_ADD: {
-            addKeyFrame(*saveState, description);
+            addKeyFrame(*state, description);
             break;
         }
         case UndoRedoRecordType::KEYFRAME_MOVE: {
-            moveKeyFrames(*saveState, description);
+            moveKeyFrames(*state, description);
             break;
         }
         default: {
@@ -132,9 +134,6 @@ void UndoRedoManager::record(SAVESTATE_ID saveStateId, const QString& descriptio
             break;
         }
     }
-
-    // The save state has now been used and should be invalidated so we can't use it again.
-    clearState(saveState);
 }
 
 void UndoRedoManager::clearState(UndoSaveState*& state)
@@ -177,8 +176,10 @@ void UndoRedoManager::pushCommand(QUndoCommand* command)
 
 void UndoRedoManager::removeKeyFrame(const UndoSaveState& undoState, const QString& description)
 {
+    if (undoState.keyframe == nullptr) { return; }
     KeyFrameRemoveCommand* element = new KeyFrameRemoveCommand(undoState.keyframe.get(),
                                                            undoState.layerId,
+                                                           undoState.frameIndex,
                                                            description,
                                                            editor());
     pushCommand(element);
@@ -186,7 +187,7 @@ void UndoRedoManager::removeKeyFrame(const UndoSaveState& undoState, const QStri
 
 void UndoRedoManager::addKeyFrame(const UndoSaveState& undoState, const QString& description)
 {
-    KeyFrameAddCommand* element = new KeyFrameAddCommand(undoState.currentFrameIndex,
+    KeyFrameAddCommand* element = new KeyFrameAddCommand(undoState.frameIndex,
                                                            undoState.layerId,
                                                            description,
                                                            editor());
@@ -218,7 +219,15 @@ void UndoRedoManager::moveKeyFrames(const UndoSaveState& undoState, const QStrin
 void UndoRedoManager::replaceBitmap(const UndoSaveState& undoState, const QString& description)
 {
     if (undoState.keyframe == nullptr || undoState.layerType != Layer::BITMAP) { return; }
+
+    Layer* layer = editor()->layers()->findLayerById(undoState.layerId);
+    if (layer == nullptr || layer->type() != Layer::BITMAP) { return; }
+
+    const BitmapImage* redoBitmap = static_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(undoState.frameIndex);
+    if (redoBitmap == nullptr) { return; }
+
     BitmapReplaceCommand* element = new BitmapReplaceCommand(static_cast<BitmapImage*>(undoState.keyframe.get()),
+                                               redoBitmap,
                                                undoState.layerId,
                                                description,
                                                editor());
@@ -240,7 +249,15 @@ void UndoRedoManager::replaceBitmap(const UndoSaveState& undoState, const QStrin
 void UndoRedoManager::replaceVector(const UndoSaveState& undoState, const QString& description)
 {
     if (undoState.keyframe == nullptr || undoState.layerType != Layer::VECTOR) { return; }
+
+    Layer* layer = editor()->layers()->findLayerById(undoState.layerId);
+    if (layer == nullptr || layer->type() != Layer::VECTOR) { return; }
+
+    const VectorImage* redoVector = static_cast<LayerVector*>(layer)->getLastVectorImageAtFrame(undoState.frameIndex);
+    if (redoVector == nullptr) { return; }
+
     VectorReplaceCommand* element = new VectorReplaceCommand(static_cast<VectorImage*>(undoState.keyframe.get()),
+                                                 redoVector,
                                                  undoState.layerId,
                                                  description,
                                                  editor());
@@ -258,12 +275,38 @@ void UndoRedoManager::replaceVector(const UndoSaveState& undoState, const QStrin
     pushCommand(element);
 }
 
+UndoTransaction UndoRedoManager::beginTransaction(UndoRedoRecordType recordType)
+{
+    const Layer* layer = editor()->layers()->currentLayer();
+    return beginTransaction(recordType, layer->id(), editor()->currentFrame());
+}
+
+UndoTransaction UndoRedoManager::beginTransaction(UndoRedoRecordType recordType, int layerId, int framePosition)
+{
+    if (!mNewBackupSystemEnabled) {
+        // Skip the state capture (including the keyframe clone) entirely
+        // while the legacy system is active.
+        return UndoTransaction();
+    }
+
+    const Layer* layer = editor()->layers()->findLayerById(layerId);
+    if (layer == nullptr) {
+        return UndoTransaction();
+    }
+
+    std::unique_ptr<UndoSaveState> state(new UndoSaveState());
+    state->recordType = recordType;
+    initCommonKeyFrameState(state.get(), layer, framePosition);
+
+    return UndoTransaction(this, std::move(state));
+}
+
 SAVESTATE_ID UndoRedoManager::createState(UndoRedoRecordType recordType)
 {
     int saveStateId = mSaveStateId;
     UndoSaveState* state = new UndoSaveState();
     state->recordType = recordType;
-    initCommonKeyFrameState(state);
+    initCommonKeyFrameState(state, editor()->layers()->currentLayer(), editor()->currentFrame());
 
     mSaveStates[saveStateId] = state;
     mSaveStateId += 1;
@@ -277,12 +320,11 @@ void UndoRedoManager::addUserState(SAVESTATE_ID saveStateId, const UserSaveState
     mSaveStates[saveStateId]->userState = userState;
 }
 
-void UndoRedoManager::initCommonKeyFrameState(UndoSaveState* undoSaveState) const
+void UndoRedoManager::initCommonKeyFrameState(UndoSaveState* undoSaveState, const Layer* layer, int frameIndex) const
 {
-    const Layer* layer = editor()->layers()->currentLayer();
     undoSaveState->layerType = layer->type();
     undoSaveState->layerId = layer->id();
-    undoSaveState->currentFrameIndex = editor()->currentFrame();
+    undoSaveState->frameIndex = frameIndex;
 
     if (layer->type() == Layer::BITMAP || layer->type() == Layer::VECTOR) {
         auto selectMan = editor()->select();
@@ -295,7 +337,6 @@ void UndoRedoManager::initCommonKeyFrameState(UndoSaveState* undoSaveState) cons
             selectMan->currentTransformAnchor());
     }
 
-    const int frameIndex = editor()->currentFrame();
     auto keyframe = layer->getKeyFrameWhichCovers(frameIndex);
     if (keyframe == nullptr)
     {
