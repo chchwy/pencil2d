@@ -145,6 +145,11 @@ public:
      *  @return true if there are unsaved changes, otherwise false */
     bool hasUnsavedChanges() const;
 
+    /** Overrides the backup-system choice read from the user preference at
+     *  init(). Switching mid-session strands the other system's history, so
+     *  only call this before any editing has been recorded (used by tests). */
+    void setNewBackupSystemEnabled(bool enabled) { mNewBackupSystemEnabled = enabled; }
+
     QAction* createUndoAction(QObject* parent, const QIcon& icon);
     QAction* createRedoAction(QObject* parent, const QIcon& icon);
 
