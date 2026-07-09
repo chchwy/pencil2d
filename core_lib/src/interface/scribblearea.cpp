@@ -46,6 +46,7 @@ GNU General Public License for more details.
 #include "viewmanager.h"
 #include "selectionmanager.h"
 #include "overlaymanager.h"
+#include "undoredomanager.h"
 
 ScribbleArea::ScribbleArea(QWidget* parent) : QWidget(parent),
     mCanvasPainter(mCanvas),
@@ -1462,6 +1463,7 @@ void ScribbleArea::deleteSelection()
 
         handleDrawingOnEmptyFrame();
 
+        UndoTransaction transaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
         mEditor->backup(tr("Delete Selection", "Undo Step: clear the selection area."));
 
         selectMan->clearCurves();
@@ -1478,6 +1480,7 @@ void ScribbleArea::deleteSelection()
             bitmapImage->clear(selectMan->mySelectionRect());
         }
         mEditor->setModified(mEditor->currentLayerIndex(), mEditor->currentFrame());
+        transaction.commit(tr("Delete Selection", "Undo Step: clear the selection area."));
     }
 }
 
@@ -1486,8 +1489,10 @@ void ScribbleArea::clearImage()
     Layer* layer = mEditor->layers()->currentLayer();
     if (layer == nullptr) { return; }
 
+    UndoTransaction transaction;
     if (layer->type() == Layer::VECTOR)
     {
+        transaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
         mEditor->backup(tr("Clear Image", "Undo step text"));
 
         VectorImage* vectorImage = currentVectorImage(layer);
@@ -1500,6 +1505,7 @@ void ScribbleArea::clearImage()
     }
     else if (layer->type() == Layer::BITMAP)
     {
+        transaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
         mEditor->backup(tr("Clear Image", "Undo step text"));
 
         BitmapImage* bitmapImage = currentBitmapImage(layer);
@@ -1511,6 +1517,7 @@ void ScribbleArea::clearImage()
         return; // skip updates when nothing changes
     }
     mEditor->setModified(mEditor->layers()->currentLayerIndex(), mEditor->currentFrame());
+    transaction.commit(tr("Clear Image", "Undo step text"));
 }
 
 void ScribbleArea::paletteColorChanged(QColor color)
