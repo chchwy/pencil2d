@@ -314,6 +314,27 @@ TEST_CASE("Moving a layer is undoable")
     REQUIRE(scene.editor->layers()->getLayer(1) == firstLayer);
 }
 
+TEST_CASE("Creating a layer is undoable")
+{
+    UndoRedoTestScene scene;
+    const int countBefore = scene.editor->layers()->count();
+
+    Layer* newLayer = scene.editor->layers()->createBitmapLayer("Extra");
+    const int newLayerId = newLayer->id();
+    REQUIRE(scene.editor->layers()->count() == countBefore + 1);
+
+    scene.undoAction->trigger();
+    REQUIRE(scene.editor->layers()->count() == countBefore);
+    REQUIRE(scene.editor->layers()->findLayerById(newLayerId) == nullptr);
+
+    scene.redoAction->trigger();
+    REQUIRE(scene.editor->layers()->count() == countBefore + 1);
+    Layer* restored = scene.editor->layers()->findLayerById(newLayerId);
+    REQUIRE(restored != nullptr);
+    REQUIRE(restored->name() == "Extra");
+    REQUIRE(scene.editor->layers()->getIndex(restored) == countBefore);
+}
+
 TEST_CASE("Adding a keyframe through the editor is undoable")
 {
     UndoRedoTestScene scene;

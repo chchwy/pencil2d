@@ -22,6 +22,8 @@ GNU General Public License for more details.
 #include <QUndoCommand>
 #include <QRectF>
 
+#include <memory>
+
 #include "bitmapimage.h"
 #include "vectorimage.h"
 #include "soundclip.h"
@@ -154,6 +156,27 @@ private:
 
     VectorImage undoVector;
     VectorImage redoVector;
+};
+
+class LayerAddCommand : public UndoRedoCommand
+{
+public:
+    LayerAddCommand(int layerId,
+                    int layerIndex,
+                    const QString& description,
+                    Editor* editor,
+                    QUndoCommand* parent = nullptr);
+    ~LayerAddCommand() override;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    int layerId = 0;
+    int layerIndex = 0;
+
+    /// Holds the layer while it is undone out of the document.
+    std::unique_ptr<Layer> takenLayer;
 };
 
 class LayerMoveCommand : public UndoRedoCommand

@@ -412,6 +412,17 @@ bool Object::addLayer(Layer* layer)
     return true;
 }
 
+bool Object::insertLayer(int index, Layer* layer)
+{
+    if (layer == nullptr || mLayers.contains(layer))
+    {
+        return false;
+    }
+    index = qBound(0, index, static_cast<int>(mLayers.size()));
+    mLayers.insert(index, layer);
+    return true;
+}
+
 ColorRef Object::getColor(int index) const
 {
     ColorRef result(Qt::white, tr("error"));

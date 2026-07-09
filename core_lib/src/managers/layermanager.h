@@ -82,6 +82,17 @@ public:
     /// Index of the given layer in the document, or -1 if not found.
     int getIndex(Layer*) const;
 
+    /** Removes the layer with the given id from the document WITHOUT
+     *  destroying it and returns it; ownership passes to the caller.
+     *  Adjusts the current layer and fires the same signals as
+     *  deleteLayer(). Used by the undo commands. */
+    Layer* takeLayer(int layerId);
+
+    /** Re-inserts a layer previously removed with takeLayer() at the given
+     *  index, keeping its id, and makes it the current layer. Takes
+     *  ownership back into the document. */
+    void restoreLayer(Layer* layer, int index);
+
 signals:
     void currentLayerWillChange(int index);
     void currentLayerChanged(int index);
@@ -90,6 +101,9 @@ signals:
     void layerDeleted(int index);
 
 private:
+    /// Pushes a LayerAddCommand for a layer that was just created.
+    void recordLayerAdded(Layer* layer);
+
     int mLastCameraLayerIdx = 0;
 };
 
