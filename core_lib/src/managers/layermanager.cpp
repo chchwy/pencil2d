@@ -211,6 +211,8 @@ Layer* LayerManager::createLayer(Layer::LAYER_TYPE type, const QString& strLayer
     emit layerCountChanged(count());
     setCurrentLayer(getLastLayerIndex());
 
+    recordLayerAdded(layer);
+
     return layer;
 }
 
@@ -221,6 +223,8 @@ LayerBitmap* LayerManager::createBitmapLayer(const QString& strLayerName)
 
     emit layerCountChanged(count());
     setCurrentLayer(getLastLayerIndex());
+
+    recordLayerAdded(layer);
 
     return layer;
 }
@@ -233,6 +237,8 @@ LayerVector* LayerManager::createVectorLayer(const QString& strLayerName)
     emit layerCountChanged(count());
     setCurrentLayer(getLastLayerIndex());
 
+    recordLayerAdded(layer);
+
     return layer;
 }
 
@@ -243,6 +249,8 @@ LayerCamera* LayerManager::createCameraLayer(const QString& strLayerName)
 
     emit layerCountChanged(count());
     setCurrentLayer(getLastLayerIndex());
+
+    recordLayerAdded(layer);
 
     return layer;
 }
@@ -255,7 +263,19 @@ LayerSound* LayerManager::createSoundLayer(const QString& strLayerName)
     emit layerCountChanged(count());
     setCurrentLayer(getLastLayerIndex());
 
+    recordLayerAdded(layer);
+
     return layer;
+}
+
+void LayerManager::recordLayerAdded(Layer* layer)
+{
+    // The undo manager may not exist yet, e.g. during editor bootstrap or
+    // in tests that wire up a bare LayerManager.
+    if (editor()->undoRedo() == nullptr) { return; }
+
+    editor()->undoRedo()->push(new LayerAddCommand(layer->id(), getIndex(layer),
+                                                   tr("Add layer"), editor()));
 }
 
 int LayerManager::lastFrameAtFrame(int frameIndex)
@@ -350,6 +370,40 @@ Status LayerManager::deleteLayer(int index)
     return Status::OK;
 }
 
+Layer* LayerManager::takeLayer(int layerId)
+{
+    Layer* layer = object()->findLayerById(layerId);
+    if (layer == nullptr) { return nullptr; }
+
+    const int index = getIndex(layer);
+
+    // Mirrors deleteLayer()'s current-layer handling.
+    if (index == object()->getLayerCount() - 1 &&
+        index == currentLayerIndex())
+    {
+        setCurrentLayer(currentLayerIndex() - 1);
+    }
+    Layer* taken = object()->takeLayer(layerId);
+    if (index >= currentLayerIndex())
+    {
+        setCurrentLayer(currentLayerIndex());
+    }
+
+    emit layerDeleted(index);
+    emit layerCountChanged(count());
+
+    return taken;
+}
+
+void LayerManager::restoreLayer(Layer* layer, int index)
+{
+    if (layer == nullptr) { return; }
+
+    object()->insertLayer(index, layer);
+    emit layerCountChanged(count());
+    setCurrentLayer(index);
+}
+
 Status LayerManager::renameLayer(Layer* layer, const QString& newName)
 {
     if (newName.isEmpty()) return Status::FAIL;
@@ -359,8 +413,11 @@ Status LayerManager::renameLayer(Layer* layer, const QString& newName)
     layer->setName(newName);
     emit currentLayerChanged(getIndex(layer));
 
-    editor()->undoRedo()->push(new LayerRenameCommand(layer->id(), oldName, newName,
-                                                      tr("Rename layer"), editor()));
+    if (editor()->undoRedo() != nullptr)
+    {
+        editor()->undoRedo()->push(new LayerRenameCommand(layer->id(), oldName, newName,
+                                                          tr("Rename layer"), editor()));
+    }
     return Status::OK;
 }
 

@@ -134,6 +134,11 @@ public:
     void deleteLayer(Layer*);
     bool addLayer(Layer* layer);
 
+    /** Inserts a layer at the given index, taking ownership.
+     *  Unlike addLayer(), the layer keeps its existing id — used to restore
+     *  a layer previously removed with takeLayer() (undo/redo). */
+    bool insertLayer(int index, Layer* layer);
+
     template<typename T>
     std::vector<T*> getLayersByType() const
     {
