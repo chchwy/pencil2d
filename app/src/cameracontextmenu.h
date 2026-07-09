@@ -23,17 +23,27 @@ GNU General Public License for more details.
 
 #include <QMenu>
 
+#include "cameraeasingtype.h"
+#include "camerafieldoption.h"
+
+class Editor;
 class LayerCamera;
 
 class CameraContextMenu : public QMenu
 {
     Q_OBJECT
 public:
-    CameraContextMenu(int frameNumber, const LayerCamera* layer);
+    CameraContextMenu(int frameNumber, const LayerCamera* layer, Editor* editor);
 
 private:
+    /// Applies an easing change to the keyframe, recorded as one undo step.
+    void setEasing(CameraEasingType type);
+    /// Applies a transform reset option, recorded as one undo step.
+    void resetTransform(CameraFieldOption option);
+
     int mFrameNumber;
     const LayerCamera* mCurrentLayer;
+    Editor* mEditor;
 };
 
 #endif // CAMERACONTEXTMENU_H

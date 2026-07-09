@@ -159,6 +159,12 @@ public:
      *  Deletes the command without recording when the new system is off. */
     void push(QUndoCommand* command);
 
+    /** Groups every command recorded until endMacro() into a single undo
+     *  step. Used for operations that modify several keyframes at once.
+     *  No-op while the new system is disabled. */
+    void beginMacro(const QString& text);
+    void endMacro();
+
     QAction* createUndoAction(QObject* parent, const QIcon& icon);
     QAction* createRedoAction(QObject* parent, const QIcon& icon);
 
@@ -204,6 +210,7 @@ private:
     void replaceKeyFrame(const UndoSaveState& undoState, const QString& description);
     void replaceBitmap(const UndoSaveState& undoState, const QString& description);
     void replaceVector(const UndoSaveState& undoState, const QString& description);
+    void replaceCamera(const UndoSaveState& undoState, const QString& description);
 
     void addKeyFrame(const UndoSaveState& undoState, const QString& description);
     void removeKeyFrame(const UndoSaveState& undoState, const QString& description);
