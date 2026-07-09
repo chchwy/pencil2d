@@ -31,6 +31,7 @@ GNU General Public License for more details.
 #include "layermanager.h"
 #include "soundmanager.h"
 #include "undoredomanager.h"
+#include "undoredocommand.h"
 #include "layerbitmap.h"
 #include "layersound.h"
 #include "bitmapimage.h"
@@ -289,6 +290,28 @@ TEST_CASE("Renaming a layer is undoable")
 
     scene.redoAction->trigger();
     REQUIRE(layer->name() == "Renamed");
+}
+
+TEST_CASE("Moving a layer is undoable")
+{
+    UndoRedoTestScene scene;
+    Layer* firstLayer = scene.bitmapLayer();
+    Layer* secondLayer = scene.object->addNewBitmapLayer();
+    scene.editor->layers()->setCurrentLayer(1);
+
+    // Simulate a timeline drag from index 1 to index 0 and record it the
+    // way TimeLineCells does.
+    scene.editor->swapLayers(0, 1);
+    REQUIRE(scene.editor->layers()->getLayer(0) == secondLayer);
+    scene.editor->undoRedo()->push(new LayerMoveCommand(1, 0, "Move layer", scene.editor));
+
+    scene.undoAction->trigger();
+    REQUIRE(scene.editor->layers()->getLayer(0) == firstLayer);
+    REQUIRE(scene.editor->layers()->getLayer(1) == secondLayer);
+
+    scene.redoAction->trigger();
+    REQUIRE(scene.editor->layers()->getLayer(0) == secondLayer);
+    REQUIRE(scene.editor->layers()->getLayer(1) == firstLayer);
 }
 
 TEST_CASE("Adding a keyframe through the editor is undoable")

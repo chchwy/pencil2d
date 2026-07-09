@@ -79,6 +79,9 @@ public:
     QString nameSuggestLayer(const QString& name);
     int getLastLayerIndex() { return count() - 1; }
 
+    /// Index of the given layer in the document, or -1 if not found.
+    int getIndex(Layer*) const;
+
 signals:
     void currentLayerWillChange(int index);
     void currentLayerChanged(int index);
@@ -87,8 +90,6 @@ signals:
     void layerDeleted(int index);
 
 private:
-    int getIndex(Layer*) const;
-
     int mLastCameraLayerIdx = 0;
 };
 

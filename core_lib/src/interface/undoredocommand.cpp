@@ -321,6 +321,56 @@ void VectorReplaceCommand::redo()
     editor()->scrubTo(redoVector.pos());
 }
 
+LayerMoveCommand::LayerMoveCommand(int fromIndex,
+                                   int toIndex,
+                                   const QString& description,
+                                   Editor* editor,
+                                   QUndoCommand* parent) : UndoRedoCommand(editor, parent)
+{
+    this->fromIndex = fromIndex;
+    this->toIndex = toIndex;
+
+    setText(description);
+}
+
+void LayerMoveCommand::moveLayer(int from, int to)
+{
+    const int count = editor()->layers()->count();
+    if (from < 0 || from >= count || to < 0 || to >= count) {
+        return setObsolete(true);
+    }
+
+    // A move is a series of adjacent swaps, mirroring the timeline's
+    // drag behavior; Editor::swapLayers handles the current-layer and
+    // UI updates per swap.
+    if (to < from)
+    {
+        for (int i = from - 1; i >= to; i--)
+            editor()->swapLayers(i, i + 1);
+    }
+    else
+    {
+        for (int i = from + 1; i <= to; i++)
+            editor()->swapLayers(i, i - 1);
+    }
+}
+
+void LayerMoveCommand::undo()
+{
+    UndoRedoCommand::undo();
+    moveLayer(toIndex, fromIndex);
+}
+
+void LayerMoveCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    moveLayer(fromIndex, toIndex);
+}
+
 LayerRenameCommand::LayerRenameCommand(int layerId,
                                        const QString& oldName,
                                        const QString& newName,

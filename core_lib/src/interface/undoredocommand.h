@@ -156,6 +156,25 @@ private:
     VectorImage redoVector;
 };
 
+class LayerMoveCommand : public UndoRedoCommand
+{
+public:
+    LayerMoveCommand(int fromIndex,
+                     int toIndex,
+                     const QString& description,
+                     Editor* editor,
+                     QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    void moveLayer(int from, int to);
+
+    int fromIndex = 0;
+    int toIndex = 0;
+};
+
 class LayerRenameCommand : public UndoRedoCommand
 {
 public:
