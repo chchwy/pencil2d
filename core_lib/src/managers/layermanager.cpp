@@ -351,6 +351,17 @@ Status LayerManager::deleteLayer(int index)
     }
     Q_ASSERT(object()->getLayerCount() >= 2);
 
+    UndoRedoManager* undoRedo = editor()->undoRedo();
+    if (undoRedo != nullptr && undoRedo->isNewBackupSystemEnabled())
+    {
+        // Transfer the layer's ownership to the undo command instead of
+        // destroying it, so the removal can be undone and commands
+        // recorded before it stay valid (#864, #1412).
+        Layer* taken = takeLayer(layer->id());
+        undoRedo->push(new LayerRemoveCommand(taken, index, tr("Delete layer"), editor()));
+        return Status::OK;
+    }
+
     // current layer is the last layer && we are deleting it
     if (index == object()->getLayerCount() - 1 &&
         index == currentLayerIndex())

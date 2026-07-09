@@ -321,6 +321,47 @@ void VectorReplaceCommand::redo()
     editor()->scrubTo(redoVector.pos());
 }
 
+LayerRemoveCommand::LayerRemoveCommand(Layer* takenLayer,
+                                       int layerIndex,
+                                       const QString& description,
+                                       Editor* editor,
+                                       QUndoCommand* parent) : UndoRedoCommand(editor, parent)
+{
+    Q_ASSERT(takenLayer != nullptr);
+    this->takenLayer.reset(takenLayer);
+    this->layerId = takenLayer->id();
+    this->layerIndex = layerIndex;
+
+    setText(description);
+}
+
+LayerRemoveCommand::~LayerRemoveCommand() = default;
+
+void LayerRemoveCommand::undo()
+{
+    UndoRedoCommand::undo();
+
+    if (takenLayer == nullptr) {
+        return setObsolete(true);
+    }
+
+    editor()->layers()->restoreLayer(takenLayer.release(), layerIndex);
+}
+
+void LayerRemoveCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack; the layer was
+    // already taken out of the document before the command was pushed.
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    takenLayer.reset(editor()->layers()->takeLayer(layerId));
+    if (takenLayer == nullptr) {
+        return setObsolete(true);
+    }
+}
+
 LayerAddCommand::LayerAddCommand(int layerId,
                                  int layerIndex,
                                  const QString& description,
