@@ -69,10 +69,15 @@ bool UndoRedoManager::init()
 void UndoRedoManager::onSettingChanged(SETTING setting)
 {
     if (setting == SETTING::UNDO_REDO_MAX_STEPS) {
-        // The stack needs to be cleared in order to change the undo redo limit
-        clearStack();
-        qDebug() << "updated undo stack limit";
-        mUndoStack.setUndoLimit(editor()->preference()->getInt(SETTING::UNDO_REDO_MAX_STEPS));
+        const int newLimit = editor()->preference()->getInt(SETTING::UNDO_REDO_MAX_STEPS);
+        if (mUndoStack.count() == 0) {
+            mUndoStack.setUndoLimit(newLimit);
+        } else {
+            // QUndoStack only allows changing the limit while empty. Instead
+            // of wiping the user's history to apply the new value, defer it
+            // to the next natural clear (loading or creating a document).
+            mPendingUndoLimit = newLimit;
+        }
     }
 }
 
@@ -398,6 +403,10 @@ void UndoRedoManager::clearStack()
 {
     if (mNewBackupSystemEnabled) {
         mUndoStack.clear();
+        if (mPendingUndoLimit > 0) {
+            mUndoStack.setUndoLimit(mPendingUndoLimit);
+            mPendingUndoLimit = -1;
+        }
     } else {
         mLegacyBackupIndex = -1;
         while (!mLegacyBackupList.isEmpty())
