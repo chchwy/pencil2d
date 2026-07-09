@@ -34,6 +34,7 @@ GNU General Public License for more details.
 #include "playbackmanager.h"
 #include "preferencemanager.h"
 #include "undoredomanager.h"
+#include "undoredocommand.h"
 #include "timeline.h"
 
 #include "cameracontextmenu.h"
@@ -1095,6 +1096,8 @@ void TimeLineCells::mouseReleaseEvent(QMouseEvent* event)
         mToLayer = getInbetweenLayerNumber(event->pos().y());
         if (mToLayer != mFromLayer && mToLayer > -1 && mToLayer < mEditor->layers()->count())
         {
+            Layer* movedLayer = mEditor->layers()->getLayer(mFromLayer);
+
             // Bubble the from layer up or down to the to layer
             if (mToLayer < mFromLayer) // bubble up
             {
@@ -1105,6 +1108,15 @@ void TimeLineCells::mouseReleaseEvent(QMouseEvent* event)
             {
                 for (int i = mFromLayer + 1; i <= mToLayer; i++)
                     mEditor->swapLayers(i, i - 1);
+            }
+
+            // Record where the layer actually ended up — individual swaps may
+            // have been rejected (e.g. the bottom camera layer stays put).
+            const int landedIndex = mEditor->layers()->getIndex(movedLayer);
+            if (landedIndex != mFromLayer)
+            {
+                mEditor->undoRedo()->push(new LayerMoveCommand(mFromLayer, landedIndex,
+                                                               tr("Move layer"), mEditor));
             }
         }
     }
