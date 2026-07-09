@@ -85,7 +85,13 @@ void KeyFrameRemoveCommand::undo()
         Status status = editor()->sound()->loadSound(clip, soundFile);
         if (!status.ok())
         {
-            // loadSound deletes the clip when it fails past the file checks
+            // loadSound only deletes the clip when it fails past its file
+            // checks; on its FILE_NOT_FOUND/FAIL early returns the clip is
+            // still ours to free.
+            if (status == Status::FILE_NOT_FOUND || status == Status::FAIL)
+            {
+                delete clip;
+            }
             return setObsolete(true);
         }
     }
