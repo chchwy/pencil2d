@@ -150,6 +150,15 @@ public:
      *  only call this before any editing has been recorded (used by tests). */
     void setNewBackupSystemEnabled(bool enabled) { mNewBackupSystemEnabled = enabled; }
 
+    /** True when the experimental QUndoStack-based system is active. */
+    bool isNewBackupSystemEnabled() const { return mNewBackupSystemEnabled; }
+
+    /** Pushes a ready-made command onto the undo stack. Use for operations
+     *  (e.g. layer structure changes) that don't need before/after keyframe
+     *  capture; keyframe edits go through beginTransaction() instead.
+     *  Deletes the command without recording when the new system is off. */
+    void push(QUndoCommand* command);
+
     QAction* createUndoAction(QObject* parent, const QIcon& icon);
     QAction* createRedoAction(QObject* parent, const QIcon& icon);
 

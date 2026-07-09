@@ -275,6 +275,22 @@ TEST_CASE("Clearing the image is undoable")
     REQUIRE(layer->getBitmapImageAtFrame(1)->constScanLine(3, 4) == 0);
 }
 
+TEST_CASE("Renaming a layer is undoable")
+{
+    UndoRedoTestScene scene;
+    Layer* layer = scene.bitmapLayer();
+    layer->setName("Original");
+
+    scene.editor->layers()->renameLayer(layer, "Renamed");
+    REQUIRE(layer->name() == "Renamed");
+
+    scene.undoAction->trigger();
+    REQUIRE(layer->name() == "Original");
+
+    scene.redoAction->trigger();
+    REQUIRE(layer->name() == "Renamed");
+}
+
 TEST_CASE("Adding a keyframe through the editor is undoable")
 {
     UndoRedoTestScene scene;
