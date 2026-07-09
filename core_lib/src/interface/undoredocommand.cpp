@@ -36,16 +36,15 @@ UndoRedoCommand::UndoRedoCommand(Editor* editor, QUndoCommand* parent) : QUndoCo
 }
 
 KeyFrameRemoveCommand::KeyFrameRemoveCommand(const KeyFrame* undoKeyFrame,
-                                         int undoLayerId,
+                                         int layerId,
+                                         int redoPosition,
                                          const QString &description,
                                          Editor *editor,
                                          QUndoCommand *parent) : UndoRedoCommand(editor, parent)
 {
     this->undoKeyFrame = undoKeyFrame->clone();
-    this->undoLayerId = undoLayerId;
-
-    this->redoLayerId = editor->layers()->currentLayer()->id();
-    this->redoPosition = editor->currentFrame();
+    this->layerId = layerId;
+    this->redoPosition = redoPosition;
 
     setText(description);
 }
@@ -57,7 +56,7 @@ KeyFrameRemoveCommand::~KeyFrameRemoveCommand()
 
 void KeyFrameRemoveCommand::undo()
 {
-    Layer* layer = editor()->layers()->findLayerById(undoLayerId);
+    Layer* layer = editor()->layers()->findLayerById(layerId);
     if (layer == nullptr) {
         // Until we support layer deletion recovery, we mark the command as
         // obsolete as soon as it's been
@@ -75,7 +74,7 @@ void KeyFrameRemoveCommand::undo()
 
 void KeyFrameRemoveCommand::redo()
 {
-    Layer* layer = editor()->layers()->findLayerById(redoLayerId);
+    Layer* layer = editor()->layers()->findLayerById(layerId);
     if (layer == nullptr) {
         // Until we support layer deletion recovery, we mark the command as
         // obsolete as soon as it's been
@@ -93,42 +92,39 @@ void KeyFrameRemoveCommand::redo()
     editor()->scrubTo(redoPosition);
 }
 
-KeyFrameAddCommand::KeyFrameAddCommand(int undoPosition,
-                                       int undoLayerId,
+KeyFrameAddCommand::KeyFrameAddCommand(int position,
+                                       int layerId,
                                        const QString &description,
                                        Editor *editor,
                                        QUndoCommand *parent)
     : UndoRedoCommand(editor, parent)
 {
-    this->undoPosition = undoPosition;
-    this->undoLayerId = undoLayerId;
-
-    this->redoLayerId = editor->layers()->currentLayer()->id();
-    this->redoPosition = editor->currentFrame();
+    this->position = position;
+    this->layerId = layerId;
 
     setText(description);
 }
 
 void KeyFrameAddCommand::undo()
 {
-    Layer* layer = editor()->layers()->findLayerById(undoLayerId);
+    Layer* layer = editor()->layers()->findLayerById(layerId);
     if (!layer) {
         return setObsolete(true);
     }
 
     UndoRedoCommand::undo();
 
-    layer->removeKeyFrame(undoPosition);
+    layer->removeKeyFrame(position);
 
-    emit editor()->frameModified(undoPosition);
+    emit editor()->frameModified(position);
     editor()->layers()->notifyAnimationLengthChanged();
     editor()->layers()->setCurrentLayer(layer);
-    editor()->scrubTo(undoPosition);
+    editor()->scrubTo(position);
 }
 
 void KeyFrameAddCommand::redo()
 {
-    Layer* layer = editor()->layers()->findLayerById(redoLayerId);
+    Layer* layer = editor()->layers()->findLayerById(layerId);
     if (!layer) {
         return setObsolete(true);
     }
@@ -138,17 +134,17 @@ void KeyFrameAddCommand::redo()
     // Ignore automatic redo when added to undo stack
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
-    layer->addNewKeyFrameAt(redoPosition);
+    layer->addNewKeyFrameAt(position);
 
-    emit editor()->frameModified(redoPosition);
+    emit editor()->frameModified(position);
     editor()->layers()->notifyAnimationLengthChanged();
     editor()->layers()->setCurrentLayer(layer);
-    editor()->scrubTo(redoPosition);
+    editor()->scrubTo(position);
 }
 
 MoveKeyFramesCommand::MoveKeyFramesCommand(int offset,
                                          QList<int> listOfPositions,
-                                         int undoLayerId,
+                                         int layerId,
                                          const QString& description,
                                          Editor* editor,
                                          QUndoCommand *parent)
@@ -157,15 +153,14 @@ MoveKeyFramesCommand::MoveKeyFramesCommand(int offset,
     this->frameOffset = offset;
     this->positions = listOfPositions;
 
-    this->undoLayerId = undoLayerId;
-    this->redoLayerId = editor->layers()->currentLayer()->id();
+    this->layerId = layerId;
 
     setText(description);
 }
 
 void MoveKeyFramesCommand::undo()
 {
-    Layer* undoLayer = editor()->layers()->findLayerById(undoLayerId);
+    Layer* undoLayer = editor()->layers()->findLayerById(layerId);
 
     if (!undoLayer) {
         return setObsolete(true);
@@ -183,7 +178,7 @@ void MoveKeyFramesCommand::undo()
 
 void MoveKeyFramesCommand::redo()
 {
-    Layer* redoLayer = editor()->layers()->findLayerById(redoLayerId);
+    Layer* redoLayer = editor()->layers()->findLayerById(layerId);
 
     if (!redoLayer) {
         return setObsolete(true);
@@ -206,26 +201,22 @@ void MoveKeyFramesCommand::redo()
     emit editor()->framesModified();
 }
 BitmapReplaceCommand::BitmapReplaceCommand(const BitmapImage* undoBitmap,
-                             const int undoLayerId,
+                             const BitmapImage* redoBitmap,
+                             const int layerId,
                              const QString& description,
                              Editor *editor,
                              QUndoCommand *parent) : UndoRedoCommand(editor, parent)
 {
-
     this->undoBitmap = *undoBitmap;
-    this->undoLayerId = undoLayerId;
-
-    Layer* layer = editor->layers()->currentLayer();
-    redoLayerId = layer->id();
-    redoBitmap = *static_cast<LayerBitmap*>(layer)->
-            getLastBitmapImageAtFrame(editor->currentFrame());
+    this->redoBitmap = *redoBitmap;
+    this->layerId = layerId;
 
     setText(description);
 }
 
 void BitmapReplaceCommand::undo()
 {
-    Layer* layer = editor()->layers()->findLayerById(undoLayerId);
+    Layer* layer = editor()->layers()->findLayerById(layerId);
     if (!layer) {
         return setObsolete(true);
     }
@@ -239,7 +230,7 @@ void BitmapReplaceCommand::undo()
 
 void BitmapReplaceCommand::redo()
 {
-    Layer* layer = editor()->layers()->findLayerById(redoLayerId);
+    Layer* layer = editor()->layers()->findLayerById(layerId);
     if (!layer) {
         return setObsolete(true);
     }
@@ -255,25 +246,22 @@ void BitmapReplaceCommand::redo()
 }
 
 VectorReplaceCommand::VectorReplaceCommand(const VectorImage* undoVector,
-                                   const int undoLayerId,
+                                   const VectorImage* redoVector,
+                                   const int layerId,
                                    const QString& description,
                                    Editor* editor,
                                    QUndoCommand* parent) : UndoRedoCommand(editor, parent)
 {
-
     this->undoVector = *undoVector;
-    this->undoLayerId = undoLayerId;
-    Layer* layer = editor->layers()->currentLayer();
-    redoLayerId = layer->id();
-    redoVector = *static_cast<LayerVector*>(layer)->
-            getLastVectorImageAtFrame(editor->currentFrame());
+    this->redoVector = *redoVector;
+    this->layerId = layerId;
 
     setText(description);
 }
 
 void VectorReplaceCommand::undo()
 {
-    Layer* layer = editor()->layers()->findLayerById(undoLayerId);
+    Layer* layer = editor()->layers()->findLayerById(layerId);
     if (!layer) {
         return setObsolete(true);
     }
@@ -287,7 +275,7 @@ void VectorReplaceCommand::undo()
 
 void VectorReplaceCommand::redo()
 {
-    Layer* layer = editor()->layers()->findLayerById(redoLayerId);
+    Layer* layer = editor()->layers()->findLayerById(layerId);
     if (!layer) {
         return setObsolete(true);
     }

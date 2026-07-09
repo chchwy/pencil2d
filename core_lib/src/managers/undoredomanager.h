@@ -21,12 +21,15 @@ GNU General Public License for more details.
 #include "basemanager.h"
 #include "layer.h"
 #include "keyframe.h"
+#include "undotransaction.h"
 
 #include "preferencesdef.h"
 
 #include <QUndoStack>
 #include <QRectF>
 #include <QMap>
+
+#include <memory>
 
 class QAction;
 class QUndoCommand;
@@ -107,7 +110,8 @@ struct UndoSaveState {
     // Common data
     UndoRedoRecordType recordType = UndoRedoRecordType::INVALID;
     int layerId = 0;
-    int currentFrameIndex = 0;
+    /// The frame position the state was captured at.
+    int frameIndex = 0;
     Layer::LAYER_TYPE layerType = Layer::UNDEFINED;
     std::unique_ptr<KeyFrame> keyframe;
     SelectionSaveState selectionState = {};
@@ -126,6 +130,18 @@ public:
     bool init() override;
     Status load(Object*) override;
     Status save(Object*) override;
+
+    /** Begins an undo transaction, capturing the before-state of the given
+     *  layer at the given frame position.
+     *
+     *  Returns an inactive transaction when the layer doesn't exist or the
+     *  new undo/redo system is disabled — commit() is then a no-op, so call
+     *  sites don't need to check.
+     */
+    UndoTransaction beginTransaction(UndoRedoRecordType recordType, int layerId, int framePosition);
+
+    /// Convenience overload capturing the current layer and frame.
+    UndoTransaction beginTransaction(UndoRedoRecordType recordType);
 
     /** Records the given save state.
      *  The input save state is cleaned up and set to nullptr after use.
@@ -186,6 +202,11 @@ signals:
     void didUpdateUndoStack();
 
 private:
+    friend class UndoTransaction;
+
+    /** Records the given save state as an undo command and pushes it onto
+     *  the stack. Called by UndoTransaction::commit(). */
+    void record(std::unique_ptr<UndoSaveState> state, const QString& description);
 
     void replaceKeyFrame(const UndoSaveState& undoState, const QString& description);
     void replaceBitmap(const UndoSaveState& undoState, const QString& description);
@@ -195,7 +216,7 @@ private:
     void removeKeyFrame(const UndoSaveState& undoState, const QString& description);
     void moveKeyFrames(const UndoSaveState& undoState, const QString& description);
 
-    void initCommonKeyFrameState(UndoSaveState* undoSaveState) const;
+    void initCommonKeyFrameState(UndoSaveState* undoSaveState, const Layer* layer, int frameIndex) const;
 
     void pushCommand(QUndoCommand* command);
 

@@ -39,6 +39,7 @@ set(CORE_LIB_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/soundmanager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/toolmanager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/undoredomanager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/undotransaction.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/viewmanager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/miniz.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/movieexporter.h
@@ -135,6 +136,7 @@ set(CORE_LIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/soundmanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/toolmanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/undoredomanager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/undotransaction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/managers/viewmanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/miniz.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/movieexporter.cpp
