@@ -18,13 +18,23 @@ GNU General Public License for more details.
 #include <QAction>
 #include <QIcon>
 
+#include <QCoreApplication>
+#include <QDataStream>
+#include <QDir>
+#include <QElapsedTimer>
+#include <QEventLoop>
+#include <QFile>
+
 #include "object.h"
 #include "editor.h"
 #include "scribblearea.h"
 #include "layermanager.h"
+#include "soundmanager.h"
 #include "undoredomanager.h"
 #include "layerbitmap.h"
+#include "layersound.h"
 #include "bitmapimage.h"
+#include "soundclip.h"
 
 namespace
 {
@@ -72,6 +82,45 @@ struct UndoRedoTestScene
 };
 
 const QRgb red = qPremultiply(QColor(255, 0, 0).rgba());
+
+// Writes a minimal but valid 16-bit mono PCM WAV file.
+void writeTestWavFile(const QString& path)
+{
+    QFile file(path);
+    REQUIRE(file.open(QIODevice::WriteOnly));
+
+    const quint32 sampleRate = 8000;
+    const quint16 channels = 1;
+    const quint16 bitsPerSample = 16;
+    const QByteArray samples(800, '\0'); // 400 samples of silence
+
+    QDataStream out(&file);
+    out.setByteOrder(QDataStream::LittleEndian);
+    out.writeRawData("RIFF", 4);
+    out << quint32(36 + samples.size());
+    out.writeRawData("WAVE", 4);
+    out.writeRawData("fmt ", 4);
+    out << quint32(16) << quint16(1) << channels << sampleRate
+        << quint32(sampleRate * channels * bitsPerSample / 8)
+        << quint16(channels * bitsPerSample / 8) << bitsPerSample;
+    out.writeRawData("data", 4);
+    out << quint32(samples.size());
+    out.writeRawData(samples.constData(), samples.size());
+}
+
+// The media backend probes sound files on a worker thread and posts results
+// back via queued events. Give those events a chance to be delivered before
+// asserting or tearing the scene down, otherwise the pooled thread can
+// outlive the objects it reports to.
+void pumpEvents(int ms = 100)
+{
+    QElapsedTimer timer;
+    timer.start();
+    while (timer.elapsed() < ms)
+    {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+    }
+}
 
 } // namespace
 
@@ -173,6 +222,40 @@ TEST_CASE("A default-constructed UndoTransaction is inert")
     REQUIRE_FALSE(transaction.isActive());
     transaction.commit("nothing");
     transaction.discard();
+}
+
+TEST_CASE("Removing a sound keyframe is undoable and restores a playable clip")
+{
+    UndoRedoTestScene scene;
+
+    LayerSound* soundLayer = scene.object->addNewSoundLayer();
+    scene.editor->layers()->setCurrentLayer(soundLayer);
+
+    const QString soundPath = QDir::temp().filePath("pencil2d_test_undo_sound.wav");
+    writeTestWavFile(soundPath);
+
+    SoundClip* clip = new SoundClip;
+    REQUIRE(scene.editor->sound()->loadSound(clip, soundPath).ok());
+    soundLayer->addKeyFrame(1, clip);
+    REQUIRE(soundLayer->keyExists(1));
+    pumpEvents();
+
+    scene.editor->scrubTo(1);
+    scene.editor->removeKey();
+    REQUIRE_FALSE(soundLayer->keyExists(1));
+    pumpEvents();
+
+    scene.undoAction->trigger();
+    REQUIRE(soundLayer->keyExists(1));
+    SoundClip* restored = static_cast<SoundClip*>(soundLayer->getKeyFrameAt(1));
+    REQUIRE(restored->isValid()); // file name intact and media player recreated
+    pumpEvents();
+
+    scene.redoAction->trigger();
+    REQUIRE_FALSE(soundLayer->keyExists(1));
+    pumpEvents();
+
+    QFile::remove(soundPath);
 }
 
 TEST_CASE("Clearing the image is undoable")

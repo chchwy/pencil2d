@@ -17,9 +17,11 @@ GNU General Public License for more details.
 */
 
 #include <QDebug>
+#include <QFile>
 
 #include "layermanager.h"
 #include "selectionmanager.h"
+#include "soundmanager.h"
 
 #include "layersound.h"
 #include "layerbitmap.h"
@@ -65,7 +67,30 @@ void KeyFrameRemoveCommand::undo()
 
     UndoRedoCommand::undo();
 
-    layer->addKeyFrame(undoKeyFrame->pos(), undoKeyFrame->clone());
+    KeyFrame* restoredKey = undoKeyFrame->clone();
+    if (layer->type() == Layer::SOUND)
+    {
+        // A cloned SoundClip has no media player; recreate it the way the
+        // legacy restore path does. If the sound file is gone, the clip
+        // can't be restored — drop the command instead of inserting a
+        // silent keyframe.
+        SoundClip* clip = static_cast<SoundClip*>(restoredKey);
+        const QString soundFile = clip->fileName();
+        if (soundFile.isEmpty() || !QFile::exists(soundFile))
+        {
+            delete clip;
+            return setObsolete(true);
+        }
+
+        Status status = editor()->sound()->loadSound(clip, soundFile);
+        if (!status.ok())
+        {
+            // loadSound deletes the clip when it fails past the file checks
+            return setObsolete(true);
+        }
+    }
+
+    layer->addKeyFrame(undoKeyFrame->pos(), restoredKey);
 
     emit editor()->frameModified(undoKeyFrame->pos());
     editor()->layers()->notifyAnimationLengthChanged();
