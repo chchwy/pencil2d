@@ -34,8 +34,10 @@ GNU General Public License for more details.
 #include "undoredocommand.h"
 #include "layerbitmap.h"
 #include "layersound.h"
+#include "layercamera.h"
 #include "bitmapimage.h"
 #include "soundclip.h"
+#include "camera.h"
 
 namespace
 {
@@ -274,6 +276,71 @@ TEST_CASE("Clearing the image is undoable")
 
     scene.redoAction->trigger();
     REQUIRE(layer->getBitmapImageAtFrame(1)->constScanLine(3, 4) == 0);
+}
+
+TEST_CASE("Modifying a camera keyframe is undoable")
+{
+    UndoRedoTestScene scene;
+    LayerCamera* cameraLayer = scene.object->addNewCameraLayer(); // has a keyframe at 1
+
+    Camera* camera = cameraLayer->getCameraAtFrame(1);
+    REQUIRE(camera != nullptr);
+    const QPointF originalTranslation = camera->translation();
+
+    UndoTransaction transaction = scene.editor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                                             cameraLayer->id(), 1);
+    REQUIRE(transaction.isActive());
+
+    camera->translate(QPointF(50, 25));
+    camera->updateViewTransform();
+    transaction.commit("camera move");
+    const QPointF movedTranslation = cameraLayer->getCameraAtFrame(1)->translation();
+    REQUIRE(movedTranslation != originalTranslation);
+
+    scene.undoAction->trigger();
+    REQUIRE(cameraLayer->getCameraAtFrame(1)->translation() == originalTranslation);
+
+    scene.redoAction->trigger();
+    REQUIRE(cameraLayer->getCameraAtFrame(1)->translation() == movedTranslation);
+}
+
+TEST_CASE("A camera reset touching several keyframes undoes as one step")
+{
+    UndoRedoTestScene scene;
+    LayerCamera* cameraLayer = scene.object->addNewCameraLayer(); // keyframe at 1
+    cameraLayer->addNewKeyFrameAt(10);
+
+    Camera* firstCamera = cameraLayer->getCameraAtFrame(1);
+    Camera* secondCamera = cameraLayer->getCameraAtFrame(10);
+    firstCamera->translate(QPointF(30, 0));
+    secondCamera->translate(QPointF(0, 40));
+    const QPointF firstMoved = firstCamera->translation();
+    const QPointF secondMoved = secondCamera->translation();
+
+    // Mimic CameraContextMenu::resetTransform's multi-keyframe capture.
+    UndoRedoManager* undoRedo = scene.editor->undoRedo();
+    undoRedo->beginMacro("Camera transform reset");
+    UndoTransaction firstTransaction = undoRedo->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                                  cameraLayer->id(), 1);
+    UndoTransaction secondTransaction = undoRedo->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                                   cameraLayer->id(), 10);
+    firstCamera->translate(QPointF(0, 0));
+    secondCamera->translate(QPointF(0, 0));
+    firstTransaction.commit("Camera transform reset");
+    secondTransaction.commit("Camera transform reset");
+    undoRedo->endMacro();
+
+    REQUIRE(cameraLayer->getCameraAtFrame(1)->translation() == QPointF(0, 0));
+    REQUIRE(cameraLayer->getCameraAtFrame(10)->translation() == QPointF(0, 0));
+
+    // One undo step restores both keyframes.
+    scene.undoAction->trigger();
+    REQUIRE(cameraLayer->getCameraAtFrame(1)->translation() == firstMoved);
+    REQUIRE(cameraLayer->getCameraAtFrame(10)->translation() == secondMoved);
+
+    scene.redoAction->trigger();
+    REQUIRE(cameraLayer->getCameraAtFrame(1)->translation() == QPointF(0, 0));
+    REQUIRE(cameraLayer->getCameraAtFrame(10)->translation() == QPointF(0, 0));
 }
 
 TEST_CASE("Renaming a layer is undoable")

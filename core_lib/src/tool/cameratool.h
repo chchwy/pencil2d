@@ -23,6 +23,7 @@ GNU General Public License for more details.
 #include "basetool.h"
 #include "camerafieldoption.h"
 #include "preferencemanager.h"
+#include "undotransaction.h"
 
 #include <QPen>
 
@@ -110,6 +111,7 @@ private:
 
     QPointF mTransformOffset;
     CameraMoveType mCamMoveMode = CameraMoveType::NONE;
+    UndoTransaction mUndoTransaction;
     int mDragPathFrame = 1;
     int mRotationIncrement = 0;
 

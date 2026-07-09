@@ -26,6 +26,7 @@ GNU General Public License for more details.
 #include "layersound.h"
 #include "layerbitmap.h"
 #include "layervector.h"
+#include "layercamera.h"
 #include "layer.h"
 
 #include "editor.h"
@@ -489,6 +490,55 @@ void LayerRenameCommand::redo()
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
     rename(newName);
+}
+
+CameraReplaceCommand::CameraReplaceCommand(const Camera* undoCamera,
+                                           const Camera* redoCamera,
+                                           int layerId,
+                                           const QString& description,
+                                           Editor* editor,
+                                           QUndoCommand* parent)
+    : UndoRedoCommand(editor, parent),
+      undoCamera(*undoCamera),
+      redoCamera(*redoCamera)
+{
+    this->layerId = layerId;
+
+    setText(description);
+}
+
+void CameraReplaceCommand::apply(const Camera& camera)
+{
+    Layer* layer = editor()->layers()->findLayerById(layerId);
+    if (layer == nullptr || layer->type() != Layer::CAMERA) {
+        return setObsolete(true);
+    }
+
+    LayerCamera* cameraLayer = static_cast<LayerCamera*>(layer);
+    if (cameraLayer->getCameraAtFrame(camera.pos()) == nullptr) {
+        return setObsolete(true);
+    }
+
+    cameraLayer->replaceKeyFrame(&camera);
+
+    emit editor()->frameModified(camera.pos());
+    editor()->scrubTo(camera.pos());
+}
+
+void CameraReplaceCommand::undo()
+{
+    UndoRedoCommand::undo();
+    apply(undoCamera);
+}
+
+void CameraReplaceCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    apply(redoCamera);
 }
 
 TransformCommand::TransformCommand(const QRectF& undoSelectionRect,

@@ -36,11 +36,13 @@ GNU General Public License for more details.
 #include "layerbitmap.h"
 #include "layervector.h"
 #include "layersound.h"
+#include "layercamera.h"
 
 
 #include "bitmapimage.h"
 #include "vectorimage.h"
 #include "soundclip.h"
+#include "camera.h"
 
 UndoRedoManager::UndoRedoManager(Editor* editor) : BaseManager(editor, "UndoRedoManager")
 {
@@ -152,6 +154,25 @@ void UndoRedoManager::push(QUndoCommand* command)
     pushCommand(command);
 }
 
+void UndoRedoManager::beginMacro(const QString& text)
+{
+    if (!mNewBackupSystemEnabled)
+    {
+        return;
+    }
+    mUndoStack.beginMacro(text);
+}
+
+void UndoRedoManager::endMacro()
+{
+    if (!mNewBackupSystemEnabled)
+    {
+        return;
+    }
+    mUndoStack.endMacro();
+    emit didUpdateUndoStack();
+}
+
 void UndoRedoManager::pushCommand(QUndoCommand* command)
 {
     mUndoStack.push(command);
@@ -185,6 +206,8 @@ void UndoRedoManager::replaceKeyFrame(const UndoSaveState& undoState, const QStr
         replaceBitmap(undoState, description);
     } else if (undoState.layerType == Layer::VECTOR) {
         replaceVector(undoState, description);
+    } else if (undoState.layerType == Layer::CAMERA) {
+        replaceCamera(undoState, description);
     } else {
         // Implement other cases
     }
@@ -228,6 +251,33 @@ void UndoRedoManager::replaceBitmap(const UndoSaveState& undoState, const QStrin
                          description,
                          editor(), element);
 
+    pushCommand(element);
+}
+
+void UndoRedoManager::replaceCamera(const UndoSaveState& undoState, const QString& description)
+{
+    if (undoState.keyframe == nullptr || undoState.layerType != Layer::CAMERA) { return; }
+
+    Layer* layer = editor()->layers()->findLayerById(undoState.layerId);
+    if (layer == nullptr || layer->type() != Layer::CAMERA) { return; }
+
+    const Camera* undoCamera = static_cast<Camera*>(undoState.keyframe.get());
+    const Camera* redoCamera = static_cast<LayerCamera*>(layer)->getCameraAtFrame(undoCamera->pos());
+    if (redoCamera == nullptr) { return; }
+
+    // Camera state is cheap to compare — don't record clicks and gestures
+    // that ended up changing nothing.
+    const bool unchanged = undoCamera->compare(*redoCamera)
+        && undoCamera->getEasingType() == redoCamera->getEasingType()
+        && undoCamera->getPathControlPoint() == redoCamera->getPathControlPoint()
+        && undoCamera->pathControlPointMoved() == redoCamera->pathControlPointMoved();
+    if (unchanged) { return; }
+
+    CameraReplaceCommand* element = new CameraReplaceCommand(undoCamera,
+                                                 redoCamera,
+                                                 undoState.layerId,
+                                                 description,
+                                                 editor());
     pushCommand(element);
 }
 

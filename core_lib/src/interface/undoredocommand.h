@@ -242,6 +242,28 @@ private:
     QString newName;
 };
 
+class CameraReplaceCommand : public UndoRedoCommand
+{
+public:
+    CameraReplaceCommand(const Camera* undoCamera,
+                         const Camera* redoCamera,
+                         int layerId,
+                         const QString& description,
+                         Editor* editor,
+                         QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    void apply(const Camera& camera);
+
+    int layerId = 0;
+
+    Camera undoCamera;
+    Camera redoCamera;
+};
+
 class TransformCommand : public UndoRedoCommand
 
 {

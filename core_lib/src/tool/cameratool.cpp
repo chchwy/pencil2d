@@ -25,6 +25,7 @@ GNU General Public License for more details.
 #include "selectionmanager.h"
 #include "playbackmanager.h"
 #include "viewmanager.h"
+#include "undoredomanager.h"
 #include "layercamera.h"
 #include "mathutils.h"
 #include "transform.h"
@@ -271,7 +272,10 @@ void CameraTool::resetCameraPath()
     LayerCamera* layer = static_cast<LayerCamera*>(editor()->layers()->currentLayer());
     Q_ASSERT(layer->type() == Layer::CAMERA);
 
+    UndoTransaction transaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                                        layer->id(), mEditor->currentFrame());
     layer->setPathMovedAtFrame(mEditor->currentFrame(), false);
+    transaction.commit(tr("Reset camera path"));
 
     emit mEditor->frameModified(mEditor->currentFrame());
 }
@@ -285,7 +289,37 @@ void CameraTool::resetTransform(CameraFieldOption option)
         mCurrentAngle = 0;
     }
 
-    layer->resetCameraAtFrame(option, mEditor->currentFrame());
+    const int frame = mEditor->currentFrame();
+    UndoRedoManager* undoRedo = mEditor->undoRedo();
+
+    // resetCameraAtFrame() can modify up to three keyframes: the one
+    // covering the frame, the next one (align/hold options) and the path
+    // flag on the keyframe covering frame - 1. Capture them all and group
+    // the result into a single undo step.
+    undoRedo->beginMacro(tr("Reset camera transform"));
+
+    UndoTransaction mainTransaction = undoRedo->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                                 layer->id(), frame);
+    const int mainPos = layer->keyExists(frame) ? frame : layer->getPreviousKeyFramePosition(frame);
+    const int nextPos = layer->getNextKeyFramePosition(mainPos);
+    UndoTransaction nextTransaction;
+    if (nextPos > mainPos) {
+        nextTransaction = undoRedo->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                     layer->id(), nextPos);
+    }
+    UndoTransaction previousTransaction;
+    if (frame > 1) {
+        previousTransaction = undoRedo->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                         layer->id(), frame - 1);
+    }
+
+    layer->resetCameraAtFrame(option, frame);
+
+    mainTransaction.commit(tr("Reset camera transform"));
+    nextTransaction.commit(tr("Reset camera transform"));
+    previousTransaction.commit(tr("Reset camera transform"));
+    undoRedo->endMacro();
+
     emit mEditor->frameModified(mEditor->currentFrame());
 }
 
@@ -326,7 +360,19 @@ int CameraTool::constrainedRotation(const qreal rotatedAngle, const int rotation
 void CameraTool::pointerPressEvent(PointerEvent* event)
 {
     updateMoveMode(event->canvasPos());
-    updateUIAssists(mEditor->layers()->currentLayer());
+    Layer* layer = mEditor->layers()->currentLayer();
+    updateUIAssists(layer);
+
+    // Capture the keyframe this gesture is about to modify: the one at the
+    // current frame, or — when dragging a bezier path point between
+    // keyframes — the keyframe holding the path control point.
+    if (layer->keyExists(mEditor->currentFrame())) {
+        mUndoTransaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                                 layer->id(), mEditor->currentFrame());
+    } else if (mCamMoveMode == CameraMoveType::PATH) {
+        mUndoTransaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                                 layer->id(), mDragPathFrame);
+    }
 
     mStartAngle = getAngleBetween(event->canvasPos(), mCameraRect.center()) - mCurrentAngle;
     mTransformOffset = event->canvasPos();
@@ -367,6 +413,10 @@ void CameraTool::pointerReleaseEvent(PointerEvent* event)
         transformCameraPath(event->canvasPos());
         mEditor->view()->forceUpdateViewTransform();
     }
+
+    // Gestures that changed nothing are dropped at record time.
+    mUndoTransaction.commit(typeName());
+
     emit mEditor->frameModified(frame);
 }
 

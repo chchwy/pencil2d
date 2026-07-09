@@ -193,7 +193,7 @@ void TimeLineCells::showCameraMenu(QPoint pos)
     mHighlightFrameEnabled = true;
     mHighlightedFrame = frameNumber;
 
-    CameraContextMenu menu(frameNumber, static_cast<const LayerCamera*>(curLayer));
+    CameraContextMenu menu(frameNumber, static_cast<const LayerCamera*>(curLayer), mEditor);
 
     menu.connect(&menu, &CameraContextMenu::aboutToHide, this, [=] {
         mHighlightFrameEnabled = false;
