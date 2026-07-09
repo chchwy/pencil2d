@@ -19,6 +19,8 @@ GNU General Public License for more details.
 
 #include "object.h"
 #include "editor.h"
+#include "undoredomanager.h"
+#include "undoredocommand.h"
 
 #include "layersound.h"
 #include "layerbitmap.h"
@@ -351,9 +353,14 @@ Status LayerManager::deleteLayer(int index)
 Status LayerManager::renameLayer(Layer* layer, const QString& newName)
 {
     if (newName.isEmpty()) return Status::FAIL;
+    if (layer->name() == newName) return Status::SAFE;
 
+    const QString oldName = layer->name();
     layer->setName(newName);
     emit currentLayerChanged(getIndex(layer));
+
+    editor()->undoRedo()->push(new LayerRenameCommand(layer->id(), oldName, newName,
+                                                      tr("Rename layer"), editor()));
     return Status::OK;
 }
 

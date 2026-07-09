@@ -321,6 +321,47 @@ void VectorReplaceCommand::redo()
     editor()->scrubTo(redoVector.pos());
 }
 
+LayerRenameCommand::LayerRenameCommand(int layerId,
+                                       const QString& oldName,
+                                       const QString& newName,
+                                       const QString& description,
+                                       Editor* editor,
+                                       QUndoCommand* parent) : UndoRedoCommand(editor, parent)
+{
+    this->layerId = layerId;
+    this->oldName = oldName;
+    this->newName = newName;
+
+    setText(description);
+}
+
+void LayerRenameCommand::rename(const QString& name)
+{
+    Layer* layer = editor()->layers()->findLayerById(layerId);
+    if (layer == nullptr) {
+        return setObsolete(true);
+    }
+
+    layer->setName(name);
+    editor()->layers()->notifyLayerChanged(layer);
+}
+
+void LayerRenameCommand::undo()
+{
+    UndoRedoCommand::undo();
+    rename(oldName);
+}
+
+void LayerRenameCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    rename(newName);
+}
+
 TransformCommand::TransformCommand(const QRectF& undoSelectionRect,
                                    const QPointF& undoTranslation,
                                    const qreal undoRotationAngle,

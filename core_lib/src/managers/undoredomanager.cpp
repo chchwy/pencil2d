@@ -142,6 +142,16 @@ bool UndoRedoManager::hasUnsavedChanges() const
     }
 }
 
+void UndoRedoManager::push(QUndoCommand* command)
+{
+    if (!mNewBackupSystemEnabled)
+    {
+        delete command;
+        return;
+    }
+    pushCommand(command);
+}
+
 void UndoRedoManager::pushCommand(QUndoCommand* command)
 {
     mUndoStack.push(command);

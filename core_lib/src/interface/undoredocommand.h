@@ -156,6 +156,27 @@ private:
     VectorImage redoVector;
 };
 
+class LayerRenameCommand : public UndoRedoCommand
+{
+public:
+    LayerRenameCommand(int layerId,
+                       const QString& oldName,
+                       const QString& newName,
+                       const QString& description,
+                       Editor* editor,
+                       QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    void rename(const QString& name);
+
+    int layerId = 0;
+    QString oldName;
+    QString newName;
+};
+
 class TransformCommand : public UndoRedoCommand
 
 {
