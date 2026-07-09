@@ -53,7 +53,6 @@ UndoRedoManager::~UndoRedoManager()
     {
         clearStack();
     }
-    clearSaveStates();
     qDebug() << "UndoRedoManager: destroyed";
 }
 
@@ -93,16 +92,6 @@ Status UndoRedoManager::save(Object* /*o*/)
     return Status::OK;
 }
 
-void UndoRedoManager::record(SAVESTATE_ID saveStateId, const QString& description)
-{
-    if (!mSaveStates.contains(saveStateId)) {
-        return;
-    }
-
-    std::unique_ptr<UndoSaveState> saveState(mSaveStates.take(saveStateId));
-    record(std::move(saveState), description);
-}
-
 void UndoRedoManager::record(std::unique_ptr<UndoSaveState> state, const QString& description)
 {
     if (state == nullptr || !mNewBackupSystemEnabled) {
@@ -134,25 +123,6 @@ void UndoRedoManager::record(std::unique_ptr<UndoSaveState> state, const QString
             break;
         }
     }
-}
-
-void UndoRedoManager::clearState(UndoSaveState*& state)
-{
-    if (state) {
-        delete state;
-        state = nullptr;
-    }
-}
-
-void UndoRedoManager::clearSaveStates()
-{
-    for (UndoSaveState* saveState : mSaveStates) {
-        if (saveState) {
-            delete saveState;
-            saveState = nullptr;
-        }
-    }
-    mSaveStates.clear();
 }
 
 bool UndoRedoManager::hasUnsavedChanges() const
@@ -299,25 +269,6 @@ UndoTransaction UndoRedoManager::beginTransaction(UndoRedoRecordType recordType,
     initCommonKeyFrameState(state.get(), layer, framePosition);
 
     return UndoTransaction(this, std::move(state));
-}
-
-SAVESTATE_ID UndoRedoManager::createState(UndoRedoRecordType recordType)
-{
-    int saveStateId = mSaveStateId;
-    UndoSaveState* state = new UndoSaveState();
-    state->recordType = recordType;
-    initCommonKeyFrameState(state, editor()->layers()->currentLayer(), editor()->currentFrame());
-
-    mSaveStates[saveStateId] = state;
-    mSaveStateId += 1;
-
-    return saveStateId;
-}
-
-void UndoRedoManager::addUserState(SAVESTATE_ID saveStateId, const UserSaveState& userState)
-{
-    if (!mSaveStates.contains(saveStateId)) { return; }
-    mSaveStates[saveStateId]->userState = userState;
 }
 
 void UndoRedoManager::initCommonKeyFrameState(UndoSaveState* undoSaveState, const Layer* layer, int frameIndex) const

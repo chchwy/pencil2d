@@ -104,7 +104,7 @@ void BucketTool::pointerPressEvent(PointerEvent* event)
 
     LayerCamera* layerCam = mEditor->layers()->getCameraLayerBelow(mEditor->currentLayerIndex());
 
-    mUndoSaveState = mEditor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+    mUndoTransaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
     mBitmapBucket = BitmapBucket(mEditor,
                                  mEditor->color()->frontColor(),
                                  layerCam ? layerCam->getViewAtFrame(mEditor->currentFrame()).inverted().mapRect(layerCam->getViewRect()) : QRect(),
@@ -163,7 +163,7 @@ void BucketTool::paintBitmap()
         }
         else if (progress == BucketState::DidFillTarget)
         {
-            mEditor->undoRedo()->record(mUndoSaveState, typeName());
+            mUndoTransaction.commit(typeName());
             mEditor->setModified(layerIndex, frameIndex);
         }
     });

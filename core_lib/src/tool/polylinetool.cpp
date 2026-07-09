@@ -177,10 +177,10 @@ void PolylineTool::pointerDoubleClickEvent(PointerEvent* event)
             // include the current point before ending the line.
             mPoints << getCurrentPoint();
         }
-        SAVESTATE_ID saveStateId = mEditor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+        UndoTransaction transaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
         mEditor->backup(typeName());
         endPolyline(mPoints);
-        mEditor->undoRedo()->record(saveStateId, typeName());
+        transaction.commit(typeName());
     }
 }
 
@@ -213,9 +213,9 @@ bool PolylineTool::keyPressEvent(QKeyEvent* event)
         {
             // include the current point before ending the line.
             mPoints << getCurrentPoint();
-            SAVESTATE_ID saveStateId = mEditor->undoRedo()->createState(UndoRedoRecordType::KEYFRAME_MODIFY);
+            UndoTransaction transaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
             endPolyline(mPoints);
-            mEditor->undoRedo()->record(saveStateId, typeName());
+            transaction.commit(typeName());
             return true;
         }
         break;
