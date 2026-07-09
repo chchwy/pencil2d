@@ -360,17 +360,10 @@ bool GeneralPage::canApplyOrCancelUndoRedoChanges() const
 void GeneralPage::undoRedoApplyButtonPressed()
 {
     if (ui->undoStepsBox->value() != mManager->getInt(SETTING::UNDO_REDO_MAX_STEPS)) {
-        QMessageBox messageBox(this);
-        messageBox.setIcon(QMessageBox::Warning);
-        messageBox.setText(tr("Resets your current undo history"));
-        messageBox.setInformativeText(tr("Changing the maximum number of undo/redo steps resets your current undo/redo history. \n\nAre you sure you want to proceed?"));
-        messageBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-
-        if (messageBox.exec() == QMessageBox::Yes) {
-            mManager->set(SETTING::UNDO_REDO_MAX_STEPS, ui->undoStepsBox->value());
-        } else {
-            ui->undoStepsBox->setValue(mManager->getInt(SETTING::UNDO_REDO_MAX_STEPS));
-        }
+        // The new limit is applied without discarding the existing undo
+        // history; it takes full effect once the history is next cleared
+        // (e.g. when a project is opened or created).
+        mManager->set(SETTING::UNDO_REDO_MAX_STEPS, ui->undoStepsBox->value());
     }
 
     const bool systemIsOn = mManager->isOn(SETTING::NEW_UNDO_REDO_SYSTEM_ON);

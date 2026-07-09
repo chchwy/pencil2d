@@ -217,6 +217,10 @@ private:
     int mLegacyLastModifiedLayer = -1;
     int mLegacyLastModifiedFrame = -1;
 
+    /// A max-steps value waiting to be applied at the next clearStack();
+    /// -1 when nothing is pending.
+    int mPendingUndoLimit = -1;
+
     bool mNewBackupSystemEnabled = false;
 };
 
