@@ -277,6 +277,14 @@ void UndoRedoManager::initCommonKeyFrameState(UndoSaveState* undoSaveState, cons
     undoSaveState->layerId = layer->id();
     undoSaveState->frameIndex = frameIndex;
 
+    // KEYFRAME_ADD and KEYFRAME_MOVE commands only need the layer id and
+    // frame position; skip the selection capture and the potentially
+    // expensive full keyframe clone for them.
+    if (undoSaveState->recordType != UndoRedoRecordType::KEYFRAME_MODIFY &&
+        undoSaveState->recordType != UndoRedoRecordType::KEYFRAME_REMOVE) {
+        return;
+    }
+
     if (layer->type() == Layer::BITMAP || layer->type() == Layer::VECTOR) {
         auto selectMan = editor()->select();
         undoSaveState->selectionState = SelectionSaveState(

@@ -41,6 +41,7 @@ struct UndoRedoTestScene
 
         editor = new Editor;
         scribbleArea = new ScribbleArea(nullptr);
+        scribbleArea->setEditor(editor);
         editor->setScribbleArea(scribbleArea);
         editor->setObject(object); // editor takes ownership
         editor->init();
@@ -172,6 +173,23 @@ TEST_CASE("A default-constructed UndoTransaction is inert")
     REQUIRE_FALSE(transaction.isActive());
     transaction.commit("nothing");
     transaction.discard();
+}
+
+TEST_CASE("Clearing the image is undoable")
+{
+    UndoRedoTestScene scene;
+    LayerBitmap* layer = scene.bitmapLayer();
+    BitmapImage* image = layer->getBitmapImageAtFrame(1);
+    image->setPixel(3, 4, red);
+
+    scene.scribbleArea->clearImage();
+    REQUIRE(layer->getBitmapImageAtFrame(1)->constScanLine(3, 4) == 0);
+
+    scene.undoAction->trigger();
+    REQUIRE(layer->getBitmapImageAtFrame(1)->constScanLine(3, 4) == red);
+
+    scene.redoAction->trigger();
+    REQUIRE(layer->getBitmapImageAtFrame(1)->constScanLine(3, 4) == 0);
 }
 
 TEST_CASE("Adding a keyframe through the editor is undoable")
