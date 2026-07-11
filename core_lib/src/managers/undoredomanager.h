@@ -161,7 +161,8 @@ public:
 
     /** Groups every command recorded until endMacro() into a single undo
      *  step. Used for operations that modify several keyframes at once.
-     *  No-op while the new system is disabled. */
+     *  If nothing is recorded in between, no undo entry is created.
+     *  Does not support nesting. No-op while the new system is disabled. */
     void beginMacro(const QString& text);
     void endMacro();
 
@@ -236,6 +237,11 @@ private:
     /// A max-steps value waiting to be applied at the next clearStack();
     /// -1 when nothing is pending.
     int mPendingUndoLimit = -1;
+
+    /// Lazily-opened macro state, see beginMacro().
+    QString mPendingMacroText;
+    bool mMacroPending = false;
+    bool mMacroStarted = false;
 
     bool mNewBackupSystemEnabled = false;
 };
