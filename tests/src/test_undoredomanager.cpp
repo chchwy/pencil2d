@@ -343,6 +343,25 @@ TEST_CASE("A camera reset touching several keyframes undoes as one step")
     REQUIRE(cameraLayer->getCameraAtFrame(10)->translation() == QPointF(0, 0));
 }
 
+TEST_CASE("A macro that records nothing leaves no undo entry")
+{
+    UndoRedoTestScene scene;
+    LayerCamera* cameraLayer = scene.object->addNewCameraLayer();
+
+    UndoRedoManager* undoRedo = scene.editor->undoRedo();
+    undoRedo->beginMacro("Camera transform reset");
+    UndoTransaction transaction = undoRedo->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                             cameraLayer->id(), 1);
+    // Nothing is modified — e.g. "Reset rotation" on an already-default
+    // camera. The unchanged-comparison drops the command, and the empty
+    // macro must not become a phantom undo step.
+    transaction.commit("Camera transform reset");
+    undoRedo->endMacro();
+
+    REQUIRE_FALSE(undoRedo->hasUnsavedChanges());
+    REQUIRE_FALSE(scene.undoAction->isEnabled());
+}
+
 TEST_CASE("Renaming a layer is undoable")
 {
     UndoRedoTestScene scene;

@@ -160,7 +160,12 @@ void UndoRedoManager::beginMacro(const QString& text)
     {
         return;
     }
-    mUndoStack.beginMacro(text);
+    // Don't open the macro on the stack yet: QUndoStack keeps a macro
+    // around even when no command is pushed into it, which would leave a
+    // do-nothing undo entry. The macro is opened lazily by the first
+    // pushCommand() and skipped entirely when nothing gets recorded.
+    mPendingMacroText = text;
+    mMacroPending = true;
 }
 
 void UndoRedoManager::endMacro()
@@ -169,12 +174,23 @@ void UndoRedoManager::endMacro()
     {
         return;
     }
-    mUndoStack.endMacro();
-    emit didUpdateUndoStack();
+    if (mMacroStarted)
+    {
+        mUndoStack.endMacro();
+        emit didUpdateUndoStack();
+    }
+    mMacroPending = false;
+    mMacroStarted = false;
 }
 
 void UndoRedoManager::pushCommand(QUndoCommand* command)
 {
+    if (mMacroPending && !mMacroStarted)
+    {
+        mUndoStack.beginMacro(mPendingMacroText);
+        mMacroStarted = true;
+    }
+
     mUndoStack.push(command);
 
     emit didUpdateUndoStack();
