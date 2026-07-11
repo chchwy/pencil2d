@@ -113,7 +113,13 @@ void KeyFrameRemoveCommand::undo()
         return setObsolete(true);
     }
 
-    layer->addKeyFrame(undoKeyFrame->pos(), restoredKey);
+    if (!layer->addKeyFrame(undoKeyFrame->pos(), restoredKey))
+    {
+        // The position is occupied — addKeyFrame doesn't take ownership
+        // on failure.
+        delete restoredKey;
+        return setObsolete(true);
+    }
 
     emit editor()->frameModified(undoKeyFrame->pos());
     editor()->layers()->notifyAnimationLengthChanged();
@@ -195,7 +201,13 @@ void KeyFrameAddCommand::redo()
         {
             return setObsolete(true);
         }
-        layer->addKeyFrame(position, restoredKey);
+        if (!layer->addKeyFrame(position, restoredKey))
+        {
+            // The position is occupied — addKeyFrame doesn't take
+            // ownership on failure.
+            delete restoredKey;
+            return setObsolete(true);
+        }
     }
     else
     {
