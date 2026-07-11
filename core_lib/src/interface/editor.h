@@ -227,6 +227,10 @@ public: //slots
 
     void settingUpdated(SETTING);
 
+    /** UI-side reaction to an undo command's change notification:
+     *  navigates to the affected layer and frame. */
+    void onUndoCommandExecuted(int layerId, int framePosition);
+
     void dontAskAutoSave(bool b) { mAutosaveNeverAskAgain = b; }
     bool autoSaveNeverAskAgain() const { return mAutosaveNeverAskAgain; }
     void resetAutoSaveCounter();

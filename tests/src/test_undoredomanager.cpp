@@ -424,6 +424,28 @@ TEST_CASE("Pasting onto an occupied frame shifts it; undo restores the layout")
     REQUIRE(layer->getBitmapImageAtFrame(2)->constScanLine(5, 5) == blue);
 }
 
+TEST_CASE("Undo navigates to the affected layer and frame")
+{
+    UndoRedoTestScene scene;
+    LayerBitmap* firstLayer = scene.bitmapLayer();
+    scene.object->addNewBitmapLayer();
+
+    // Record a change on the first layer at frame 1.
+    UndoTransaction transaction = scene.editor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY,
+                                                                             firstLayer->id(), 1);
+    firstLayer->getBitmapImageAtFrame(1)->setPixel(3, 4, red);
+    transaction.commit("stroke");
+
+    // Wander off to another layer and frame.
+    scene.editor->layers()->setCurrentLayer(1);
+    scene.editor->scrubTo(9);
+
+    // Undo brings the view back to where the change happened.
+    scene.undoAction->trigger();
+    REQUIRE(scene.editor->layers()->currentLayer() == firstLayer);
+    REQUIRE(scene.editor->currentFrame() == 1);
+}
+
 TEST_CASE("Renaming a layer is undoable")
 {
     UndoRedoTestScene scene;

@@ -123,10 +123,24 @@ void Editor::makeConnections()
     connect(mPreferenceManager, &PreferenceManager::optionChanged, this, &Editor::settingUpdated);
     connect(mUndoRedoManager, &UndoRedoManager::didUpdateUndoStack, this, &Editor::updateAutoSaveCounter);
     connect(mPreferenceManager, &PreferenceManager::optionChanged, mUndoRedoManager, &UndoRedoManager::onSettingChanged);
+    connect(mUndoRedoManager, &UndoRedoManager::commandExecuted, this, &Editor::onUndoCommandExecuted);
 
     // XXX: This is a hack to prevent crashes until #864 is done (see #1412)
     connect(mLayerManager, &LayerManager::layerDeleted, mUndoRedoManager, &UndoRedoManager::sanitizeLegacyBackupElementsAfterLayerDeletion);
     connect(mLayerManager, &LayerManager::currentLayerWillChange, this, &Editor::onCurrentLayerWillChange);
+}
+
+void Editor::onUndoCommandExecuted(int layerId, int framePosition)
+{
+    // Navigate to what the undo/redo just changed, so the user sees the
+    // effect. This is the UI-side reaction to commands' notifications; the
+    // commands themselves only touch the model.
+    Layer* layer = layers()->findLayerById(layerId);
+    if (layer != nullptr && layers()->currentLayer() != layer)
+    {
+        layers()->setCurrentLayer(layer);
+    }
+    scrubTo(framePosition);
 }
 
 void Editor::settingUpdated(SETTING setting)

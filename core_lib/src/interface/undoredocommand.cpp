@@ -30,6 +30,7 @@ GNU General Public License for more details.
 #include "layer.h"
 
 #include "editor.h"
+#include "undoredomanager.h"
 #include "undoredocommand.h"
 
 UndoRedoCommand::UndoRedoCommand(Editor* editor, QUndoCommand* parent) : QUndoCommand(parent)
@@ -116,7 +117,7 @@ void KeyFrameRemoveCommand::undo()
 
     emit editor()->frameModified(undoKeyFrame->pos());
     editor()->layers()->notifyAnimationLengthChanged();
-    editor()->scrubTo(undoKeyFrame->pos());
+    editor()->undoRedo()->notifyCommandExecuted(layerId, undoKeyFrame->pos());
 }
 
 void KeyFrameRemoveCommand::redo()
@@ -136,7 +137,7 @@ void KeyFrameRemoveCommand::redo()
 
     emit editor()->frameModified(redoPosition);
     editor()->layers()->notifyAnimationLengthChanged();
-    editor()->scrubTo(redoPosition);
+    editor()->undoRedo()->notifyCommandExecuted(layerId, redoPosition);
 }
 
 KeyFrameAddCommand::KeyFrameAddCommand(int position,
@@ -172,8 +173,7 @@ void KeyFrameAddCommand::undo()
 
     emit editor()->frameModified(position);
     editor()->layers()->notifyAnimationLengthChanged();
-    editor()->layers()->setCurrentLayer(layer);
-    editor()->scrubTo(position);
+    editor()->undoRedo()->notifyCommandExecuted(layerId, position);
 }
 
 void KeyFrameAddCommand::redo()
@@ -204,8 +204,7 @@ void KeyFrameAddCommand::redo()
 
     emit editor()->frameModified(position);
     editor()->layers()->notifyAnimationLengthChanged();
-    editor()->layers()->setCurrentLayer(layer);
-    editor()->scrubTo(position);
+    editor()->undoRedo()->notifyCommandExecuted(layerId, position);
 }
 
 MoveKeyFramesCommand::MoveKeyFramesCommand(int offset,
@@ -295,7 +294,7 @@ void BitmapReplaceCommand::undo()
 
     static_cast<LayerBitmap*>(layer)->replaceKeyFrame(&undoBitmap);
 
-    editor()->scrubTo(undoBitmap.pos());
+    editor()->undoRedo()->notifyCommandExecuted(layerId, undoBitmap.pos());
 }
 
 void BitmapReplaceCommand::redo()
@@ -312,7 +311,7 @@ void BitmapReplaceCommand::redo()
 
     static_cast<LayerBitmap*>(layer)->replaceKeyFrame(&redoBitmap);
 
-    editor()->scrubTo(redoBitmap.pos());
+    editor()->undoRedo()->notifyCommandExecuted(layerId, redoBitmap.pos());
 }
 
 VectorReplaceCommand::VectorReplaceCommand(const VectorImage* undoVector,
@@ -340,7 +339,7 @@ void VectorReplaceCommand::undo()
 
     static_cast<LayerVector*>(layer)->replaceKeyFrame(&undoVector);
 
-    editor()->scrubTo(undoVector.pos());
+    editor()->undoRedo()->notifyCommandExecuted(layerId, undoVector.pos());
 }
 
 void VectorReplaceCommand::redo()
@@ -357,7 +356,7 @@ void VectorReplaceCommand::redo()
 
     static_cast<LayerVector*>(layer)->replaceKeyFrame(&redoVector);
 
-    editor()->scrubTo(redoVector.pos());
+    editor()->undoRedo()->notifyCommandExecuted(layerId, redoVector.pos());
 }
 
 LayerRemoveCommand::LayerRemoveCommand(Layer* takenLayer,
@@ -560,7 +559,7 @@ void CameraReplaceCommand::apply(const Camera& camera)
     cameraLayer->replaceKeyFrame(&camera);
 
     emit editor()->frameModified(camera.pos());
-    editor()->scrubTo(camera.pos());
+    editor()->undoRedo()->notifyCommandExecuted(layerId, camera.pos());
 }
 
 void CameraReplaceCommand::undo()
@@ -646,12 +645,11 @@ void TransformCommand::apply(const QRectF& selectionRect,
                              const QPointF& selectionAnchor,
                              const bool roundPixels)
 {
-    auto selectMan = editor()->select();
-    selectMan->setSelection(selectionRect, roundPixels);
-    selectMan->setTransformAnchor(selectionAnchor);
-    selectMan->setTranslation(translation);
-    selectMan->setRotation(rotationAngle);
-    selectMan->setScale(scaleX, scaleY);
-
-    selectMan->calculateSelectionTransformation();
+    editor()->select()->restoreSelectionState(selectionRect,
+                                              translation,
+                                              rotationAngle,
+                                              scaleX,
+                                              scaleY,
+                                              selectionAnchor,
+                                              roundPixels);
 }
