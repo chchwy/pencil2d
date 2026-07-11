@@ -30,6 +30,7 @@ GNU General Public License for more details.
 #include "scribblearea.h"
 #include "layermanager.h"
 #include "soundmanager.h"
+#include "clipboardmanager.h"
 #include "undoredomanager.h"
 #include "undoredocommand.h"
 #include "layerbitmap.h"
@@ -360,6 +361,67 @@ TEST_CASE("A macro that records nothing leaves no undo entry")
 
     REQUIRE_FALSE(undoRedo->hasUnsavedChanges());
     REQUIRE_FALSE(scene.undoAction->isEnabled());
+}
+
+TEST_CASE("Pasting frames is undoable as a single step")
+{
+    UndoRedoTestScene scene;
+    LayerBitmap* layer = scene.bitmapLayer();
+    layer->getBitmapImageAtFrame(1)->setPixel(3, 4, red);
+
+    layer->setFrameSelected(1, true);
+    scene.editor->clipboards()->copySelectedFrames(layer);
+    layer->deselectAll();
+
+    scene.editor->scrubTo(5);
+    scene.editor->paste();
+    REQUIRE(layer->keyExists(5));
+    REQUIRE(layer->getBitmapImageAtFrame(5)->constScanLine(3, 4) == red);
+
+    // One undo removes the pasted frame.
+    scene.undoAction->trigger();
+    REQUIRE_FALSE(layer->keyExists(5));
+    REQUIRE(layer->keyExists(1));
+
+    // Redo restores it including its content, not as an empty frame.
+    scene.redoAction->trigger();
+    REQUIRE(layer->keyExists(5));
+    REQUIRE(layer->getBitmapImageAtFrame(5)->constScanLine(3, 4) == red);
+}
+
+TEST_CASE("Pasting onto an occupied frame shifts it; undo restores the layout")
+{
+    const QRgb blue = qPremultiply(QColor(0, 0, 255).rgba());
+
+    UndoRedoTestScene scene;
+    LayerBitmap* layer = scene.bitmapLayer();
+    layer->getBitmapImageAtFrame(1)->setPixel(3, 4, red);
+
+    layer->setFrameSelected(1, true);
+    scene.editor->clipboards()->copySelectedFrames(layer);
+    layer->deselectAll();
+
+    // Make the original distinguishable from the pasted copy.
+    layer->getBitmapImageAtFrame(1)->setPixel(5, 5, blue);
+
+    // Paste onto frame 1: the original moves to 2, the copy lands on 1.
+    scene.editor->paste();
+    REQUIRE(layer->keyExists(1));
+    REQUIRE(layer->keyExists(2));
+    REQUIRE(layer->getBitmapImageAtFrame(1)->constScanLine(5, 5) == 0);
+    REQUIRE(layer->getBitmapImageAtFrame(2)->constScanLine(5, 5) == blue);
+
+    // One undo removes the copy and moves the original back.
+    scene.undoAction->trigger();
+    REQUIRE(layer->keyExists(1));
+    REQUIRE_FALSE(layer->keyExists(2));
+    REQUIRE(layer->getBitmapImageAtFrame(1)->constScanLine(5, 5) == blue);
+
+    scene.redoAction->trigger();
+    REQUIRE(layer->keyExists(1));
+    REQUIRE(layer->keyExists(2));
+    REQUIRE(layer->getBitmapImageAtFrame(1)->constScanLine(5, 5) == 0);
+    REQUIRE(layer->getBitmapImageAtFrame(2)->constScanLine(5, 5) == blue);
 }
 
 TEST_CASE("Renaming a layer is undoable")

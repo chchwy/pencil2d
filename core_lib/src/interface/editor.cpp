@@ -307,6 +307,10 @@ void Editor::pasteToFrames()
 
     currentLayer->deselectAll();
 
+    // The whole paste — shifting frames out of the way and adding each
+    // pasted keyframe — undoes as a single step.
+    undoRedo()->beginMacro(tr("Paste frames"));
+
     int newPositionOffset = mFrame - clipboardFrames.cbegin()->first;
     for (auto it = clipboardFrames.cbegin(); it != clipboardFrames.cend(); ++it)
     {
@@ -318,23 +322,35 @@ void Editor::pasteToFrames()
 
             // Select and move any frames that may come into contact with the new position
             currentLayer->newSelectionOfConnectedFrames(newPosition);
+
+            UndoTransaction moveTransaction = undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MOVE,
+                                                                           currentLayer->id(), newPosition);
+            UserSaveState userState;
+            userState.moveFramesState = MoveFramesSaveState(1, currentLayer->selectedKeyFramesPositions());
+            moveTransaction.setUserState(userState);
+
             currentLayer->moveSelectedFrames(1);
+            moveTransaction.commit(tr("Paste frames"));
         }
 
         KeyFrame* key = it->second;
         // It's a bug if the keyframe is nullptr at this point...
         Q_ASSERT(key != nullptr);
 
-        // TODO: undo/redo implementation
+        UndoTransaction addTransaction = undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_ADD,
+                                                                      currentLayer->id(), newPosition);
         currentLayer->addKeyFrame(newPosition, key);
         if (currentLayer->type() == Layer::SOUND)
         {
             auto soundClip = static_cast<SoundClip*>(key);
             sound()->loadSound(soundClip, soundClip->fileName());
         }
+        addTransaction.commit(tr("Paste frames"));
 
         currentLayer->setFrameSelected(key->pos(), true);
     }
+
+    undoRedo()->endMacro();
 
     layers()->notifyAnimationLengthChanged();
 }
@@ -361,7 +377,6 @@ void Editor::paste()
             pasteToCanvas(&clipboardVectorImage, mFrame);
         }
     } else {
-        // TODO: implement undo/redo
         pasteToFrames();
     }
 
