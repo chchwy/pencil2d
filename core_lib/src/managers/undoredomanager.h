@@ -166,6 +166,12 @@ public:
     void beginMacro(const QString& text);
     void endMacro();
 
+    /** Called by undo commands after they have applied a change, naming the
+     *  affected layer and frame. Commands report *what* changed through
+     *  this; how the UI reacts (e.g. navigating there) is decided by the
+     *  commandExecuted subscribers, not by the commands. */
+    void notifyCommandExecuted(int layerId, int framePosition) { emit commandExecuted(layerId, framePosition); }
+
     QAction* createUndoAction(QObject* parent, const QIcon& icon);
     QAction* createRedoAction(QObject* parent, const QIcon& icon);
 
@@ -200,6 +206,9 @@ public:
 
 signals:
     void didUpdateUndoStack();
+
+    /** An undo command applied a change to the given layer and frame. */
+    void commandExecuted(int layerId, int framePosition);
 
 private:
     friend class UndoTransaction;

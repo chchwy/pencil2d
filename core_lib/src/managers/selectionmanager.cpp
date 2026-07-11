@@ -349,3 +349,20 @@ void SelectionManager::resetSelectionProperties()
     emit selectionChanged();
 }
 
+
+void SelectionManager::restoreSelectionState(const QRectF& selectionRect,
+                                             const QPointF& translation,
+                                             qreal rotationAngle,
+                                             qreal scaleX,
+                                             qreal scaleY,
+                                             const QPointF& anchor,
+                                             bool roundPixels)
+{
+    setSelection(selectionRect, roundPixels);
+    setTransformAnchor(anchor);
+    setTranslation(translation);
+    setRotation(rotationAngle);
+    setScale(scaleX, scaleY);
+
+    calculateSelectionTransformation();
+}

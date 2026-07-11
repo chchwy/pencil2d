@@ -120,6 +120,16 @@ public:
     void setScale(const qreal scaleX, const qreal scaleY) { mScaleX = scaleX; mScaleY = scaleY; }
     void setTranslation(const QPointF& translation) { mTranslation = translation; }
 
+    /** Replaces the entire selection state in one step and recalculates the
+     *  selection transform. Used by undo/redo to restore a recorded state. */
+    void restoreSelectionState(const QRectF& selectionRect,
+                               const QPointF& translation,
+                               qreal rotationAngle,
+                               qreal scaleX,
+                               qreal scaleY,
+                               const QPointF& anchor,
+                               bool roundPixels);
+
     qreal angleFromPoint(const QPointF& point, const QPointF& anchorPoint) const;
 
     // Coordinate Space Conversions
