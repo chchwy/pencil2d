@@ -81,12 +81,17 @@ private:
 class KeyFrameAddCommand : public UndoRedoCommand
 {
 public:
+    /** @param addedKeyFrame The keyframe that was added, or nullptr.
+     *  When given, it is cloned so redo can restore content-bearing
+     *  additions (e.g. pasted frames); otherwise redo creates a new
+     *  empty keyframe. */
     KeyFrameAddCommand(int position,
                         int layerId,
+                        const KeyFrame* addedKeyFrame,
                         const QString& description,
                         Editor* editor,
                         QUndoCommand* parent = nullptr);
-    ~KeyFrameAddCommand() = default;
+    ~KeyFrameAddCommand() override;
 
     void undo() override;
     void redo() override;
@@ -95,6 +100,8 @@ private:
 
     int layerId = 0;
     int position = 0;
+
+    std::unique_ptr<KeyFrame> keyClone;
 };
 
 class MoveKeyFramesCommand : public UndoRedoCommand

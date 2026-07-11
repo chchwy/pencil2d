@@ -209,8 +209,19 @@ void UndoRedoManager::removeKeyFrame(const UndoSaveState& undoState, const QStri
 
 void UndoRedoManager::addKeyFrame(const UndoSaveState& undoState, const QString& description)
 {
+    // Capture the added keyframe as it exists now (at record time), so redo
+    // can restore content-bearing additions such as pasted frames. Freshly
+    // created keyframes are empty, making the clone cheap in that case.
+    const KeyFrame* addedKeyFrame = nullptr;
+    const Layer* layer = editor()->layers()->findLayerById(undoState.layerId);
+    if (layer != nullptr)
+    {
+        addedKeyFrame = layer->getKeyFrameAt(undoState.frameIndex);
+    }
+
     KeyFrameAddCommand* element = new KeyFrameAddCommand(undoState.frameIndex,
                                                            undoState.layerId,
+                                                           addedKeyFrame,
                                                            description,
                                                            editor());
     pushCommand(element);

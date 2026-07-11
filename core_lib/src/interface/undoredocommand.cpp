@@ -38,6 +38,42 @@ UndoRedoCommand::UndoRedoCommand(Editor* editor, QUndoCommand* parent) : QUndoCo
     mEditor = editor;
 }
 
+namespace
+{
+/** Clones a stored keyframe for (re-)insertion into the given layer.
+ *  Sound clips get their media player recreated the way the legacy restore
+ *  path does. Returns nullptr when restoring isn't possible (e.g. the
+ *  sound file is gone). */
+KeyFrame* cloneKeyFrameForLayer(const KeyFrame* storedKeyFrame, const Layer* layer, Editor* editor)
+{
+    KeyFrame* restoredKey = storedKeyFrame->clone();
+    if (layer->type() == Layer::SOUND)
+    {
+        SoundClip* clip = static_cast<SoundClip*>(restoredKey);
+        const QString soundFile = clip->fileName();
+        if (soundFile.isEmpty() || !QFile::exists(soundFile))
+        {
+            delete clip;
+            return nullptr;
+        }
+
+        Status status = editor->sound()->loadSound(clip, soundFile);
+        if (!status.ok())
+        {
+            // loadSound only deletes the clip when it fails past its file
+            // checks; on its FILE_NOT_FOUND/FAIL early returns the clip is
+            // still ours to free.
+            if (status == Status::FILE_NOT_FOUND || status == Status::FAIL)
+            {
+                delete clip;
+            }
+            return nullptr;
+        }
+    }
+    return restoredKey;
+}
+} // namespace
+
 KeyFrameRemoveCommand::KeyFrameRemoveCommand(const KeyFrame* undoKeyFrame,
                                          int layerId,
                                          int redoPosition,
@@ -68,33 +104,12 @@ void KeyFrameRemoveCommand::undo()
 
     UndoRedoCommand::undo();
 
-    KeyFrame* restoredKey = undoKeyFrame->clone();
-    if (layer->type() == Layer::SOUND)
+    KeyFrame* restoredKey = cloneKeyFrameForLayer(undoKeyFrame, layer, editor());
+    if (restoredKey == nullptr)
     {
-        // A cloned SoundClip has no media player; recreate it the way the
-        // legacy restore path does. If the sound file is gone, the clip
-        // can't be restored — drop the command instead of inserting a
-        // silent keyframe.
-        SoundClip* clip = static_cast<SoundClip*>(restoredKey);
-        const QString soundFile = clip->fileName();
-        if (soundFile.isEmpty() || !QFile::exists(soundFile))
-        {
-            delete clip;
-            return setObsolete(true);
-        }
-
-        Status status = editor()->sound()->loadSound(clip, soundFile);
-        if (!status.ok())
-        {
-            // loadSound only deletes the clip when it fails past its file
-            // checks; on its FILE_NOT_FOUND/FAIL early returns the clip is
-            // still ours to free.
-            if (status == Status::FILE_NOT_FOUND || status == Status::FAIL)
-            {
-                delete clip;
-            }
-            return setObsolete(true);
-        }
+        // e.g. the underlying sound file is gone — drop the command
+        // instead of inserting a broken keyframe.
+        return setObsolete(true);
     }
 
     layer->addKeyFrame(undoKeyFrame->pos(), restoredKey);
@@ -126,6 +141,7 @@ void KeyFrameRemoveCommand::redo()
 
 KeyFrameAddCommand::KeyFrameAddCommand(int position,
                                        int layerId,
+                                       const KeyFrame* addedKeyFrame,
                                        const QString &description,
                                        Editor *editor,
                                        QUndoCommand *parent)
@@ -133,9 +149,15 @@ KeyFrameAddCommand::KeyFrameAddCommand(int position,
 {
     this->position = position;
     this->layerId = layerId;
+    if (addedKeyFrame != nullptr)
+    {
+        this->keyClone.reset(addedKeyFrame->clone());
+    }
 
     setText(description);
 }
+
+KeyFrameAddCommand::~KeyFrameAddCommand() = default;
 
 void KeyFrameAddCommand::undo()
 {
@@ -166,7 +188,19 @@ void KeyFrameAddCommand::redo()
     // Ignore automatic redo when added to undo stack
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
-    layer->addNewKeyFrameAt(position);
+    if (keyClone != nullptr)
+    {
+        KeyFrame* restoredKey = cloneKeyFrameForLayer(keyClone.get(), layer, editor());
+        if (restoredKey == nullptr)
+        {
+            return setObsolete(true);
+        }
+        layer->addKeyFrame(position, restoredKey);
+    }
+    else
+    {
+        layer->addNewKeyFrameAt(position);
+    }
 
     emit editor()->frameModified(position);
     editor()->layers()->notifyAnimationLengthChanged();
@@ -200,10 +234,15 @@ void MoveKeyFramesCommand::undo()
 
     UndoRedoCommand::undo();
 
+    // Rebuild the selection from the recorded state: the moved frames sit
+    // at their post-move positions now, and whatever the live selection is
+    // must not leak into the move.
+    undoLayer->deselectAll();
     for (int position : qAsConst(positions)) {
-        undoLayer->setFrameSelected(position, true);
+        undoLayer->setFrameSelected(position + frameOffset, true);
     }
     undoLayer->moveSelectedFrames(-frameOffset);
+    undoLayer->deselectAll();
 
     emit editor()->framesModified();
 }
@@ -221,14 +260,13 @@ void MoveKeyFramesCommand::redo()
     // Ignore automatic redo when added to undo stack
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
-    QList<int> newPositions = positions;
-
-
-    for (int position : qAsConst(newPositions)) {
+    redoLayer->deselectAll();
+    for (int position : qAsConst(positions)) {
         redoLayer->setFrameSelected(position, true);
     }
 
     redoLayer->moveSelectedFrames(frameOffset);
+    redoLayer->deselectAll();
 
     emit editor()->framesModified();
 }
