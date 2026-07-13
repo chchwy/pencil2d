@@ -20,7 +20,6 @@ GNU General Public License for more details.
 #include <QFile>
 #include <QMediaPlayer>
 #include <QtMath>
-#include "soundplayer.h"
 
 SoundClip::SoundClip()
 {
@@ -63,72 +62,6 @@ Status SoundClip::init(const QString& strSoundFile)
     }
     setFileName(strSoundFile);
     return Status::OK;
-}
-
-bool SoundClip::isValid() const
-{
-    if (fileName().isEmpty())
-    {
-        return false;
-    }
-
-    if (!mPlayer)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-void SoundClip::attachPlayer(SoundPlayer* player)
-{
-    Q_ASSERT( player != nullptr );
-    mPlayer.reset(player);
-}
-
-void SoundClip::detachPlayer()
-{
-    mPlayer.reset();
-}
-
-void SoundClip::play()
-{
-    if (mPlayer)
-    {
-        mPlayer->play();
-    }
-}
-
-void SoundClip::playFromPosition(int frameNumber, int fps)
-{
-    int framesIntoSound = frameNumber;
-    if (pos() > 1)
-    {
-        framesIntoSound = frameNumber - pos();
-    }
-    qreal msPerFrame = 1000.0 / fps;
-    qint64 msIntoSound = qRound(framesIntoSound * msPerFrame);
-    if (mPlayer)
-    {
-        mPlayer->setMediaPlayerPosition(msIntoSound);
-        mPlayer->play();
-    }
-}
-
-void SoundClip::pause()
-{
-    if (mPlayer)
-    {
-        mPlayer->pause();
-    }
-}
-
-void SoundClip::stop()
-{
-    if (mPlayer)
-    {
-        mPlayer->stop();
-    }
 }
 
 int64_t SoundClip::duration() const

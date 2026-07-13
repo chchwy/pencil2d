@@ -253,7 +253,7 @@ TEST_CASE("Removing a sound keyframe is undoable and restores a playable clip")
     scene.undoAction->trigger();
     REQUIRE(soundLayer->keyExists(1));
     SoundClip* restored = static_cast<SoundClip*>(soundLayer->getKeyFrameAt(1));
-    REQUIRE(restored->isValid()); // file name intact and media player recreated
+    REQUIRE(scene.editor->sound()->hasValidPlayer(restored)); // media player recreated
     pumpEvents();
 
     scene.redoAction->trigger();

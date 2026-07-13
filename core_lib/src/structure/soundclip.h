@@ -21,7 +21,6 @@ GNU General Public License for more details.
 #include <memory>
 #include "keyframe.h"
 
-class SoundPlayer;
 
 class SoundClip : public KeyFrame
 {
@@ -34,19 +33,9 @@ public:
     SoundClip* clone() const override;
 
     Status init(const QString& strSoundFile);
-    bool isValid() const;
 
     void setSoundClipName(const QString& sName) { mOriginalSoundClipName = sName; }
     QString soundClipName() const { return mOriginalSoundClipName; }
-
-    void attachPlayer(SoundPlayer* player);
-    void detachPlayer();
-    SoundPlayer* player() const { return mPlayer.get(); }
-
-    void play();
-    void playFromPosition(int frameNumber, int fps);
-    void pause();
-    void stop();
 
     int64_t duration() const;
     void setDuration(const int64_t& duration);
@@ -54,8 +43,6 @@ public:
     void updateLength(int fps);
 
 private:
-    std::shared_ptr<SoundPlayer> mPlayer;
-
     QString mOriginalSoundClipName;
 
     // Duration in seconds.
