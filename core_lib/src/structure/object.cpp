@@ -566,11 +566,19 @@ void Object::loadDefaultPalette()
     addColor(ColorRef(QColor(227, 177, 105), tr("Light Grayish Orange Yellow")));
 }
 
+namespace
+{
+// Preload window used while painting: keep a few frames on either side
+// warm so nearby onion-skin and scrub accesses don't hit the disk.
+const int PAINT_PRELOAD_FRAMES_BEHIND = 3;
+const int PAINT_PRELOAD_FRAMES_AHEAD = 4;
+}
+
 void Object::paintImage(QPainter& painter,int frameNumber,
                         bool background,
                         bool antialiasing) const
 {
-    updateActiveFrames(frameNumber);
+    updateActiveFrames(frameNumber, PAINT_PRELOAD_FRAMES_BEHIND, PAINT_PRELOAD_FRAMES_AHEAD);
 
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -670,10 +678,10 @@ int Object::totalKeyFrameCount() const
     return sum;
 }
 
-void Object::updateActiveFrames(int frame) const
+void Object::updateActiveFrames(int frame, int framesBehind, int framesAhead) const
 {
-    const int beginFrame = std::max(frame - 3, 1);
-    const int endFrame = frame + 4;
+    const int beginFrame = std::max(frame - framesBehind, 1);
+    const int endFrame = frame + framesAhead;
 
     const int minFrameCount = getLayerCount() * (endFrame - beginFrame);
     mActiveFramePool->setMinFrameCount(minFrameCount);
