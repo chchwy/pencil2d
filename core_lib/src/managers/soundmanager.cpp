@@ -156,10 +156,71 @@ void SoundManager::onDurationChanged(SoundPlayer* player, int64_t duration)
 
 Status SoundManager::createMediaPlayer(SoundClip* clip)
 {
+    delete mSoundPlayers.take(clip);
+
     SoundPlayer* newPlayer = new SoundPlayer();
+    newPlayer->setParent(this);
     newPlayer->init(clip);
 
     connect(newPlayer, &SoundPlayer::durationChanged, this, &SoundManager::onDurationChanged);
 
+    mSoundPlayers.insert(clip, newPlayer);
+    clip->addEventListener(this);
+
     return Status::OK;
+}
+
+void SoundManager::onKeyFrameDestroy(KeyFrame* keyframe)
+{
+    delete mSoundPlayers.take(keyframe);
+}
+
+void SoundManager::play(const SoundClip* clip) const
+{
+    SoundPlayer* player = mSoundPlayers.value(clip);
+    if (player != nullptr)
+    {
+        player->play();
+    }
+}
+
+void SoundManager::playFromPosition(const SoundClip* clip, int frameNumber, int fps) const
+{
+    SoundPlayer* player = mSoundPlayers.value(clip);
+    if (player == nullptr) { return; }
+
+    int framesIntoSound = frameNumber;
+    if (clip->pos() > 1)
+    {
+        framesIntoSound = frameNumber - clip->pos();
+    }
+    qreal msPerFrame = 1000.0 / fps;
+    qint64 msIntoSound = qRound(framesIntoSound * msPerFrame);
+
+    player->setMediaPlayerPosition(msIntoSound);
+    player->play();
+}
+
+void SoundManager::pause(const SoundClip* clip) const
+{
+    SoundPlayer* player = mSoundPlayers.value(clip);
+    if (player != nullptr)
+    {
+        player->pause();
+    }
+}
+
+void SoundManager::stop(const SoundClip* clip) const
+{
+    SoundPlayer* player = mSoundPlayers.value(clip);
+    if (player != nullptr)
+    {
+        player->stop();
+    }
+}
+
+bool SoundManager::hasValidPlayer(const SoundClip* clip) const
+{
+    SoundPlayer* player = mSoundPlayers.value(clip);
+    return player != nullptr && player->isValid();
 }

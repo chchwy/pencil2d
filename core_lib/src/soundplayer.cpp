@@ -54,8 +54,6 @@ void SoundPlayer::init(SoundClip* clip)
     mMediaPlayer->setMedia(QUrl::fromLocalFile(clip->fileName()), &mBuffer);
 #endif
     makeConnections();
-
-    clip->attachPlayer(this);
 }
 
 void SoundPlayer::onKeyFrameDestroy(KeyFrame* keyFrame)

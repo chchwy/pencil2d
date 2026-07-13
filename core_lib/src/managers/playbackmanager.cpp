@@ -17,6 +17,8 @@ GNU General Public License for more details.
 
 #include "playbackmanager.h"
 
+#include "soundmanager.h"
+
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QDebug>
@@ -219,7 +221,7 @@ void PlaybackManager::playScrub(int frame)
     mScrubTimer->singleShot(mMsecSoundScrub, this, &PlaybackManager::stopScrubPlayback);
     for (int i = 0; i < mSoundclipsToPLay.count(); i++)
     {
-        mSoundclipsToPLay.at(i)->playFromPosition(frame, mFps);
+        editor()->sound()->playFromPosition(mSoundclipsToPLay.at(i), frame, mFps);
     }
 }
 
@@ -295,7 +297,7 @@ void PlaybackManager::playSounds(int frame)
                 {
                     key = layer->getKeyFrameWhichCovers(listPosition);
                     SoundClip* clip = static_cast<SoundClip*>(key);
-                    clip->playFromPosition(frame, mFps);
+                    editor()->sound()->playFromPosition(clip, frame, mFps);
                 }
             }
         }
@@ -304,7 +306,7 @@ void PlaybackManager::playSounds(int frame)
             key = layer->getKeyFrameAt(frame);
             SoundClip* clip = static_cast<SoundClip*>(key);
 
-            clip->play();
+            editor()->sound()->play(clip);
 
             // save the position of our active sound frame
             mActiveSoundFrame = frame;
@@ -316,7 +318,7 @@ void PlaybackManager::playSounds(int frame)
             {
                 key = layer->getKeyFrameWhichCovers(mActiveSoundFrame);
                 SoundClip* clip = static_cast<SoundClip*>(key);
-                clip->stop();
+                editor()->sound()->stop(clip);
 
                 // make sure list is cleared on end
                 if (!mListOfActiveSoundFrames.isEmpty())
@@ -368,10 +370,10 @@ void PlaybackManager::stopSounds()
 
     for (LayerSound* layer : kSoundLayers)
     {
-        layer->foreachKeyFrame([](KeyFrame* key)
+        layer->foreachKeyFrame([this](KeyFrame* key)
         {
             SoundClip* clip = static_cast<SoundClip*>(key);
-            clip->stop();
+            editor()->sound()->stop(clip);
         });
     }
 }
@@ -380,7 +382,7 @@ void PlaybackManager::stopScrubPlayback()
 {
     for (int i = 0; i < mSoundclipsToPLay.count(); i++)
     {
-        mSoundclipsToPLay.at(i)->pause();
+        editor()->sound()->pause(mSoundclipsToPLay.at(i));
     }
     mSoundclipsToPLay.clear();
 }
