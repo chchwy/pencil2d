@@ -17,29 +17,27 @@ GNU General Public License for more details.
 #include "pegbaraligner.h"
 
 #include <QDebug>
-#include <editor.h>
 #include <pencilerror.h>
 
 #include <bitmapimage.h>
 #include <layerbitmap.h>
-#include <layermanager.h>
+#include <object.h>
 
 PegStatus::PegStatus(ErrorCode code, QPoint point)
     : Status(code), point(point)
 {
 }
 
-PegBarAligner::PegBarAligner(Editor* editor, QRect searchRect) :
-    mEditor(editor), mPegSearchRect(searchRect)
+PegBarAligner::PegBarAligner(Object* object, QRect searchRect) :
+    mObject(object), mPegSearchRect(searchRect)
 {
 }
 
 
-Status PegBarAligner::align(const QStringList& layers)
+Status PegBarAligner::align(const BitmapImage& referenceImage, const QStringList& layers,
+                            QList<int>* alignedFrames)
 {
-    LayerBitmap* layerBitmap = static_cast<LayerBitmap*>(mEditor->layers()->currentLayer());
-    BitmapImage* img = layerBitmap->getBitmapImageAtFrame(mEditor->currentFrame());
-    PegStatus result = findPoint(*img);
+    PegStatus result = findPoint(referenceImage);
 
     if (!result.ok())
     {
@@ -51,12 +49,12 @@ Status PegBarAligner::align(const QStringList& layers)
 
     for (int i = 0; i < layers.count(); i++)
     {
-        layerBitmap = static_cast<LayerBitmap*>(mEditor->layers()->findLayerByName(layers.at(i)));
+        LayerBitmap* layerBitmap = static_cast<LayerBitmap*>(mObject->findLayerByName(layers.at(i)));
         for (int k = layerBitmap->firstKeyFramePosition(); k <= layerBitmap->getMaxKeyFramePosition(); k++)
         {
             if (!layerBitmap->keyExists(k)) { continue; }
 
-            img = layerBitmap->getBitmapImageAtFrame(k);
+            BitmapImage* img = layerBitmap->getBitmapImageAtFrame(k);
             img->enableAutoCrop(false);
 
             result = findPoint(*img);
@@ -67,11 +65,12 @@ Status PegBarAligner::align(const QStringList& layers)
             }
             img->moveTopLeft(QPoint(img->left() + (pegX - result.point.x()), img->top() + (pegY - result.point.y())));
 
-            emit mEditor->frameModified(img->pos());
+            if (alignedFrames != nullptr)
+            {
+                alignedFrames->append(img->pos());
+            }
         }
     }
-
-    mEditor->deselectAll();
 
     return Status::OK;
 }

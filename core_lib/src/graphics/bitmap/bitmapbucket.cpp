@@ -16,10 +16,11 @@ GNU General Public License for more details.
 */
 #include "bitmapbucket.h"
 
+#include "object.h"
+
 #include <QtMath>
 #include <QDebug>
 
-#include "editor.h"
 #include "layermanager.h"
 
 #include "layerbitmap.h"
@@ -28,19 +29,21 @@ BitmapBucket::BitmapBucket()
 {
 }
 
-BitmapBucket::BitmapBucket(Editor* editor,
+BitmapBucket::BitmapBucket(Object* object,
+                           int layerIndex,
+                           int frameIndex,
                            QColor color,
                            QRect maxFillRegion,
                            QPointF fillPoint,
                            BucketToolProperties properties):
-    mEditor(editor),
+    mObject(object),
+    mFrameIndex(frameIndex),
     mMaxFillRegion(maxFillRegion),
     mProperties(properties)
 
 {
-    Layer* initialLayer = editor->layers()->currentLayer();
-    int initialLayerIndex = mEditor->currentLayerIndex();
-    int frameIndex = mEditor->currentFrame();
+    Layer* initialLayer = object->getLayer(layerIndex);
+    int initialLayerIndex = layerIndex;
 
     mBucketColor = qPremultiply(color.rgba());
 
@@ -113,7 +116,7 @@ bool BitmapBucket::allowContinuousFill(const QPoint& checkPoint, const QRgb& che
 
 void BitmapBucket::paint(const QPointF& updatedPoint, std::function<void(BucketState, int, int)> state)
 {
-    const int currentFrameIndex = mEditor->currentFrame();
+    const int currentFrameIndex = mFrameIndex;
 
     BitmapImage* targetImage = static_cast<LayerBitmap*>(mTargetFillToLayer)->getLastBitmapImageAtFrame(currentFrameIndex);
     if (targetImage == nullptr || !targetImage->isLoaded()) { return; } // Can happen if the first frame is deleted while drawing
@@ -191,11 +194,10 @@ void BitmapBucket::paint(const QPointF& updatedPoint, std::function<void(BucketS
 BitmapImage BitmapBucket::flattenBitmapLayersToImage()
 {
     BitmapImage flattenImage = BitmapImage();
-    int currentFrame = mEditor->currentFrame();
-    auto layerMan = mEditor->layers();
-    for (int i = 0; i < layerMan->count(); i++)
+    int currentFrame = mFrameIndex;
+    for (int i = 0; i < mObject->getLayerCount(); i++)
     {
-        Layer* layer = layerMan->getLayer(i);
+        Layer* layer = mObject->getLayer(i);
         Q_ASSERT(layer);
         if (layer->type() == Layer::BITMAP && layer->visible())
         {

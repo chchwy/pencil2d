@@ -23,7 +23,7 @@ GNU General Public License for more details.
 #include <functional>
 
 class Layer;
-class Editor;
+class Object;
 
 enum class BucketState
 {
@@ -35,7 +35,11 @@ class BitmapBucket
 {
 public:
     explicit BitmapBucket();
-    explicit BitmapBucket(Editor* editor, QColor color, QRect maxFillRegion, QPointF fillPoint, BucketToolProperties properties);
+    /** @param object The document to fill in.
+     *  @param layerIndex The layer the fill targets.
+     *  @param frameIndex The frame the fill targets; captured for the whole
+     *         drag gesture. */
+    explicit BitmapBucket(Object* object, int layerIndex, int frameIndex, QColor color, QRect maxFillRegion, QPointF fillPoint, BucketToolProperties properties);
 
     /** Will paint at the given point, given that it makes sense.. canUse is always called prior to painting
      *
@@ -65,7 +69,8 @@ private:
 
     BitmapImage flattenBitmapLayersToImage();
 
-    Editor* mEditor = nullptr;
+    Object* mObject = nullptr;
+    int mFrameIndex = 0;
     Layer* mTargetFillToLayer = nullptr;
 
     QHash<QRgb, bool> *mPixelCache;

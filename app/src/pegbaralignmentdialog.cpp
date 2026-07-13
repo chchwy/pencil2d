@@ -27,6 +27,9 @@ GNU General Public License for more details.
 #include "toolmanager.h"
 #include "scribblearea.h"
 
+#include <layerbitmap.h>
+#include <bitmapimage.h>
+#include <object.h>
 #include <pegbaraligner.h>
 
 PegBarAlignmentDialog::PegBarAlignmentDialog(Editor *editor, QWidget *parent) :
@@ -166,13 +169,23 @@ void PegBarAlignmentDialog::alignPegs()
     }
 
 
-    Status result = PegBarAligner(mEditor, mEditor->select()->mySelectionRect().toAlignedRect()).align(bitmaplayers);
+    LayerBitmap* referenceLayer = static_cast<LayerBitmap*>(mEditor->layers()->currentLayer());
+    BitmapImage* referenceImage = referenceLayer->getBitmapImageAtFrame(mEditor->currentFrame());
+
+    QList<int> alignedFrames;
+    Status result = PegBarAligner(mEditor->object(), mEditor->select()->mySelectionRect().toAlignedRect())
+                        .align(*referenceImage, bitmaplayers, &alignedFrames);
     if (!result.ok())
     {
         QMessageBox::information(this, "Pencil2D",
                                  result.description(),
                                  QMessageBox::Ok);
         return;
+    }
+
+    for (int alignedFrame : alignedFrames)
+    {
+        emit mEditor->frameModified(alignedFrame);
     }
 
     mEditor->deselectAll();

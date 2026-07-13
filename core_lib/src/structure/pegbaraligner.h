@@ -23,7 +23,7 @@ GNU General Public License for more details.
 #include <QRectF>
 
 class BitmapImage;
-class Editor;
+class Object;
 
 class PegStatus : public Status
 {
@@ -36,14 +36,19 @@ class PegBarAligner
 {
     Q_DECLARE_TR_FUNCTIONS(PegBarAligner)
 public:
-    PegBarAligner(Editor* editor, QRect searchRect);
+    PegBarAligner(Object* object, QRect searchRect);
 
-    Status align(const QStringList& layers);
+    /** Aligns every keyframe of the named bitmap layers to the peg hole
+     *  found in the reference image.
+     *  @param alignedFrames Receives the modified frame positions, so the
+     *         caller can emit its change notifications. May be nullptr. */
+    Status align(const BitmapImage& referenceImage, const QStringList& layers,
+                 QList<int>* alignedFrames = nullptr);
 
 private:
     PegStatus findPoint(const BitmapImage& image) const;
 
-    Editor* mEditor = nullptr;
+    Object* mObject = nullptr;
 
     const int mGrayThreshold = 121;
     QRect mPegSearchRect;
