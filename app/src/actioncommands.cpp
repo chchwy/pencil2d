@@ -16,6 +16,8 @@ GNU General Public License for more details.
 
 #include "actioncommands.h"
 
+#include "imageexporter.h"
+
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -475,7 +477,8 @@ Status ActionCommands::exportImageSequence()
     progress.setWindowModality(Qt::WindowModal);
     progress.show();
 
-    Status st = mEditor->object()->exportFrames(startFrame, endFrame,
+    Status st = ImageExporter::exportFrames(mEditor->object(),
+                                    startFrame, endFrame,
                                     cameraLayer,
                                     exportSize,
                                     strFilePath,
@@ -484,7 +487,12 @@ Status ActionCommands::exportImageSequence()
                                     exportKeyframesOnly,
                                     mEditor->layers()->currentLayer()->name(),
                                     true,
-                                    &progress,
+                                    [&progress](int value) {
+                                        progress.setValue(value);
+                                        // Required to make the progress bar update on-screen.
+                                        QApplication::processEvents();
+                                        return !progress.wasCanceled();
+                                    },
                                     100);
 
     if (!st.ok())
@@ -580,7 +588,8 @@ Status ActionCommands::exportImage()
 
     QTransform view = cameraLayer->getViewAtFrame(mEditor->currentFrame());
 
-    Status st = mEditor->object()->exportIm(mEditor->currentFrame(),
+    Status st = ImageExporter::exportImage(mEditor->object(),
+                                           mEditor->currentFrame(),
                                            view,
                                            cameraLayer->getViewSize(),
                                            exportSize,
