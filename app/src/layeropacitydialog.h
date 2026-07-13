@@ -50,6 +50,16 @@ private:
     qreal getOpacityForKeyFrame(Layer* layer, const KeyFrame* keyframe) const;
     void setOpacityForKeyFrame(Layer* layer, KeyFrame* keyframe, qreal opacity);
 
+    /** Resolves candidate positions to exact keyframe positions and their
+     *  current opacities (parallel lists); positions without a keyframe
+     *  are skipped. */
+    void gatherOpacities(Layer* layer, const QList<int>& candidates,
+                         QList<int>& positions, QList<qreal>& opacities) const;
+    /** Records the applied change as one undo step; reads the new values
+     *  back from the keyframes. No-ops when nothing changed. */
+    void recordOpacityChange(Layer* layer, const QList<int>& positions,
+                             const QList<qreal>& oldOpacities, const QString& description);
+
     void updateValues(qreal opacity);
     void setOpacityForCurrentKeyframe();
     void setOpacityForSelectedKeyframes();

@@ -1198,8 +1198,17 @@ void TimeLineCells::editLayerProperties(LayerCamera* cameraLayer) const
     QSettings settings(PENCIL2D, PENCIL2D);
     settings.setValue(SETTING_FIELD_W, dialog.getWidth());
     settings.setValue(SETTING_FIELD_H, dialog.getHeight());
-    cameraLayer->setViewRect(QRect(-dialog.getWidth() / 2, -dialog.getHeight() / 2, dialog.getWidth(), dialog.getHeight()));
+
+    const QRect oldViewRect = cameraLayer->getViewRect();
+    const QRect newViewRect(-dialog.getWidth() / 2, -dialog.getHeight() / 2, dialog.getWidth(), dialog.getHeight());
+    cameraLayer->setViewRect(newViewRect);
     mEditor->view()->forceUpdateViewTransform();
+
+    if (newViewRect != oldViewRect)
+    {
+        mEditor->undoRedo()->push(new CameraViewRectCommand(cameraLayer->id(), oldViewRect, newViewRect,
+                                                            mEditor->currentFrame(), tr("Camera size change"), mEditor));
+    }
 }
 
 void TimeLineCells::editLayerName(Layer* layer) const
