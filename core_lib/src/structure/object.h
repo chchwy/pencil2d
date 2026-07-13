@@ -28,7 +28,6 @@ GNU General Public License for more details.
 #include "pencildef.h"
 #include "objectdata.h"
 
-class QProgressDialog;
 class QFile;
 class QLockFile;
 class LayerBitmap;
@@ -147,12 +146,6 @@ public:
         }
         return result;
     }
-
-    // these functions need to be moved to somewhere...
-    Status exportFrames(int frameStart, int frameEnd, const LayerCamera* cameraLayer, QSize exportSize, QString filePath, QString format,
-                      bool transparency, bool exportKeyframesOnly, const QString& layerName, bool antialiasing, QProgressDialog* progress, int progressMax) const;
-
-    Status exportIm(int frameStart, const QTransform& view, QSize cameraSize, QSize exportSize, const QString& filePath, const QString& format, bool antialiasing, bool transparency) const;
 
     void modification() { modified = true; }
     bool isModified() const { return modified; }

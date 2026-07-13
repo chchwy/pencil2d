@@ -29,6 +29,8 @@ GNU General Public License for more details.
 
 #include "commandlineexporter.h"
 
+#include "imageexporter.h"
+
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 const auto qEndl = Qt::endl;
 #else
@@ -159,7 +161,8 @@ void CommandLineExporter::exportImageSequence(const QString &outputPath,
                                               bool transparency)
 {
     mOut << tr("Exporting image sequence...", "Command line task progress") << qEndl;
-    mEditor->object()->exportFrames(startFrame,
+    ImageExporter::exportFrames(mEditor->object(),
+                                    startFrame,
                                     endFrame,
                                     cameraLayer,
                                     exportSize,

@@ -118,6 +118,7 @@ HEADERS +=  \
     src/canvaspainter.h \
     src/soundplayer.h \
     src/movieexporter.h \
+    src/imageexporter.h \
     src/miniz.h \
     src/qminiz.h \
     src/activeframepool.h \
@@ -204,6 +205,7 @@ SOURCES +=  src/graphics/bitmap/bitmapimage.cpp \
     src/camerapainter.cpp \
     src/soundplayer.cpp \
     src/movieexporter.cpp \
+    src/imageexporter.cpp \
     src/miniz.cpp \
     src/qminiz.cpp \
     src/activeframepool.cpp \

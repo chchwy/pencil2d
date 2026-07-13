@@ -20,15 +20,12 @@ GNU General Public License for more details.
 
 #include <QDomDocument>
 #include <QTextStream>
-#include <QProgressDialog>
-#include <QApplication>
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
 #include <QLockFile>
 #include <QDateTime>
-#include <QImageWriter>
 #include <QRegularExpression>
 
 #include "layer.h"
@@ -651,149 +648,6 @@ QString Object::copyFileToDataFolder(const QString& strFilePath)
     }
 
     return destFile;
-}
-
-Status Object::exportFrames(int frameStart, int frameEnd,
-                          const LayerCamera* cameraLayer,
-                          QSize exportSize,
-                          QString filePath,
-                          QString format,
-                          bool transparency,
-                          bool exportKeyframesOnly,
-                          const QString& layerName,
-                          bool antialiasing,
-                          QProgressDialog* progress = nullptr,
-                          int progressMax = 50) const
-{
-    Q_ASSERT(cameraLayer);
-
-    QString extension = "";
-    QString formatStr = format;
-    if (formatStr == "PNG" || formatStr == "png")
-    {
-        format = "PNG";
-        extension = ".png";
-    }
-    if (formatStr == "JPG" || formatStr == "jpg" || formatStr == "JPEG" || formatStr == "jpeg")
-    {
-        format = "JPG";
-        extension = ".jpg";
-        transparency = false; // JPG doesn't support transparency, so we have to include the background
-    }
-    if (formatStr == "TIFF" || formatStr == "tiff" || formatStr == "TIF" || formatStr == "tif")
-    {
-        format = "TIFF";
-        extension = ".tiff";
-    }
-    if (formatStr == "BMP" || formatStr == "bmp")
-    {
-        format = "BMP";
-        extension = ".bmp";
-        transparency = false;
-    }
-    if (formatStr == "WEBP" || formatStr == "webp") {
-        format = "WEBP";
-        extension = ".webp";
-    }
-    if (filePath.endsWith(extension, Qt::CaseInsensitive))
-    {
-        filePath.chop(extension.size());
-    }
-
-    qDebug() << "Exporting frames from "
-        << frameStart << "to"
-        << frameEnd
-        << "at size " << exportSize;
-
-    DebugDetails dd;
-    dd << "\n[Export frames diagnostics]\n";
-    bool ok = true;
-
-    for (int currentFrame = frameStart; currentFrame <= frameEnd; currentFrame++)
-    {
-        if (progress != nullptr)
-        {
-            int totalFramesToExport = (frameEnd - frameStart) + 1;
-            if (totalFramesToExport != 0) // Avoid dividing by zero.
-            {
-                progress->setValue((currentFrame - frameStart + 1) * progressMax / totalFramesToExport);
-                QApplication::processEvents(); // Required to make progress bar update on-screen.
-            }
-
-            if (progress->wasCanceled())
-            {
-                break;
-            }
-        }
-
-        QTransform view = cameraLayer->getViewAtFrame(currentFrame);
-        QSize camSize = cameraLayer->getViewSize();
-
-        QString frameNumberString = QString::number(currentFrame);
-        while (frameNumberString.length() < 4)
-        {
-            frameNumberString.prepend("0");
-        }
-        QString sFileName = filePath + frameNumberString + extension;
-        Layer* layer = findLayerByName(layerName);
-        Status st = Status::SAFE;
-        if (exportKeyframesOnly)
-        {
-            if (layer->keyExists(currentFrame))
-            {
-                st = exportIm(currentFrame, view, camSize, exportSize, sFileName, format, antialiasing, transparency);
-            }
-        }
-        else
-        {
-            st = exportIm(currentFrame, view, camSize, exportSize, sFileName, format, antialiasing, transparency);
-        }
-
-        if (!st.ok())
-        {
-            ok = false;
-            dd.collect(st.details());
-        }
-    }
-
-    if (!ok)
-    {
-        dd << "\nError: Failed to export one or more frames";
-        return Status(Status::FAIL, dd);
-    }
-
-    return Status::OK;
-}
-
-Status Object::exportIm(int frame, const QTransform& view, QSize cameraSize, QSize exportSize, const QString& filePath, const QString& format, bool antialiasing, bool transparency) const
-{
-    QImage imageToExport(exportSize, QImage::Format_ARGB32_Premultiplied);
-
-    QColor bgColor = Qt::white;
-    if (transparency)
-        bgColor.setAlpha(0);
-    imageToExport.fill(bgColor);
-
-    QTransform centralizeCamera;
-    centralizeCamera.translate(cameraSize.width() / 2, cameraSize.height() / 2);
-
-    QPainter painter(&imageToExport);
-    painter.setWorldTransform(view * centralizeCamera);
-    painter.setWindow(QRect(0, 0, cameraSize.width(), cameraSize.height()));
-
-    paintImage(painter, frame, false, antialiasing);
-
-    QImageWriter writer(filePath, format.toStdString().c_str());
-    bool b = writer.write(imageToExport);
-    if (b) {
-        return Status::OK;
-    } else {
-        DebugDetails dd;
-        dd << "Object::exportIm";
-        dd << QString("&nbsp;&nbsp;filePath: ").append(filePath);
-        dd << QString("&nbsp;&nbsp;Error: %1 (code %2)").arg(writer.errorString()).arg(static_cast<int>(writer.error()));
-        return Status(Status::FAIL, dd);
-    }
 }
 
 int Object::getLayerCount() const
