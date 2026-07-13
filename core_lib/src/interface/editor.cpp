@@ -909,7 +909,10 @@ void Editor::scrubTo(int frame)
     {
         emit updateTimeLineCached(); // needs to update the timeline to update onion skin positions
     }
-    mObject->updateActiveFrames(frame);
+    // Scrub preload policy: warm the frames just around the target so
+    // scrubbing and playback don't stall on disk loads.
+    const int framesBehind = 3, framesAhead = 4;
+    mObject->updateActiveFrames(frame, framesBehind, framesAhead);
     emit scrubbed(frame);
 }
 

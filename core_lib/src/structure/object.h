@@ -158,7 +158,12 @@ public:
     void setData(const ObjectData&);
 
     int totalKeyFrameCount() const;
-    void updateActiveFrames(int frame) const;
+
+    /** Loads the keyframes of every visible layer in the window
+     *  [frame - framesBehind, frame + framesAhead) into the LRU frame pool
+     *  and sizes the pool's minimum accordingly. The window size is the
+     *  caller's cache policy, not the Object's. */
+    void updateActiveFrames(int frame, int framesBehind, int framesAhead) const;
     void setActiveFramePoolSize(int sizeInMB);
 
 private:
