@@ -437,3 +437,41 @@ TEST_CASE("BitmapImage autoCrop performance")
         REQUIRE(b->height() == 901);
     }
 }
+
+TEST_CASE("BitmapImage::diffBounds")
+{
+    SECTION("identical images give an empty rect")
+    {
+        BitmapImage a(QRect(0, 0, 20, 20), Qt::red);
+        BitmapImage b(QRect(0, 0, 20, 20), Qt::red);
+        REQUIRE(a.diffBounds(b).isEmpty());
+        REQUIRE(a.diffBounds(a).isEmpty());
+    }
+
+    SECTION("a single differing pixel gives a 1x1 rect at that pixel")
+    {
+        BitmapImage a(QRect(0, 0, 20, 20), Qt::red);
+        BitmapImage b(QRect(0, 0, 20, 20), Qt::red);
+        b.setPixel(7, 9, qRgba(0, 255, 0, 255));
+        REQUIRE(a.diffBounds(b) == QRect(7, 9, 1, 1));
+        REQUIRE(b.diffBounds(a) == QRect(7, 9, 1, 1));
+    }
+
+    SECTION("content outside the other image's bounds counts as a difference")
+    {
+        BitmapImage a(QRect(0, 0, 10, 10), Qt::red);
+        BitmapImage b(QRect(0, 0, 10, 10), Qt::red);
+        b.paste(&a); // no-op paste keeps b == a
+        BitmapImage extension(QRect(30, 30, 5, 5), Qt::blue);
+        b.paste(&extension);
+        REQUIRE(a.diffBounds(b) == QRect(30, 30, 5, 5));
+    }
+
+    SECTION("an empty image against a painted one covers the painted area")
+    {
+        BitmapImage empty;
+        BitmapImage painted(QRect(2, 3, 4, 5), Qt::blue);
+        REQUIRE(empty.diffBounds(painted) == QRect(2, 3, 4, 5));
+        REQUIRE(painted.diffBounds(empty) == QRect(2, 3, 4, 5));
+    }
+}

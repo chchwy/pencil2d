@@ -258,12 +258,45 @@ void UndoRedoManager::replaceBitmap(const UndoSaveState& undoState, const QStrin
     Layer* layer = editor()->layers()->findLayerById(undoState.layerId);
     if (layer == nullptr || layer->type() != Layer::BITMAP) { return; }
 
-    const BitmapImage* redoBitmap = static_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(undoState.frameIndex);
+    BitmapImage* undoBitmap = static_cast<BitmapImage*>(undoState.keyframe.get());
+    BitmapImage* redoBitmap = static_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(undoState.frameIndex);
     if (redoBitmap == nullptr) { return; }
 
-    BitmapReplaceCommand* element = new BitmapReplaceCommand(static_cast<BitmapImage*>(undoState.keyframe.get()),
-                                               redoBitmap,
+    // Store only the region that actually changed instead of two full
+    // canvases — for a typical stroke this is one to two orders of
+    // magnitude less memory.
+    const QRect diff = undoBitmap->diffBounds(*redoBitmap);
+
+    const SelectionSaveState& sel = undoState.selectionState;
+    auto selectMan = editor()->select();
+    const bool selectionUnchanged =
+        sel.bounds == selectMan->mySelectionRect()
+        && sel.rotationAngle == selectMan->myRotation()
+        && sel.scaleX == selectMan->myScaleX()
+        && sel.scaleY == selectMan->myScaleY()
+        && sel.translation == selectMan->myTranslation()
+        && sel.anchor == selectMan->currentTransformAnchor();
+
+    // A gesture that changed neither pixels nor the selection (e.g. a
+    // plain click with a drawing tool) records nothing.
+    if (diff.isEmpty() && selectionUnchanged) { return; }
+
+    // copy() returns an empty image when the source image is empty; the
+    // patch must still cover the diff region with transparency so that
+    // applying it erases (e.g. undoing the first stroke on a new frame).
+    BitmapImage undoPatch = undoBitmap->copy(diff);
+    if (!diff.isEmpty() && undoPatch.bounds() != diff) {
+        undoPatch = BitmapImage(diff, Qt::transparent);
+    }
+    BitmapImage redoPatch = redoBitmap->copy(diff);
+    if (!diff.isEmpty() && redoPatch.bounds() != diff) {
+        redoPatch = BitmapImage(diff, Qt::transparent);
+    }
+
+    BitmapReplaceCommand* element = new BitmapReplaceCommand(undoPatch,
+                                               redoPatch,
                                                undoState.layerId,
+                                               undoBitmap->pos(),
                                                description,
                                                editor());
 

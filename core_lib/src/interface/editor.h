@@ -274,6 +274,10 @@ private:
     int mAutosaveCounter = 0;
     bool mAutosaveNeverAskAgain = false;
 
+    /// True while onUndoCommandExecuted navigates; suppresses the
+    /// commit-active-selection side effects of scrubTo/layer switching.
+    bool mIsNavigatingUndoRedo = false;
+
     void makeConnections();
 
     QList<QTemporaryDir*> mTemporaryDirs;
