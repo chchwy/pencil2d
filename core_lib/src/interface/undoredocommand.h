@@ -256,6 +256,66 @@ private:
     QString newName;
 };
 
+/** Ids for QUndoStack command compression; commands without an id never merge. */
+enum UndoRedoCommandId
+{
+    OpacityCommandId = 1
+};
+
+class KeyFrameOpacityCommand : public UndoRedoCommand
+{
+public:
+    /** One opacity value per position; the lists run in parallel. */
+    KeyFrameOpacityCommand(int layerId,
+                           const QList<int>& positions,
+                           const QList<qreal>& undoOpacities,
+                           const QList<qreal>& redoOpacities,
+                           const QString& description,
+                           Editor* editor,
+                           QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+    /** Consecutive opacity changes to the same keyframes merge into one
+     *  undo step, so dragging the opacity slider doesn't flood the
+     *  history with one entry per tick. */
+    int id() const override { return OpacityCommandId; }
+    bool mergeWith(const QUndoCommand* other) override;
+
+private:
+    void apply(const QList<qreal>& opacities);
+
+    int layerId = 0;
+    QList<int> positions;
+    QList<qreal> undoOpacities;
+    QList<qreal> redoOpacities;
+};
+
+class CameraViewRectCommand : public UndoRedoCommand
+{
+public:
+    CameraViewRectCommand(int layerId,
+                          const QRect& undoViewRect,
+                          const QRect& redoViewRect,
+                          int framePosition,
+                          const QString& description,
+                          Editor* editor,
+                          QUndoCommand* parent = nullptr);
+
+    void undo() override;
+    void redo() override;
+
+private:
+    void apply(const QRect& viewRect);
+
+    int layerId = 0;
+    int framePosition = 0;
+
+    QRect undoViewRect;
+    QRect redoViewRect;
+};
+
 class CameraReplaceCommand : public UndoRedoCommand
 {
 public:

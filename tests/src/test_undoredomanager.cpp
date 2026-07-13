@@ -481,6 +481,52 @@ TEST_CASE("A selection-only change is undoable even though no pixel changed")
     REQUIRE(r == QRectF(2, 2, 10, 10));
 }
 
+TEST_CASE("Changing keyframe opacity is undoable and consecutive changes merge")
+{
+    UndoRedoTestScene scene;
+    LayerBitmap* layer = scene.bitmapLayer();
+    BitmapImage* image = layer->getBitmapImageAtFrame(1);
+    REQUIRE(image->getOpacity() == 1.0);
+
+    // Two consecutive changes to the same keyframe, recorded the way the
+    // opacity dialog does (apply first, then push old -> new).
+    image->setOpacity(0.5);
+    scene.editor->undoRedo()->push(new KeyFrameOpacityCommand(layer->id(), { 1 }, { 1.0 }, { 0.5 },
+                                                              "Change opacity", scene.editor));
+    image->setOpacity(0.25);
+    scene.editor->undoRedo()->push(new KeyFrameOpacityCommand(layer->id(), { 1 }, { 0.5 }, { 0.25 },
+                                                              "Change opacity", scene.editor));
+
+    // The commands merged: one undo restores the original value and the
+    // stack is exhausted.
+    scene.undoAction->trigger();
+    REQUIRE(layer->getBitmapImageAtFrame(1)->getOpacity() == 1.0);
+    REQUIRE_FALSE(scene.undoAction->isEnabled());
+
+    scene.redoAction->trigger();
+    REQUIRE(layer->getBitmapImageAtFrame(1)->getOpacity() == 0.25);
+}
+
+TEST_CASE("Changing the camera field size is undoable")
+{
+    UndoRedoTestScene scene;
+    LayerCamera* cameraLayer = scene.object->addNewCameraLayer();
+
+    const QRect oldViewRect = cameraLayer->getViewRect();
+    const QRect newViewRect(-320, -240, 640, 480);
+    REQUIRE(oldViewRect != newViewRect);
+
+    cameraLayer->setViewRect(newViewRect);
+    scene.editor->undoRedo()->push(new CameraViewRectCommand(cameraLayer->id(), oldViewRect, newViewRect,
+                                                             1, "Camera size change", scene.editor));
+
+    scene.undoAction->trigger();
+    REQUIRE(cameraLayer->getViewRect() == oldViewRect);
+
+    scene.redoAction->trigger();
+    REQUIRE(cameraLayer->getViewRect() == newViewRect);
+}
+
 TEST_CASE("Renaming a layer is undoable")
 {
     UndoRedoTestScene scene;

@@ -21,6 +21,7 @@ GNU General Public License for more details.
 
 #include "layermanager.h"
 #include "selectionmanager.h"
+#include "viewmanager.h"
 #include "soundmanager.h"
 
 #include "layersound.h"
@@ -551,6 +552,142 @@ void LayerRenameCommand::redo()
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
     rename(newName);
+}
+
+namespace
+{
+/** Sets a keyframe's opacity; opacity lives on the bitmap/vector image
+ *  classes, not on the KeyFrame base. */
+void setKeyFrameOpacity(const Layer* layer, KeyFrame* keyframe, qreal opacity)
+{
+    if (layer->type() == Layer::BITMAP)
+    {
+        static_cast<BitmapImage*>(keyframe)->setOpacity(opacity);
+    }
+    else if (layer->type() == Layer::VECTOR)
+    {
+        static_cast<VectorImage*>(keyframe)->setOpacity(opacity);
+    }
+}
+} // namespace
+
+KeyFrameOpacityCommand::KeyFrameOpacityCommand(int layerId,
+                                               const QList<int>& positions,
+                                               const QList<qreal>& undoOpacities,
+                                               const QList<qreal>& redoOpacities,
+                                               const QString& description,
+                                               Editor* editor,
+                                               QUndoCommand* parent) : UndoRedoCommand(editor, parent)
+{
+    Q_ASSERT(positions.size() == undoOpacities.size());
+    Q_ASSERT(positions.size() == redoOpacities.size());
+    this->layerId = layerId;
+    this->positions = positions;
+    this->undoOpacities = undoOpacities;
+    this->redoOpacities = redoOpacities;
+
+    setText(description);
+}
+
+void KeyFrameOpacityCommand::apply(const QList<qreal>& opacities)
+{
+    Layer* layer = editor()->layers()->findLayerById(layerId);
+    if (layer == nullptr) {
+        return setObsolete(true);
+    }
+
+    for (int i = 0; i < positions.size(); i++)
+    {
+        KeyFrame* keyframe = layer->getKeyFrameAt(positions.at(i));
+        if (keyframe == nullptr) { continue; }
+
+        setKeyFrameOpacity(layer, keyframe, opacities.at(i));
+        layer->markFrameAsDirty(positions.at(i));
+    }
+
+    emit editor()->framesModified();
+    editor()->undoRedo()->notifyCommandExecuted(layerId, positions.first());
+}
+
+void KeyFrameOpacityCommand::undo()
+{
+    UndoRedoCommand::undo();
+    apply(undoOpacities);
+}
+
+void KeyFrameOpacityCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    apply(redoOpacities);
+}
+
+bool KeyFrameOpacityCommand::mergeWith(const QUndoCommand* other)
+{
+    if (other->id() != id()) { return false; }
+
+    const KeyFrameOpacityCommand* otherCommand = static_cast<const KeyFrameOpacityCommand*>(other);
+
+    // Only successive changes of the same kind to the same keyframes
+    // collapse into one undo step (e.g. opacity slider ticks); the undo
+    // side keeps this command's original values.
+    if (otherCommand->layerId != layerId
+        || otherCommand->positions != positions
+        || otherCommand->text() != text())
+    {
+        return false;
+    }
+
+    redoOpacities = otherCommand->redoOpacities;
+    return true;
+}
+
+CameraViewRectCommand::CameraViewRectCommand(int layerId,
+                                             const QRect& undoViewRect,
+                                             const QRect& redoViewRect,
+                                             int framePosition,
+                                             const QString& description,
+                                             Editor* editor,
+                                             QUndoCommand* parent) : UndoRedoCommand(editor, parent)
+{
+    this->layerId = layerId;
+    this->undoViewRect = undoViewRect;
+    this->redoViewRect = redoViewRect;
+    this->framePosition = framePosition;
+
+    setText(description);
+}
+
+void CameraViewRectCommand::apply(const QRect& viewRect)
+{
+    Layer* layer = editor()->layers()->findLayerById(layerId);
+    if (layer == nullptr || layer->type() != Layer::CAMERA) {
+        return setObsolete(true);
+    }
+
+    static_cast<LayerCamera*>(layer)->setViewRect(viewRect);
+    editor()->view()->forceUpdateViewTransform();
+
+    editor()->undoRedo()->notifyCommandExecuted(layerId, framePosition);
+}
+
+void CameraViewRectCommand::undo()
+{
+    UndoRedoCommand::undo();
+    apply(undoViewRect);
+}
+
+void CameraViewRectCommand::redo()
+{
+    UndoRedoCommand::redo();
+
+    // Ignore automatic redo when added to undo stack
+    if (isFirstRedo()) { setFirstRedo(false); return; }
+
+    apply(redoViewRect);
 }
 
 CameraReplaceCommand::CameraReplaceCommand(const Camera* undoCamera,

@@ -1,4 +1,7 @@
 #include "layeropacitydialog.h"
+
+#include "undoredomanager.h"
+#include "undoredocommand.h"
 #include "ui_layeropacitydialog.h"
 
 #include "layermanager.h"
@@ -124,6 +127,33 @@ void LayerOpacityDialog::setOpacityForKeyFrame(Layer* layer, KeyFrame* keyframe,
     }
 }
 
+void LayerOpacityDialog::gatherOpacities(Layer* layer, const QList<int>& candidates,
+                                         QList<int>& positions, QList<qreal>& opacities) const
+{
+    for (int pos : candidates)
+    {
+        const KeyFrame* keyframe = layer->getKeyFrameAt(pos);
+        if (keyframe == nullptr) { continue; }
+        positions.append(pos);
+        opacities.append(getOpacityForKeyFrame(layer, keyframe));
+    }
+}
+
+void LayerOpacityDialog::recordOpacityChange(Layer* layer, const QList<int>& positions,
+                                             const QList<qreal>& oldOpacities, const QString& description)
+{
+    if (positions.isEmpty()) { return; }
+
+    QList<int> samePositions;
+    QList<qreal> newOpacities;
+    gatherOpacities(layer, positions, samePositions, newOpacities);
+    if (newOpacities == oldOpacities) { return; }
+
+    mEditor->undoRedo()->push(new KeyFrameOpacityCommand(layer->id(), positions,
+                                                         oldOpacities, newOpacities,
+                                                         description, mEditor));
+}
+
 void LayerOpacityDialog::opacitySliderChanged(int value)
 {
     ui->chooseOpacitySpinBox->setValue(value * mSpinBoxMultiplier);
@@ -153,6 +183,10 @@ void LayerOpacityDialog::fade(OpacityFadeType fadeType)
     int fadeFromPos = selectedKeys.first();
     KeyFrame* keyframe = currentLayer->getLastKeyFrameAtPosition(fadeFromPos);
     if (keyframe == nullptr) { return; }
+
+    QList<int> recordPositions;
+    QList<qreal> oldOpacities;
+    gatherOpacities(currentLayer, selectedKeys, recordPositions, oldOpacities);
 
     qreal initialOpacity = getOpacityForKeyFrame(currentLayer, keyframe);
 
@@ -198,6 +232,8 @@ void LayerOpacityDialog::fade(OpacityFadeType fadeType)
         }
         setOpacityForKeyFrame(currentLayer, keyframe, newOpacity);
     }
+
+    recordOpacityChange(currentLayer, recordPositions, oldOpacities, tr("Fade opacity"));
 
     keyframe = currentLayer->getLastKeyFrameAtPosition(mEditor->currentFrame());
 
@@ -302,8 +338,14 @@ void LayerOpacityDialog::setOpacityForCurrentKeyframe()
     KeyFrame* keyframe = currentLayer->getLastKeyFrameAtPosition(mEditor->currentFrame());
     if (keyframe == nullptr) { return; }
 
+    QList<int> positions;
+    QList<qreal> oldOpacities;
+    gatherOpacities(currentLayer, { keyframe->pos() }, positions, oldOpacities);
+
     qreal opacity = ui->chooseOpacitySlider->value() / mMultiplier;
     setOpacityForKeyFrame(currentLayer, keyframe, opacity);
+
+    recordOpacityChange(currentLayer, positions, oldOpacities, tr("Change opacity"));
 
     emit mEditor->framesModified();
 }
@@ -317,6 +359,10 @@ void LayerOpacityDialog::setOpacityForSelectedKeyframes()
 
     if (frames.isEmpty()) { return; }
 
+    QList<int> positions;
+    QList<qreal> oldOpacities;
+    gatherOpacities(currentLayer, frames, positions, oldOpacities);
+
     qreal opacity = static_cast<qreal>(ui->chooseOpacitySlider->value()) / mMultiplier;
 
     for (int pos : frames)
@@ -327,6 +373,8 @@ void LayerOpacityDialog::setOpacityForSelectedKeyframes()
         setOpacityForKeyFrame(currentLayer, keyframe, opacity);
     }
 
+    recordOpacityChange(currentLayer, positions, oldOpacities, tr("Change opacity"));
+
     emit mEditor->framesModified();
 }
 
@@ -335,6 +383,14 @@ void LayerOpacityDialog::setOpacityForLayer()
     Layer* currentLayer = mLayerManager->currentLayer();
     if (currentLayer == nullptr) { return; }
 
+    QList<int> candidates;
+    currentLayer->foreachKeyFrame([&candidates](KeyFrame* keyframe) {
+        candidates.append(keyframe->pos());
+    });
+    QList<int> positions;
+    QList<qreal> oldOpacities;
+    gatherOpacities(currentLayer, candidates, positions, oldOpacities);
+
     qreal opacity = static_cast<qreal>(ui->chooseOpacitySlider->value()) / mMultiplier;
 
     currentLayer->foreachKeyFrame([this, currentLayer, opacity](KeyFrame* keyframe) {
@@ -342,6 +398,8 @@ void LayerOpacityDialog::setOpacityForLayer()
 
         setOpacityForKeyFrame(currentLayer, keyframe, opacity);
     });
+
+    recordOpacityChange(currentLayer, positions, oldOpacities, tr("Change opacity"));
 
     emit mEditor->framesModified();
 }
