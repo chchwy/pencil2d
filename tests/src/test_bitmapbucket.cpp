@@ -16,7 +16,8 @@
 void dragAndFill(QPointF movePoint, Editor* editor, QColor color, QRect bounds, BucketToolProperties properties, int fillCountThreshold) {
     int moveX = 0;
 
-    BitmapBucket bucket = BitmapBucket(editor, color, bounds, movePoint, properties);
+    BitmapBucket bucket = BitmapBucket(editor->object(), editor->currentLayerIndex(), editor->currentFrame(),
+                                       color, bounds, movePoint, properties);
     QPointF movingPoint = movePoint;
 
     int fillCount = 0;

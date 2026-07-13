@@ -105,7 +105,9 @@ void BucketTool::pointerPressEvent(PointerEvent* event)
     LayerCamera* layerCam = mEditor->layers()->getCameraLayerBelow(mEditor->currentLayerIndex());
 
     mUndoTransaction = mEditor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
-    mBitmapBucket = BitmapBucket(mEditor,
+    mBitmapBucket = BitmapBucket(mEditor->object(),
+                                 mEditor->currentLayerIndex(),
+                                 mEditor->currentFrame(),
                                  mEditor->color()->frontColor(),
                                  layerCam ? layerCam->getViewAtFrame(mEditor->currentFrame()).inverted().mapRect(layerCam->getViewRect()) : QRect(),
                                  getCurrentPoint(),
