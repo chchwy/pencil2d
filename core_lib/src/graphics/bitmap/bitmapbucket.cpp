@@ -21,7 +21,6 @@ GNU General Public License for more details.
 #include <QtMath>
 #include <QDebug>
 
-#include "layermanager.h"
 
 #include "layerbitmap.h"
 
