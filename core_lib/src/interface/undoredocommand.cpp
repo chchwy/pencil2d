@@ -281,49 +281,61 @@ void MoveKeyFramesCommand::redo()
 
     emit editor()->framesModified();
 }
-BitmapReplaceCommand::BitmapReplaceCommand(const BitmapImage* undoBitmap,
-                             const BitmapImage* redoBitmap,
+BitmapReplaceCommand::BitmapReplaceCommand(const BitmapImage& undoSubImage,
+                             const BitmapImage& redoSubImage,
                              const int layerId,
+                             const int framePosition,
                              const QString& description,
                              Editor *editor,
                              QUndoCommand *parent) : UndoRedoCommand(editor, parent)
 {
-    this->undoBitmap = *undoBitmap;
-    this->redoBitmap = *redoBitmap;
+    this->undoSubImage = undoSubImage;
+    this->redoSubImage = redoSubImage;
     this->layerId = layerId;
+    this->framePosition = framePosition;
 
     setText(description);
 }
 
-void BitmapReplaceCommand::undo()
+void BitmapReplaceCommand::applySubImage(const BitmapImage& subImage)
 {
     Layer* layer = editor()->layers()->findLayerById(layerId);
-    if (!layer) {
+    if (layer == nullptr || layer->type() != Layer::BITMAP) {
         return setObsolete(true);
     }
 
+    BitmapImage* liveImage = static_cast<LayerBitmap*>(layer)->getLastBitmapImageAtFrame(framePosition);
+    if (liveImage == nullptr) {
+        return setObsolete(true);
+    }
+
+    // CompositionMode_Source overwrites the changed region outright,
+    // including writing transparency back — which is how undoing a stroke
+    // erases it. Outside the sub-image the two states were identical.
+    BitmapImage sourcePatch = subImage; // paste() needs a mutable image
+    if (!sourcePatch.bounds().isEmpty())
+    {
+        liveImage->paste(&sourcePatch, QPainter::CompositionMode_Source);
+    }
+
+    editor()->undoRedo()->notifyCommandExecuted(layerId, framePosition);
+}
+
+void BitmapReplaceCommand::undo()
+{
     UndoRedoCommand::undo();
 
-    static_cast<LayerBitmap*>(layer)->replaceKeyFrame(&undoBitmap);
-
-    editor()->undoRedo()->notifyCommandExecuted(layerId, undoBitmap.pos());
+    applySubImage(undoSubImage);
 }
 
 void BitmapReplaceCommand::redo()
 {
-    Layer* layer = editor()->layers()->findLayerById(layerId);
-    if (!layer) {
-        return setObsolete(true);
-    }
-
     UndoRedoCommand::redo();
 
     // Ignore automatic redo when added to undo stack
     if (isFirstRedo()) { setFirstRedo(false); return; }
 
-    static_cast<LayerBitmap*>(layer)->replaceKeyFrame(&redoBitmap);
-
-    editor()->undoRedo()->notifyCommandExecuted(layerId, redoBitmap.pos());
+    applySubImage(redoSubImage);
 }
 
 VectorReplaceCommand::VectorReplaceCommand(const VectorImage* undoVector,

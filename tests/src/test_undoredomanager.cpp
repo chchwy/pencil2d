@@ -31,6 +31,7 @@ GNU General Public License for more details.
 #include "layermanager.h"
 #include "soundmanager.h"
 #include "clipboardmanager.h"
+#include "selectionmanager.h"
 #include "undoredomanager.h"
 #include "undoredocommand.h"
 #include "layerbitmap.h"
@@ -444,6 +445,40 @@ TEST_CASE("Undo navigates to the affected layer and frame")
     scene.undoAction->trigger();
     REQUIRE(scene.editor->layers()->currentLayer() == firstLayer);
     REQUIRE(scene.editor->currentFrame() == 1);
+}
+
+TEST_CASE("A gesture that changes nothing records nothing")
+{
+    UndoRedoTestScene scene;
+
+    UndoTransaction transaction = scene.editor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
+    REQUIRE(transaction.isActive());
+    // No pixels touched, no selection change — e.g. a plain click with a
+    // drawing tool.
+    transaction.commit("click");
+
+    REQUIRE_FALSE(scene.editor->undoRedo()->hasUnsavedChanges());
+    REQUIRE_FALSE(scene.undoAction->isEnabled());
+}
+
+TEST_CASE("A selection-only change is undoable even though no pixel changed")
+{
+    UndoRedoTestScene scene;
+    auto selectMan = scene.editor->select();
+
+    UndoTransaction transaction = scene.editor->undoRedo()->beginTransaction(UndoRedoRecordType::KEYFRAME_MODIFY);
+    selectMan->setSelection(QRectF(2, 2, 10, 10));
+    transaction.commit("selection");
+
+    REQUIRE(scene.editor->undoRedo()->hasUnsavedChanges());
+
+    scene.undoAction->trigger();
+    REQUIRE(selectMan->mySelectionRect() == QRectF());
+
+    scene.redoAction->trigger();
+    QRectF r = selectMan->mySelectionRect();
+    INFO("rect: " << r.x() << "," << r.y() << " " << r.width() << "x" << r.height());
+    REQUIRE(r == QRectF(2, 2, 10, 10));
 }
 
 TEST_CASE("Renaming a layer is undoable")

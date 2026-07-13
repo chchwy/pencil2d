@@ -135,12 +135,21 @@ void Editor::onUndoCommandExecuted(int layerId, int framePosition)
     // Navigate to what the undo/redo just changed, so the user sees the
     // effect. This is the UI-side reaction to commands' notifications; the
     // commands themselves only touch the model.
+    //
+    // Navigating normally commits an active selection transformation
+    // (scrubTo / onCurrentLayerWillChange). During undo/redo that would
+    // destroy the selection state the command just restored — and mutate
+    // pixels behind the undo stack's back — so it is suppressed here.
+    mIsNavigatingUndoRedo = true;
+
     Layer* layer = layers()->findLayerById(layerId);
     if (layer != nullptr && layers()->currentLayer() != layer)
     {
         layers()->setCurrentLayer(layer);
     }
     scrubTo(framePosition);
+
+    mIsNavigatingUndoRedo = false;
 }
 
 void Editor::settingUpdated(SETTING setting)
@@ -173,7 +182,7 @@ void Editor::onCurrentLayerWillChange(int index)
 {
     Q_UNUSED(index)
 
-    if (select() && select()->somethingSelected()) {
+    if (!mIsNavigatingUndoRedo && select() && select()->somethingSelected()) {
         static_cast<MoveTool*>(tools()->getTool(MOVE))->applyTransformationAndDeselect();
     }
 }
@@ -886,7 +895,7 @@ void Editor::setCurrentLayerIndex(int i)
 
 void Editor::scrubTo(int frame)
 {
-    if (select() && select()->somethingSelected()) {
+    if (!mIsNavigatingUndoRedo && select() && select()->somethingSelected()) {
         static_cast<MoveTool*>(tools()->getTool(MOVE))->applyTransformationAndDeselect();
     }
 

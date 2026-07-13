@@ -194,6 +194,33 @@ BitmapImage BitmapImage::copy(QRect rectangle)
     return result;
 }
 
+QRect BitmapImage::diffBounds(const BitmapImage& other) const
+{
+    const QRect united = mBounds.united(other.mBounds);
+
+    int minX = INT_MAX, minY = INT_MAX;
+    int maxX = INT_MIN, maxY = INT_MIN;
+    for (int y = united.top(); y <= united.bottom(); y++)
+    {
+        for (int x = united.left(); x <= united.right(); x++)
+        {
+            if (constScanLine(x, y) != other.constScanLine(x, y))
+            {
+                minX = qMin(minX, x);
+                maxX = qMax(maxX, x);
+                minY = qMin(minY, y);
+                maxY = qMax(maxY, y);
+            }
+        }
+    }
+
+    if (maxX < minX)
+    {
+        return QRect();
+    }
+    return QRect(QPoint(minX, minY), QPoint(maxX, maxY));
+}
+
 void BitmapImage::paste(BitmapImage* bitmapImage, QPainter::CompositionMode cm)
 {
     if(bitmapImage->width() <= 0 || bitmapImage->height() <= 0)

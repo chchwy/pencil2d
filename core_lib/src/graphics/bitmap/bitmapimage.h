@@ -69,6 +69,12 @@ public:
     void paste(BitmapImage*, QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver);
     void paste(const TiledBuffer* tiledBuffer, QPainter::CompositionMode cm = QPainter::CompositionMode_SourceOver);
 
+    /** Returns the bounding rectangle (in canvas coordinates) of all pixels
+     *  that differ between this image and the other; an empty rect when the
+     *  images are identical. Pixels outside either image's bounds count as
+     *  transparent. */
+    QRect diffBounds(const BitmapImage& other) const;
+
     void moveTopLeft(QPoint point);
     void moveTopLeft(QPointF point) { moveTopLeft(point.toPoint()); }
     void transform(QRect rectangle, bool smoothTransform);

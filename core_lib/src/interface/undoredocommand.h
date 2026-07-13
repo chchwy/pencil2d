@@ -128,9 +128,13 @@ class BitmapReplaceCommand : public UndoRedoCommand
 {
 
 public:
-    BitmapReplaceCommand(const BitmapImage* undoBitmap,
-                  const BitmapImage* redoBitmap,
+    /** The sub-images cover only the region that actually changed (the
+     *  diff bounding box), not the whole canvas; they may be empty when
+     *  the command only carries a selection-transform child. */
+    BitmapReplaceCommand(const BitmapImage& undoSubImage,
+                  const BitmapImage& redoSubImage,
                   const int layerId,
+                  const int framePosition,
                   const QString& description,
                   Editor* editor,
                   QUndoCommand* parent = nullptr);
@@ -139,10 +143,13 @@ public:
     void redo() override;
 
 private:
-    int layerId = 0;
+    void applySubImage(const BitmapImage& subImage);
 
-    BitmapImage undoBitmap;
-    BitmapImage redoBitmap;
+    int layerId = 0;
+    int framePosition = 0;
+
+    BitmapImage undoSubImage;
+    BitmapImage redoSubImage;
 };
 
 class VectorReplaceCommand : public UndoRedoCommand
