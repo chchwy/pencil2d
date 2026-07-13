@@ -58,6 +58,7 @@ set(CORE_LIB_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/layersound.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/layervector.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/object.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/paletteio.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/objectdata.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/pegbaraligner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/soundclip.h
@@ -155,6 +156,7 @@ set(CORE_LIB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/layersound.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/layervector.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/object.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/paletteio.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/objectdata.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/pegbaraligner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core_lib/src/structure/soundclip.cpp
