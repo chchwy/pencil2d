@@ -17,6 +17,7 @@ GNU General Public License for more details.
 #include "object.h"
 
 #include "paletteio.h"
+#include "workingdirectory.h"
 
 #include <QDomDocument>
 #include <QTextStream>
@@ -24,7 +25,6 @@ GNU General Public License for more details.
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
-#include <QLockFile>
 #include <QDateTime>
 #include <QRegularExpression>
 
@@ -84,7 +84,7 @@ bool Object::loadXML(const QDomElement& docElem, ProgressCallback progressForwar
         return false;
     }
 
-    const QString dataDirPath = mDataDirPath;
+    const QString dataDirPath = dataDir();
 
     for (QDomNode node = docElem.firstChild(); !node.isNull(); node = node.nextSibling())
     {
@@ -170,69 +170,18 @@ void Object::createWorkingDir()
         QFileInfo fileInfo(mFilePath);
         projectName = fileInfo.completeBaseName();
     }
-    QDir dir(QDir::tempPath());
 
-    QString strWorkingDir;
-    do
-    {
-        strWorkingDir = QString("%1/Pencil2D/%2_%3_%4/").arg(QDir::tempPath(),
-                                                             projectName,
-                                                             PFF_TMP_DECOMPRESS_EXT,
-                                                             uniqueString(8));
-    }
-    while(dir.exists(strWorkingDir));
-
-    dir.mkpath(strWorkingDir);
-    mWorkingDirPath = strWorkingDir;
-
-    // Mark the working dir as owned by this process, so that the startup
-    // recovery scan of other instances leaves it alone.
-    mWorkingDirLock.reset(new QLockFile(QDir(strWorkingDir).filePath(PFF_WORKING_DIR_LOCK_FILE)));
-    mWorkingDirLock->setStaleLockTime(0); // stale = owning process is gone, never by age
-    if (!mWorkingDirLock->tryLock(0))
-    {
-        qWarning() << "Could not lock the working directory:" << strWorkingDir;
-    }
-
-    QDir dataDir(strWorkingDir + PFF_DATA_DIR);
-    dataDir.mkpath(".");
-
-    mDataDirPath = dataDir.absolutePath();
+    mWorkingDir.create(projectName);
 }
 
 void Object::deleteWorkingDir() const
 {
-    // Release the lock before deleting the dir, otherwise the open lock
-    // file keeps the directory from being removed on Windows.
-    mWorkingDirLock.reset();
-
-    if (!mWorkingDirPath.isEmpty())
-    {
-        QDir dir(mWorkingDirPath);
-        if (!dir.removeRecursively())
-        {
-            // Not fatal: the temp dir is leaked and will be cleaned up
-            // by a later startup scan.
-            qWarning() << "Could not remove the working directory:" << mWorkingDirPath;
-        }
-    }
+    mWorkingDir.remove();
 }
 
 void Object::setWorkingDir(const QString& path)
 {
-    if (!QDir(path).exists())
-    {
-        qWarning() << "setWorkingDir: directory does not exist:" << path;
-    }
-    mWorkingDirPath = path;
-
-    // Take ownership of an adopted working dir (e.g. a recovered project).
-    mWorkingDirLock.reset(new QLockFile(QDir(path).filePath(PFF_WORKING_DIR_LOCK_FILE)));
-    mWorkingDirLock->setStaleLockTime(0);
-    if (!mWorkingDirLock->tryLock(0))
-    {
-        qWarning() << "Could not lock the working directory:" << path;
-    }
+    mWorkingDir.setPath(path);
 }
 
 int Object::getMaxLayerID()
@@ -641,7 +590,7 @@ QString Object::copyFileToDataFolder(const QString& strFilePath)
     sNewFileName += QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss_zzz.");
     sNewFileName += QFileInfo(strFilePath).suffix();
 
-    QString destFile = QDir(mDataDirPath).filePath(sNewFileName);
+    QString destFile = QDir(dataDir()).filePath(sNewFileName);
 
     if (QFile::exists(destFile))
     {

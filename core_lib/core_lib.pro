@@ -74,6 +74,7 @@ HEADERS +=  \
     src/structure/soundclip.h \
     src/structure/object.h \
     src/structure/paletteio.h \
+    src/structure/workingdirectory.h \
     src/structure/objectdata.h \
     src/structure/filemanager.h \
     src/tool/basetool.h \
@@ -168,6 +169,7 @@ SOURCES +=  src/graphics/bitmap/bitmapimage.cpp \
     src/structure/layervector.cpp \
     src/structure/object.cpp \
     src/structure/paletteio.cpp \
+    src/structure/workingdirectory.cpp \
     src/structure/pegbaraligner.cpp \
     src/structure/soundclip.cpp \
     src/structure/objectdata.cpp \

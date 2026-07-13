@@ -27,9 +27,9 @@ GNU General Public License for more details.
 #include "pencilerror.h"
 #include "pencildef.h"
 #include "objectdata.h"
+#include "workingdirectory.h"
 
 class QFile;
-class QLockFile;
 class LayerBitmap;
 class LayerVector;
 class LayerCamera;
@@ -58,10 +58,10 @@ public:
     QString filePath() const { return mFilePath; }
     void    setFilePath(const QString& strFileName) { mFilePath = strFileName; }
 
-    QString workingDir() const { return mWorkingDirPath; }
+    QString workingDir() const { return mWorkingDir.path(); }
 
-    QString dataDir() const { return mDataDirPath; }
-    void    setDataDir(const QString& dirPath) { mDataDirPath = dirPath; }
+    QString dataDir() const { return mWorkingDir.dataPath(); }
+    void    setDataDir(const QString& dirPath) { mWorkingDir.setDataPath(dirPath); }
 
     QString mainXMLFile() const { return mMainXMLFile; }
     void    setMainXMLFile(const QString& file) { mMainXMLFile = file; }
@@ -170,9 +170,11 @@ private:
     int getMaxLayerID();
 
     QString mFilePath;       //< where this object come from. (empty if new project)
-    QString mWorkingDirPath; //< the folder that pclx will uncompress to.
-    QString mDataDirPath;    //< the folder which contains all bitmap & vector image & sound files.
     QString mMainXMLFile;    //< the location of main.xml
+
+    /// The folder the pclx is uncompressed to for editing, including its
+    /// data/ subfolder with all bitmap, vector and sound files.
+    mutable WorkingDirectory mWorkingDir;
 
     QList<Layer*> mLayers;
     bool modified = false;
@@ -181,10 +183,6 @@ private:
 
     ObjectData mData;
     mutable std::unique_ptr<ActiveFramePool> mActiveFramePool;
-
-    // Held for the lifetime of the working dir so other instances (and the
-    // startup recovery scan) can tell that the dir belongs to a live process.
-    mutable std::unique_ptr<QLockFile> mWorkingDirLock;
 };
 
 
