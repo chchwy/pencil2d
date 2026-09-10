@@ -485,7 +485,16 @@ TEST_CASE("Atomic save data safety")
 
         // Sabotage the save: the working dir is gone, so the next save must
         // fail *before* it touches the existing project file.
-        QDir(o->workingDir()).removeRecursively();
+        //
+        // Go through Object's own teardown instead of QDir::removeRecursively():
+        // it drops the working-dir lock first. A raw removal leaves that lock
+        // file open, and Windows refuses to delete an open file, so the working
+        // dir would survive, the save would legitimately succeed, and the
+        // REQUIRE(!st.ok()) below would fail on Windows only.
+        const QString workingDirPath = o->workingDir();
+        o->deleteWorkingDir();
+        REQUIRE_FALSE(QDir(workingDirPath).exists());
+
         Status st = fm.save(o, animationPath);
         delete o;
 
