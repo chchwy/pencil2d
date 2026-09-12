@@ -846,7 +846,7 @@ void ActionCommands::moveFrameForward()
     Layer* layer = mEditor->layers()->currentLayer();
     if (layer == nullptr) { return; }
 
-    // Prevent moving keyframe if the layer is not visible, as it can cause confusion to users when they don't see their keyframe move.
+    // Hidden layer: warn and abort. The user would not see the keyframe move.
     if (!layer->visible()) {
         mEditor->getScribbleArea()->showLayerNotVisibleWarning();
         return;
@@ -865,7 +865,7 @@ void ActionCommands::moveFrameBackward()
     Layer* layer = mEditor->layers()->currentLayer();
     if (layer == nullptr) { return; }
 
-    // Moving keyframes on hidden layers is not allowed, as it can cause confusion. We show a warning to the user to let them know they need to unhide the layer first.
+    // Hidden layer: warn and abort. The user would not see the keyframe move.
     if (!layer->visible()) {
         mEditor->getScribbleArea()->showLayerNotVisibleWarning();
         return;

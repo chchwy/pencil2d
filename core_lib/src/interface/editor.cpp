@@ -237,13 +237,16 @@ void Editor::copyAndCut()
 void Editor::pasteFromPreviousFrame()
 {
     Layer* currentLayer = layers()->currentLayer();
+    if (currentLayer == nullptr) { return; }
+
     int prevFrame = currentLayer->getPreviousKeyFramePosition(mFrame);
     if (!currentLayer->keyExists(mFrame) || prevFrame == mFrame)
     {
         return;
     }
 
-    // Prevents pasting on an invisible layer, as this is likely a mistake and can be confusing for users, so show a warning and prevent the action
+    // Hidden layer: warn and abort. Checked after the early exits above so that having
+    // nothing to paste from does not produce a warning about visibility.
     if (!currentLayer->visible()) {
         mScribbleArea->showLayerNotVisibleWarning();
         return;
@@ -363,7 +366,7 @@ void Editor::paste()
 
     if (!canPaste()) { return; }
 
-    // Prevents pasting on an invisible layer, as this is likely a mistake and can be confusing for users, so show a warning and prevent the action
+    // Hidden layer: warn and abort.
     if (!currentLayer->visible()) {
         mScribbleArea->showLayerNotVisibleWarning();
         return;
@@ -816,15 +819,15 @@ Status Editor::importAnimatedImage(const QString& filePath, int frameSpacing, co
 void Editor::selectAll() const
 {
     Layer* layer = layers()->currentLayer();
+    if (layer == nullptr) { return; }
 
-    QRectF rect;
-    
-    // Prevents Selection of an invisible layer, as this is likely a mistake and can be confusing for users, so show a warning and prevent the action
+    // Hidden layer: warn and abort.
     if (!layer->visible()) {
         mScribbleArea->showLayerNotVisibleWarning();
         return;
     }
 
+    QRectF rect;
     if (layer->type() == Layer::BITMAP)
     {
         // Selects the drawn area (bigger or smaller than the screen). It may be more accurate to select all this way
@@ -1007,10 +1010,15 @@ void Editor::scrubPreviousKeyFrame()
 void Editor::switchVisibilityOfLayer(int layerNumber)
 {
     Layer* layer = mObject->getLayer(layerNumber);
-    if (layer != nullptr) layer->switchVisibility();
+    if (layer != nullptr)
+    {
+        layer->switchVisibility();
 
-    // Deselect all to prevent confusion, as the user might have selected something on a layer that is now invisible, and this could lead to confusion
-    deselectAll();
+        // A selection on a layer that just became hidden can no longer be seen or acted
+        // on, so drop it. Showing a layer, or toggling one the user is not drawing on,
+        // leaves the selection alone: deselectAll() always acts on the current layer.
+        if (!layer->visible() && layerNumber == currentLayerIndex()) { deselectAll(); }
+    }
 
     mScribbleArea->onLayerChanged();
 

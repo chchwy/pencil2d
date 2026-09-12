@@ -1474,7 +1474,7 @@ void ScribbleArea::clearImage()
     Layer* layer = mEditor->layers()->currentLayer();
     if (layer == nullptr) { return; }
 
-    // Clearing an invisible layer is likely a mistake, so show a warning and prevent the action
+    // Hidden layer: warn and abort.
     if (!layer->visible()) {
         showLayerNotVisibleWarning();
         return;
