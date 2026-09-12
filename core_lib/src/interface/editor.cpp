@@ -215,9 +215,17 @@ void Editor::copy()
 
 void Editor::copyAndCut()
 {
-    copy();
-
     Layer* currentLayer = layers()->currentLayer();
+    if (currentLayer == nullptr) { return; }
+
+    // Hidden layer: warn and abort. Checked before copy() so a blocked cut leaves the
+    // clipboard untouched rather than copying and then failing to remove anything.
+    if (!currentLayer->visible()) {
+        mScribbleArea->showLayerNotVisibleWarning();
+        return;
+    }
+
+    copy();
 
     if (currentLayer->hasAnySelectedFrames() && !select()->somethingSelected()) {
         for (int pos : currentLayer->selectedKeyFramesPositions()) {
@@ -395,6 +403,15 @@ void Editor::paste()
 
 void Editor::flipSelection(bool flipVertical)
 {
+    Layer* currentLayer = layers()->currentLayer();
+    if (currentLayer == nullptr) { return; }
+
+    // Hidden layer: warn and abort.
+    if (!currentLayer->visible()) {
+        mScribbleArea->showLayerNotVisibleWarning();
+        return;
+    }
+
     if (flipVertical) {
         backup(tr("Flip selection vertically"));
     } else {
