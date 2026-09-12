@@ -1479,6 +1479,52 @@ QList<VertexRef> VectorImage::getVerticesCloseTo(QPointF P1, qreal maxDistance)
 
 /**
  * @brief VectorImage::getVerticesCloseTo
+ * Vertices within maxDistance of the segment from segmentStart to segmentEnd, measured
+ * perpendicular to the segment and capped at its endpoints. A degenerate segment
+ * (segmentStart == segmentEnd) reduces to the point query above.
+ * @param segmentStart: QPointF
+ * @param segmentEnd: QPointF
+ * @param maxDistance: qreal
+ * @return QList of VertexRef
+ */
+QList<VertexRef> VectorImage::getVerticesCloseTo(QPointF segmentStart, QPointF segmentEnd, qreal maxDistance)
+{
+    QList<VertexRef> result;
+
+    // Squared throughout, so no square root is needed per vertex
+    maxDistance *= maxDistance;
+
+    const QPointF segment = segmentEnd - segmentStart;
+    const qreal segmentLengthSquared = QPointF::dotProduct(segment, segment);
+
+    for (int curve = 0; curve < mCurves.size(); curve++)
+    {
+        for (int vertex = -1; vertex < mCurves.at(curve).getVertexSize(); vertex++)
+        {
+            const QPointF P = getVertex(curve, vertex);
+
+            // Project P onto the segment and clamp to it, so t == 0 and t == 1 give the
+            // endpoints and anything between gives the perpendicular foot.
+            qreal t = 0;
+            if (segmentLengthSquared > 0)
+            {
+                t = QPointF::dotProduct(P - segmentStart, segment) / segmentLengthSquared;
+                t = qBound(0.0, t, 1.0);
+            }
+
+            const QPointF closest = segmentStart + t * segment;
+            const QPointF offset = P - closest;
+            if (QPointF::dotProduct(offset, offset) < maxDistance)
+            {
+                result.append(VertexRef(curve, vertex));
+            }
+        }
+    }
+    return result;
+}
+
+/**
+ * @brief VectorImage::getVerticesCloseTo
  * @param P1: QPointF
  * @param maxDistance: qreal
  * @param listOfPoints: QList<VertexRef>*

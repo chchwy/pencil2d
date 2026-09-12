@@ -100,6 +100,7 @@ void EraserTool::pointerPressEvent(PointerEvent *event)
     startStroke(event->inputType());
     mLastBrushPoint = getCurrentPoint();
     mMouseDownPoint = getCurrentPoint();
+    beginVectorStroke();
 
     StrokeTool::pointerPressEvent(event);
 }
@@ -238,6 +239,32 @@ void EraserTool::drawStroke()
     }
 }
 
+VectorImage* EraserTool::currentVectorImage() const
+{
+    Layer* layer = mEditor->layers()->currentLayer();
+    if (layer == nullptr || layer->type() != Layer::VECTOR) { return nullptr; }
+
+    // Can be null if the first frame is deleted while drawing
+    return static_cast<LayerVector*>(layer)->getLastVectorImageAtFrame(mEditor->currentFrame());
+}
+
+/**
+ * @brief EraserTool::beginVectorStroke
+ * On a vector layer the eraser does not paint: it marks the vertices the brush touches as
+ * selected, and pointerReleaseEvent() deletes them. That selection is therefore per-stroke
+ * state and has to be reset when the stroke begins -- otherwise a click that never moves
+ * would delete whatever the previous stroke left selected. Picking up the vertices under
+ * the press point here is also what makes a plain click erase.
+ */
+void EraserTool::beginVectorStroke()
+{
+    VectorImage* currKey = currentVectorImage();
+    if (currKey == nullptr) { return; }
+
+    currKey->deselectAll();
+    currKey->setSelected(currKey->getVerticesCloseTo(getCurrentPoint(), getCurrentPoint(), mSettings.width() / 2), true);
+}
+
 void EraserTool::removeVectorPaint()
 {
     Layer* layer = mEditor->layers()->currentLayer();
@@ -265,13 +292,14 @@ void EraserTool::updateStrokes()
 
     if (layer->type() == Layer::VECTOR)
     {
-        qreal radius = mSettings.width() / 2;
+        VectorImage* currKey = currentVectorImage();
+        if (currKey == nullptr) { return; }
 
-        VectorImage* currKey = static_cast<VectorImage*>(layer->getLastKeyFrameAtPosition(mEditor->currentFrame()));
-        QList<VertexRef> nearbyVertices = currKey->getVerticesCloseTo(getCurrentPoint(), radius);
-        for (auto nearbyVertice : nearbyVertices)
-        {
-            currKey->setSelected(nearbyVertice, true);
-        }
+        // Ask which vertices the brush swept over since the previous event, not which ones
+        // sit near the current point. When the pointer moves fast the gap between two
+        // events is far wider than the brush, and a point query misses everything the
+        // brush passed over in between.
+        currKey->setSelected(currKey->getVerticesCloseTo(mLastBrushPoint, getCurrentPoint(), mSettings.width() / 2), true);
+        mLastBrushPoint = getCurrentPoint();
     }
 }
