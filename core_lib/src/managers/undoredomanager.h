@@ -138,7 +138,11 @@ public:
     /** Checks whether there are unsaved changes.
      *  @return true if there are unsaved changes, otherwise false */
     bool hasUnsavedChanges() const;
-    bool isFirstRedoInProgress() const { return mFirstUndoInProgress; }
+    /** Whether we are inside the synthetic redo() that QUndoStack::push() performs.
+     *  Commands check this to skip that first redo, because the caller has already
+     *  performed the operation being recorded.
+     *  @return true while pushCommand() is pushing, otherwise false */
+    bool isFirstRedoInProgress() const { return mFirstRedoInProgress; }
 
     /** Prepares and returns an save state with common data
      * @return A UndoSaveState struct with common keyframe data */
@@ -221,7 +225,7 @@ private:
     SAVESTATE_ID mSaveStateId = 1;
 
     bool mNewBackupSystemEnabled = false;
-    bool mFirstUndoInProgress = false;
+    bool mFirstRedoInProgress = false;
 };
 
 #endif // UNDOREDOMANAGER_H
