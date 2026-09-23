@@ -401,6 +401,108 @@ TEST_CASE("FileManager File-saving")
     }
 }
 
+TEST_CASE("Saving recovers after a keyframe move failed half-way")
+{
+    // Keyframes that were moved but not redrawn get their files renamed on
+    // save, via a temporary name. If one rename fails (say a virus scanner
+    // holds the file), that save must fail without losing any keyframe, and
+    // once the file is free again, saving must work again.
+    FileManager fm;
+
+    Object* o1 = new Object;
+    o1->init();
+    o1->addNewCameraLayer();
+    o1->addNewBitmapLayer();
+    LayerBitmap* layer = static_cast<LayerBitmap*>(o1->getLayer(1));
+
+    // Three square keyframes of different sizes, so each can be told apart
+    // after reload. Frame 1 already holds the layer's initial, empty keyframe.
+    int sizes[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        REQUIRE(layer->addNewKeyFrameAt(i + 2));
+        BitmapImage* b = layer->getBitmapImageAtFrame(i + 2);
+        const int side = 10 * (i + 1);
+        b->drawRect(QRectF(0, 0, side, side), QPen(Qt::NoPen), QBrush(Qt::red),
+                    QPainter::CompositionMode_SourceOver, false);
+        sizes[i] = b->image()->width(); // drawRect pads the bounds a little
+    }
+
+    QTemporaryDir testDir("PENCIL_TEST_XXXXXXXX");
+    const QString animationPath = testDir.path() + "/moved.pclx";
+    REQUIRE(fm.save(o1, animationPath).ok());
+    delete o1;
+
+    Object* o2 = fm.load(animationPath);
+    REQUIRE(o2 != nullptr);
+    layer = static_cast<LayerBitmap*>(o2->getLayer(1));
+    for (int i = 2; i <= 4; ++i)
+        layer->setFrameSelected(i, true);
+    REQUIRE(layer->moveSelectedFrames(10));
+
+    // Take the middle keyframe's file away for one save. Whichever order the
+    // keyframes are processed in, one of the others is renamed before this fails.
+    const QString middleFile = layer->getBitmapImageAtFrame(13)->fileName();
+    const QString parkedFile = middleFile + ".parked";
+    REQUIRE(QFile::rename(middleFile, parkedFile));
+
+    REQUIRE_FALSE(fm.save(o2, animationPath).ok());
+
+    REQUIRE(QFile::rename(parkedFile, middleFile));
+
+    // Frame position -> expected image size after a save and reload.
+    std::map<int, int> expected = { { 12, sizes[0] }, { 13, sizes[1] }, { 14, sizes[2] } };
+
+    SECTION("The next save succeeds and keeps every image")
+    {
+    }
+
+    SECTION("The next save succeeds after the half-moved keyframes are moved again")
+    {
+        // Find the keyframe the failed save left under a temporary name.
+        int stagedPos = 0;
+        for (int pos : { 12, 14 })
+        {
+            if (QFileInfo(layer->getBitmapImageAtFrame(pos)->fileName()).fileName().startsWith("t_"))
+                stagedPos = pos;
+        }
+        REQUIRE(stagedPos != 0);
+        const int otherPos = (stagedPos == 12) ? 14 : 12;
+
+        // Move it away, then move another keyframe into its old position. That
+        // keyframe's temporary name is now taken by the only copy of the first
+        // keyframe's image, which must not be overwritten.
+        layer->deselectAll();
+        layer->setFrameSelected(stagedPos, true);
+        REQUIRE(layer->moveSelectedFrames(20 - stagedPos));
+        layer->deselectAll();
+        layer->setFrameSelected(otherPos, true);
+        REQUIRE(layer->moveSelectedFrames(stagedPos - otherPos));
+
+        expected = { { 20, expected[stagedPos] }, { 13, sizes[1] }, { stagedPos, expected[otherPos] } };
+    }
+
+    Status st = fm.save(o2, animationPath);
+    INFO(st.details().str().toStdString());
+    REQUIRE(st.ok());
+    delete o2;
+
+    Object* o3 = fm.load(animationPath);
+    REQUIRE(o3 != nullptr);
+    layer = static_cast<LayerBitmap*>(o3->getLayer(1));
+    for (int pos = 2; pos <= 4; ++pos)
+        REQUIRE_FALSE(layer->keyExists(pos));
+    for (const auto& [pos, size] : expected)
+    {
+        INFO("frame " << pos);
+        BitmapImage* b = layer->getBitmapImageAtFrame(pos);
+        REQUIRE(b != nullptr);
+        CHECK(b->image()->width() == size);
+        CHECK(b->image()->height() == size);
+    }
+    delete o3;
+}
+
 TEST_CASE("Empty Sound Frames")
 {
     SECTION("Invalid src value")
