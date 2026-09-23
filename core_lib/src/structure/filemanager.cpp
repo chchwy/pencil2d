@@ -332,6 +332,14 @@ Status FileManager::save(const Object* object, const QString& sFileName)
     QStringList filesToZip; // A files list in the working folder needs to be zipped
     Status stKeyFrames = writeKeyFrameFiles(object, sDataFolder, filesToZip);
     dd.collect(stKeyFrames.details());
+    if (!stKeyFrames.ok())
+    {
+        // Don't write a main XML that points at keyframe files which aren't
+        // there. For a .pcl project that XML is the project file itself.
+        return Status(Status::FAIL, dd,
+                      tr("Internal Error"),
+                      tr("An internal error occurred. The project could not be saved."));
+    }
 
     Status stMainXml = writeMainXml(object, sMainXMLFile, filesToZip);
     dd.collect(stMainXml.details());
@@ -400,6 +408,12 @@ Status FileManager::writeToWorkingFolder(const Object* object)
 
     Status stKeyFrames = writeKeyFrameFiles(object, dataFolder, filesWritten);
     dd.collect(stKeyFrames.details());
+    if (!stKeyFrames.ok())
+    {
+        // Keep the last good main XML: crash recovery would otherwise load
+        // one that points at keyframe files which aren't there.
+        return Status(Status::FAIL, dd);
+    }
 
     Status stMainXml = writeMainXml(object, mainXml, filesWritten);
     dd.collect(stMainXml.details());
@@ -664,7 +678,17 @@ Status FileManager::writeKeyFrameFiles(const Object* object, const QString& data
     for (int i = 0; i < numLayers; ++i)
     {
         Layer* layer = object->getLayer(i);
-        layer->presave(dataFolder);
+        Status stPresave = layer->presave(dataFolder);
+        if (!stPresave.ok())
+        {
+            // A half-finished presave leaves some keyframe files under their
+            // temporary names. Saving the layers now would point those keyframes
+            // at files that don't exist yet, losing the images for good. Stop
+            // here; the next save picks up where presave left off.
+            dd.collect(stPresave.details());
+            dd << QString("\nError: Failed to presave Layer[%1] %2").arg(i).arg(layer->name());
+            return Status(Status::FAIL, dd);
+        }
     }
 
     bool saveLayersOK = true;
