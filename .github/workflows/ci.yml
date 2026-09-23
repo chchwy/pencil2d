@@ -48,11 +48,13 @@ jobs:
             os: ubuntu-latest
             container: "ubuntu:22.04"
             qt: 6
-          - name: Qt 6 / macOS x86_64
-            os: macos-15-intel
-            arch: x86_64
-            container:
-            qt: 6
+          # Disabled: Homebrew has no Intel bottle for qt@6 any more, and building it
+          # from source fails. Not a release asset. master uses install-qt-action instead.
+          #- name: Qt 6 / macOS x86_64
+          #  os: macos-15-intel
+          #  arch: x86_64
+          #  container:
+          #  qt: 6
           #- name: Qt 6 / macOS arm64
           #  os: macos-latest
           #  container:
