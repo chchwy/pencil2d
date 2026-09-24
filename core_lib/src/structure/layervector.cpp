@@ -76,21 +76,18 @@ void LayerVector::loadImageAtFrame(QString path, int frameNumber)
 
 Status LayerVector::saveKeyFrameFile(KeyFrame* keyFrame, QString path)
 {
-    QString theFileName = fileName(keyFrame);
-    QString strFilePath = QDir(path).filePath(theFileName);
-
     VectorImage* vecImage = static_cast<VectorImage*>(keyFrame);
+    const QString strFilePath = keyFrameSavePath(keyFrame, path, "vec");
 
-    if (needSaveFrame(keyFrame, strFilePath) == false)
+    if (!vecImage->isModified() && strFilePath == vecImage->fileName() && QFile::exists(strFilePath))
     {
-        return Status::SAFE;
+        return Status::SAFE; // already on disk, under the name it keeps
     }
 
+    // write() only takes the new file name once the file is written
     Status st = vecImage->write(strFilePath, "VEC");
     if (!st.ok())
     {
-        vecImage->setFileName("");
-
         DebugDetails dd;
         dd << "LayerVector::saveKeyFrameFile";
         dd << QString("&nbsp;&nbsp;KeyFrame.pos() = %1").arg(keyFrame->pos());
@@ -100,7 +97,6 @@ Status LayerVector::saveKeyFrameFile(KeyFrame* keyFrame, QString path)
         return Status(Status::FAIL, dd);
     }
 
-    vecImage->setFileName(strFilePath);
     vecImage->setModified(false);
     return Status::OK;
 }
@@ -112,20 +108,15 @@ KeyFrame* LayerVector::createKeyFrame(int position)
     return v;
 }
 
-QString LayerVector::fileName(KeyFrame* key) const
+QString LayerVector::srcFileName(const KeyFrame* key) const
 {
-    return QString::asprintf("%03d.%03d.vec", id(), key->pos());
-}
-
-bool LayerVector::needSaveFrame(KeyFrame* key, const QString& strSavePath)
-{
-    if (key->isModified()) // keyframe was modified
-        return true;
-    if (QFile::exists(strSavePath) == false) // hasn't been saved before
-        return true;
-    if (strSavePath != key->fileName()) // key frame moved
-        return true;
-    return false;
+    if (!key->fileName().isEmpty())
+    {
+        return QFileInfo(key->fileName()).fileName();
+    }
+    // Not saved yet. Never name a file that may exist: an old positional name
+    // like LLL.PPP.vec may belong to another keyframe that has moved away.
+    return QString::asprintf("%03d.%03d.empty.vec", id(), key->pos());
 }
 
 QDomElement LayerVector::createDomElement(QDomDocument& doc) const
@@ -136,12 +127,10 @@ QDomElement LayerVector::createDomElement(QDomDocument& doc) const
     {
         QDomElement imageTag = doc.createElement("image");
         imageTag.setAttribute("frame", keyframe->pos());
-        imageTag.setAttribute("src", fileName(keyframe));
+        imageTag.setAttribute("src", srcFileName(keyframe));
         VectorImage* image = getVectorImageAtFrame(keyframe->pos());
         imageTag.setAttribute("opacity", image->getOpacity());
         layerElem.appendChild(imageTag);
-
-        Q_ASSERT(QFileInfo(keyframe->fileName()).fileName() == fileName(keyframe));
     });
 
     return layerElem;

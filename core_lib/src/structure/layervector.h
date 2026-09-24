@@ -49,8 +49,7 @@ protected:
     KeyFrame* createKeyFrame(int position) override;
 
 private:
-    QString fileName(KeyFrame* key) const;
-    bool needSaveFrame(KeyFrame* key, const QString& strSavePath);
+    QString srcFileName(const KeyFrame* key) const;
 };
 
 #endif

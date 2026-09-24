@@ -675,22 +675,6 @@ Status FileManager::writeKeyFrameFiles(const Object* object, const QString& data
     const int numLayers = object->getLayerCount();
     dd << QString("Total layer count: %1").arg(numLayers);
 
-    for (int i = 0; i < numLayers; ++i)
-    {
-        Layer* layer = object->getLayer(i);
-        Status stPresave = layer->presave(dataFolder);
-        if (!stPresave.ok())
-        {
-            // A half-finished presave leaves some keyframe files under their
-            // temporary names. Saving the layers now would point those keyframes
-            // at files that don't exist yet, losing the images for good. Stop
-            // here; the next save picks up where presave left off.
-            dd.collect(stPresave.details());
-            dd << QString("\nError: Failed to presave Layer[%1] %2").arg(i).arg(layer->name());
-            return Status(Status::FAIL, dd);
-        }
-    }
-
     bool saveLayersOK = true;
     for (int i = 0; i < numLayers; ++i)
     {

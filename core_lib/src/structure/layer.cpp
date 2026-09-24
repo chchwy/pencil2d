@@ -18,10 +18,14 @@ GNU General Public License for more details.
 
 #include <QApplication>
 #include <QDebug>
+#include <QDir>
+#include <QFileInfo>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QPainter>
 #include <QDomElement>
 #include "keyframe.h"
+#include "util/util.h"
 
 // Used to sort the selected frames list
 bool sortAsc(int left, int right)
@@ -366,6 +370,36 @@ Status Layer::save(const QString& sDataFolder, QStringList& attachedFiles, Progr
         return Status(Status::FAIL, dd);
     }
     return Status::OK;
+}
+
+QString Layer::keyFrameSavePath(const KeyFrame* key, const QString& dataFolder, const QString& extension) const
+{
+    // LLL.PPP.<id>.ext. LLL.PPP is the layer and position when the file was
+    // created. It is kept for readability and for crash recovery without a main
+    // XML, and is not updated when the keyframe moves.
+    static const QRegularExpression uniqueName("^\\d+\\.\\d+\\.[0-9a-z]{8}\\.\\w+$");
+    static const QRegularExpression positionalName("^\\d+\\.\\d+\\.\\w+$");
+
+    const QDir folder(dataFolder);
+    const QFileInfo current(key->fileName());
+    const bool inFolder = !key->fileName().isEmpty() && current.dir() == folder;
+    const bool unique = uniqueName.match(current.fileName()).hasMatch();
+    const bool positional = positionalName.match(current.fileName()).hasMatch();
+
+    // An old positional name is kept as it is, and only replaced when the
+    // keyframe has to be rewritten anyway.
+    if (inFolder && (unique || (positional && !key->isModified())))
+    {
+        return key->fileName();
+    }
+
+    QString path;
+    do
+    {
+        path = folder.filePath(QString::asprintf("%03d.%03d.", id(), key->pos()) + uniqueString(8) + "." + extension);
+    }
+    while (QFile::exists(path));
+    return path;
 }
 
 void Layer::setModified(int position, bool modified) const

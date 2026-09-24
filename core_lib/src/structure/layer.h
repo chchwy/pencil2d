@@ -158,7 +158,6 @@ public:
     bool canMoveSelectedFramesToOffset(int offset) const;
 
     Status save(const QString& sDataFolder, QStringList& attachedFiles, ProgressCallback progressStep);
-    virtual Status presave(const QString& sDataFolder) { Q_UNUSED(sDataFolder); return Status::SAFE; }
 
     bool isPaintable() const;
 
@@ -175,6 +174,14 @@ public:
 protected:
     virtual KeyFrame* createKeyFrame(int position) = 0;
     bool loadKey(KeyFrame*);
+
+    /** The file to save @p key to, in @p dataFolder.
+     *
+     *  A keyframe keeps its file name for life, however it moves on the timeline.
+     *  It only gets a new, unique name (LLL.PPP.<id>.<extension>) when it has no
+     *  file yet, when its file is outside @p dataFolder, or when it is about to be
+     *  rewritten and still has an old positional name (LLL.PPP.<extension>). */
+    QString keyFrameSavePath(const KeyFrame* key, const QString& dataFolder, const QString& extension) const;
 
 private:
     void removeFromSelectionList(int position);

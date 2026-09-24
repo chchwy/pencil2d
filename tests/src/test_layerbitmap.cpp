@@ -22,6 +22,8 @@ GNU General Public License for more details.
 #include <memory>
 #include <QDir>
 #include <QDomElement>
+#include <QFileInfo>
+#include <QImage>
 #include <QTemporaryDir>
 
 TEST_CASE("Load bitmap layer from XML")
@@ -33,6 +35,17 @@ TEST_CASE("Load bitmap layer from XML")
     doc.setContent(QString("<layer id='1' name='Bitmap Layer' visibility='1'></layer>"));
     QDomElement layerElem = doc.documentElement();
     ProgressCallback nullCallback = []() {};
+
+    // A keyframe whose file doesn't exist loads as an empty keyframe, so give
+    // the frames below real files.
+    auto createFile = [&dataDir](const QString& relativePath)
+    {
+        const QString path = dataDir.filePath(relativePath);
+        QDir().mkpath(QFileInfo(path).path());
+        QImage image(4, 4, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::red);
+        REQUIRE(image.save(path));
+    };
 
     auto createFrame = [&layerElem, &doc](QString src = "001.001.png", int frame = 1, int topLeftX = 0, int topLeftY = 0)
     {
@@ -53,6 +66,7 @@ TEST_CASE("Load bitmap layer from XML")
 
     SECTION("Single frame")
     {
+        createFile("001.001.png");
         createFrame("001.001.png", 1, 0, 0);
 
         bitmapLayer->loadDomElement(layerElem, dataDir.path(), nullCallback);
@@ -67,6 +81,8 @@ TEST_CASE("Load bitmap layer from XML")
 
     SECTION("Multiple frames")
     {
+        createFile("001.001.png");
+        createFile("001.002.png");
         createFrame("001.001.png", 1);
         createFrame("001.002.png", 2);
 
@@ -102,8 +118,22 @@ TEST_CASE("Load bitmap layer from XML")
         REQUIRE(bitmapLayer->keyFrameCount() == 0);
     }
 
+    SECTION("Frame whose file doesn't exist is an empty keyframe")
+    {
+        createFrame("001.001.png", 1);
+
+        bitmapLayer->loadDomElement(layerElem, dataDir.path(), nullCallback);
+
+        REQUIRE(bitmapLayer->keyFrameCount() == 1);
+        BitmapImage* frame = static_cast<BitmapImage*>(bitmapLayer->getKeyFrameAt(1));
+        REQUIRE(frame != nullptr);
+        REQUIRE(frame->fileName().isEmpty());
+        REQUIRE(frame->image()->isNull());
+    }
+
     SECTION("Frame src nested in data dir")
     {
+        createFile("subdir/001.001.png");
         createFrame("subdir/001.001.png");
 
         bitmapLayer->loadDomElement(layerElem, dataDir.path(), nullCallback);

@@ -401,12 +401,11 @@ TEST_CASE("FileManager File-saving")
     }
 }
 
-TEST_CASE("Saving recovers after a keyframe move failed half-way")
+TEST_CASE("Saving recovers after a keyframe file was briefly unavailable")
 {
-    // Keyframes that were moved but not redrawn get their files renamed on
-    // save, via a temporary name. If one rename fails (say a virus scanner
-    // holds the file), that save must fail without losing any keyframe, and
-    // once the file is free again, saving must work again.
+    // If a keyframe's file is briefly unavailable during a save (say a virus
+    // scanner holds it), that save must fail without losing any keyframe, and
+    // once the file is back, saving must work again.
     FileManager fm;
 
     Object* o1 = new Object;
@@ -440,8 +439,8 @@ TEST_CASE("Saving recovers after a keyframe move failed half-way")
         layer->setFrameSelected(i, true);
     REQUIRE(layer->moveSelectedFrames(10));
 
-    // Take the middle keyframe's file away for one save. Whichever order the
-    // keyframes are processed in, one of the others is renamed before this fails.
+    // Take the middle keyframe's file away for one save. It isn't loaded, so
+    // the file is the only copy of its image: that save must fail.
     const QString middleFile = layer->getBitmapImageAtFrame(13)->fileName();
     const QString parkedFile = middleFile + ".parked";
     REQUIRE(QFile::rename(middleFile, parkedFile));
@@ -451,36 +450,7 @@ TEST_CASE("Saving recovers after a keyframe move failed half-way")
     REQUIRE(QFile::rename(parkedFile, middleFile));
 
     // Frame position -> expected image size after a save and reload.
-    std::map<int, int> expected = { { 12, sizes[0] }, { 13, sizes[1] }, { 14, sizes[2] } };
-
-    SECTION("The next save succeeds and keeps every image")
-    {
-    }
-
-    SECTION("The next save succeeds after the half-moved keyframes are moved again")
-    {
-        // Find the keyframe the failed save left under a temporary name.
-        int stagedPos = 0;
-        for (int pos : { 12, 14 })
-        {
-            if (QFileInfo(layer->getBitmapImageAtFrame(pos)->fileName()).fileName().startsWith("t_"))
-                stagedPos = pos;
-        }
-        REQUIRE(stagedPos != 0);
-        const int otherPos = (stagedPos == 12) ? 14 : 12;
-
-        // Move it away, then move another keyframe into its old position. That
-        // keyframe's temporary name is now taken by the only copy of the first
-        // keyframe's image, which must not be overwritten.
-        layer->deselectAll();
-        layer->setFrameSelected(stagedPos, true);
-        REQUIRE(layer->moveSelectedFrames(20 - stagedPos));
-        layer->deselectAll();
-        layer->setFrameSelected(otherPos, true);
-        REQUIRE(layer->moveSelectedFrames(stagedPos - otherPos));
-
-        expected = { { 20, expected[stagedPos] }, { 13, sizes[1] }, { stagedPos, expected[otherPos] } };
-    }
+    const std::map<int, int> expected = { { 12, sizes[0] }, { 13, sizes[1] }, { 14, sizes[2] } };
 
     Status st = fm.save(o2, animationPath);
     INFO(st.details().str().toStdString());

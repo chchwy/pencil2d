@@ -19,6 +19,7 @@ GNU General Public License for more details.
 #include <cmath>
 #include <QImage>
 #include <QFile>
+#include <QSaveFile>
 #include <QFileInfo>
 #include <QDebug>
 #include <QXmlStreamWriter>
@@ -116,7 +117,9 @@ Status VectorImage::write(QString filePath, QString format)
     debugInfo << QString("filePath = ").append(filePath);
     debugInfo << QString("format = ").append(format);
 
-    QFile file(filePath);
+    // Write to a temporary file and swap it in, so a failed or interrupted write
+    // never leaves a truncated file in place of the old one.
+    QSaveFile file(filePath);
     bool result = file.open(QIODevice::WriteOnly);
     if (!result)
     {
@@ -148,6 +151,12 @@ Status VectorImage::write(QString filePath, QString format)
     }
     xmlStream.writeEndElement(); // Close image element
     xmlStream.writeEndDocument();
+
+    if (xmlStream.hasError() || !file.commit())
+    {
+        debugInfo << ("file.commit() failed: " + file.errorString());
+        return Status(Status::FAIL, debugInfo);
+    }
 
     setFileName(filePath);
     return Status::OK;

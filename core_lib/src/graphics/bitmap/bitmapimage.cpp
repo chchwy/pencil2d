@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include <QFile>
 #include <QFileInfo>
 #include <QImageWriter>
+#include <QSaveFile>
 #include <QPainterPath>
 #include "util.h"
 
@@ -101,13 +102,12 @@ BitmapImage* BitmapImage::clone() const
     b->setFileName(""); // don't link to the file of the source bitmap image
 
     const bool validKeyFrame = !fileName().isEmpty();
-    if (validKeyFrame && !isModified())
+    if (validKeyFrame && !isModified() && QFile::exists(fileName()))
     {
-        // This bitmapImage is temporarily unloaded.
-        // since it's not in the memory, we need to copy the linked png file to prevent data loss.
+        // This bitmapImage may be unloaded, in which case its file is the only
+        // copy of its pixels. Give the clone its own copy of the file, so that
+        // neither can change the other's image.
         QFileInfo finfo(fileName());
-        Q_ASSERT(finfo.isAbsolute());
-        Q_ASSERT(QFile::exists(fileName()));
 
         QString newFilePath;
         do
@@ -119,10 +119,20 @@ BitmapImage* BitmapImage::clone() const
         }
         while (QFile::exists(newFilePath));
 
-        b->setFileName(newFilePath);
-        bool ok = QFile::copy(fileName(), newFilePath);
-        Q_ASSERT(ok);
-        qDebug() << "COPY>" << fileName();
+        if (QFile::copy(fileName(), newFilePath))
+        {
+            b->setFileName(newFilePath);
+        }
+        else
+        {
+            // Can't copy the file: load the pixels into the clone instead. It
+            // is then written to a file of its own on the next save.
+            qWarning() << "BitmapImage::clone: failed to copy" << fileName();
+            b->setFileName(fileName());
+            b->loadFile();
+            b->setFileName("");
+            b->setModified(true);
+        }
     }
     return b;
 }
@@ -794,16 +804,29 @@ Status BitmapImage::writeFile(const QString& filename)
     dd << "BitmapImage::writeFile";
     dd << QString("&nbsp;&nbsp;filename = ").append(filename);
 
-    QImageWriter writer(filename);
     if (!mImage.isNull())
     {
-        bool b = writer.write(mImage);
-        if (b) {
-            return Status::OK;
-        } else {
-            dd << QString("&nbsp;&nbsp;Error: %1 (Code %2)").arg(writer.errorString()).arg(static_cast<int>(writer.error()));
+        // Write to a temporary file and swap it in, so a failed or interrupted
+        // write never leaves a truncated image in place of the old one.
+        QSaveFile file(filename);
+        if (!file.open(QIODevice::WriteOnly))
+        {
+            dd << QString("&nbsp;&nbsp;Error: %1").arg(file.errorString());
             return Status(Status::FAIL, dd);
         }
+        QImageWriter writer(&file, QFileInfo(filename).suffix().toLatin1());
+        if (!writer.write(mImage))
+        {
+            dd << QString("&nbsp;&nbsp;Error: %1 (Code %2)").arg(writer.errorString()).arg(static_cast<int>(writer.error()));
+            file.cancelWriting();
+            return Status(Status::FAIL, dd);
+        }
+        if (!file.commit())
+        {
+            dd << QString("&nbsp;&nbsp;Error: %1").arg(file.errorString());
+            return Status(Status::FAIL, dd);
+        }
+        return Status::OK;
     }
 
     if (bounds().isEmpty())
