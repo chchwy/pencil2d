@@ -170,9 +170,14 @@ bool UndoRedoManager::hasUnsavedChanges() const
 
 void UndoRedoManager::pushCommand(QUndoCommand* command)
 {
-    mFirstUndoInProgress = true;
+    // QUndoStack::push() calls redo() on the command, and on its children, before it
+    // returns. The caller has already performed the operation, so that first redo must
+    // be skipped; commands do so by checking isFirstRedo().
+    // Not re-entrant: never call pushCommand() from inside a redo() or undo() override,
+    // or the inner push would silently swallow its own first redo.
+    mFirstRedoInProgress = true;
     mUndoStack.push(command);
-    mFirstUndoInProgress = false;
+    mFirstRedoInProgress = false;
 
     emit didUpdateUndoStack();
 }
