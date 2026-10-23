@@ -20,6 +20,8 @@ GNU General Public License for more details.
 
 #include "stroketool.h"
 
+class VectorImage;
+
 class EraserTool : public StrokeTool
 {
     Q_OBJECT
@@ -43,10 +45,13 @@ public:
     void removeVectorPaint();
     void updateStrokes();
 
+private:
+    VectorImage* currentVectorImage() const;
+    void beginVectorStroke();
+
 protected:
     QPointF mLastBrushPoint;
     QPointF mMouseDownPoint;
-    QList<QPointF> mStrokePoints; // Track the stroke path for vector layer erasing
 
     StrokeToolProperties mSettings;
 };

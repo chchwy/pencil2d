@@ -19,7 +19,6 @@ GNU General Public License for more details.
 #include <QSettings>
 #include <QPixmap>
 #include <QPainter>
-#include <QLineF>
 
 #include "editor.h"
 #include "blitrect.h"
@@ -101,8 +100,7 @@ void EraserTool::pointerPressEvent(PointerEvent *event)
     startStroke(event->inputType());
     mLastBrushPoint = getCurrentPoint();
     mMouseDownPoint = getCurrentPoint();
-    mStrokePoints.clear(); // Clear previous stroke points
-    mStrokePoints.append(getCurrentPoint()); // Add the starting point
+    beginVectorStroke();
 
     StrokeTool::pointerPressEvent(event);
 }
@@ -117,7 +115,6 @@ void EraserTool::pointerMoveEvent(PointerEvent* event)
     if (event->buttons() & Qt::LeftButton && event->inputType() == mCurrentInputType)
     {
         mCurrentPressure = mInterpolator.getPressure();
-        mStrokePoints.append(getCurrentPoint()); // Track the stroke path
         updateStrokes();
         if (mSettings.stabilizerLevel() != mInterpolator.getStabilizerLevel())
         {
@@ -151,7 +148,6 @@ void EraserTool::pointerReleaseEvent(PointerEvent *event)
 
     removeVectorPaint();
     endStroke();
-    mStrokePoints.clear(); // Clear stroke points after finishing
 
     StrokeTool::pointerReleaseEvent(event);
 }
@@ -243,6 +239,32 @@ void EraserTool::drawStroke()
     }
 }
 
+VectorImage* EraserTool::currentVectorImage() const
+{
+    Layer* layer = mEditor->layers()->currentLayer();
+    if (layer == nullptr || layer->type() != Layer::VECTOR) { return nullptr; }
+
+    // Can be null if the first frame is deleted while drawing
+    return static_cast<LayerVector*>(layer)->getLastVectorImageAtFrame(mEditor->currentFrame(), 0);
+}
+
+/**
+ * @brief EraserTool::beginVectorStroke
+ * On a vector layer the eraser does not paint: it marks the vertices the brush touches as
+ * selected, and pointerReleaseEvent() deletes them. That selection is therefore per-stroke
+ * state and has to be reset when the stroke begins -- otherwise a click that never moves
+ * would delete whatever the previous stroke left selected. Picking up the vertices under
+ * the press point here is also what makes a plain click erase.
+ */
+void EraserTool::beginVectorStroke()
+{
+    VectorImage* currKey = currentVectorImage();
+    if (currKey == nullptr) { return; }
+
+    currKey->deselectAll();
+    currKey->setSelected(currKey->getVerticesCloseTo(getCurrentPoint(), getCurrentPoint(), mSettings.width() / 2), true);
+}
+
 void EraserTool::removeVectorPaint()
 {
     Layer* layer = mEditor->layers()->currentLayer();
@@ -269,45 +291,14 @@ void EraserTool::updateStrokes()
 
     if (layer->type() == Layer::VECTOR)
     {
-        qreal radius = mSettings.width() / 2;
+        VectorImage* currKey = currentVectorImage();
+        if (currKey == nullptr) { return; }
 
-        VectorImage* currKey = static_cast<VectorImage*>(layer->getLastKeyFrameAtPosition(mEditor->currentFrame()));
-        if (currKey == nullptr) return;
-
-        // Clear selections at the very start of a new stroke
-        if (mStrokePoints.size() <= 2) {
-            currKey->deselectAll();
-        }
-
-        // Only process if we have at least 2 points to form a segment
-        if (mStrokePoints.size() >= 2) {
-            // Get the last segment of the stroke
-            QPointF startPoint = mStrokePoints.at(mStrokePoints.size() - 2);
-            QPointF endPoint = mStrokePoints.last();
-
-            // Check vertices along the line segment
-            QLineF segment(startPoint, endPoint);
-            qreal segmentLength = segment.length();
-
-            if (segmentLength > 0) {
-                // Sample points along the segment
-                int numSamples = qMax(2, static_cast<int>(segmentLength / (radius * 0.5)));
-                for (int i = 0; i <= numSamples; i++) {
-                    qreal t = static_cast<qreal>(i) / numSamples;
-                    QPointF samplePoint = startPoint + t * (endPoint - startPoint);
-
-                    QList<VertexRef> nearbyVertices = currKey->getVerticesCloseTo(samplePoint, radius);
-                    for (auto vertex : nearbyVertices) {
-                        currKey->setSelected(vertex, true);
-                    }
-                }
-            } else {
-                // Handle single point (click or very short stroke)
-                QList<VertexRef> nearbyVertices = currKey->getVerticesCloseTo(endPoint, radius);
-                for (auto vertex : nearbyVertices) {
-                    currKey->setSelected(vertex, true);
-                }
-            }
-        }
+        // Ask which vertices the brush swept over since the previous event, not which ones
+        // sit near the current point. When the pointer moves fast the gap between two
+        // events is far wider than the brush, and a point query misses everything the
+        // brush passed over in between.
+        currKey->setSelected(currKey->getVerticesCloseTo(mLastBrushPoint, getCurrentPoint(), mSettings.width() / 2), true);
+        mLastBrushPoint = getCurrentPoint();
     }
 }
