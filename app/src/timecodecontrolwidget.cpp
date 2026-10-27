@@ -18,7 +18,6 @@ GNU General Public License for more details.
 
 #include "preferencemanager.h"
 #include "pencildef.h"
-#include "pencilsettings.h"
 
 #include <QLabel>
 #include <QToolButton>
@@ -27,8 +26,8 @@ GNU General Public License for more details.
 #include <QComboBox>
 #include <QGroupBox>
 
-TimeCodeControlWidget::TimeCodeControlWidget(TimeCodeControls* controls, QWidget* parent)
-    : QWidget(parent, Qt::Popup), mControls(controls)
+TimeCodeControlWidget::TimeCodeControlWidget(TimeCodeControls* controls, PreferenceManager* prefs, QWidget* parent)
+    : QWidget(parent, Qt::Popup), mControls(controls), mPrefs(prefs)
 {
     auto vboxLayout = new QVBoxLayout();
     vboxLayout->setContentsMargins(4,4,4,4);
@@ -80,14 +79,13 @@ TimeCodeControlWidget::TimeCodeControlWidget(TimeCodeControls* controls, QWidget
     connect(timecodeComboBox, comboBoxValueChanged, this, [this, controls](int index) {
         auto timecodeKind = controls->timecodeKindFromInt(index);
 
-        setTimecodeTimerKind(timecodeKind);
+        setTimecodeKind(timecodeKind);
     });
 }
 
 void TimeCodeControlWidget::showFrames(bool shown)
 {
-    QSettings settings(PENCIL2D, PENCIL2D);
-    settings.setValue(SETTING_TIMECODE_FRAMES_ON, shown);
+    mPrefs->set(SETTING::TIMECODE_FRAMES_ON, shown);
 
     mControls->showFrames = shown;
     emit timecodeUpdated();
@@ -100,18 +98,15 @@ int TimeCodeControlWidget::timecodeKindToInt(TimecodeKind kind) const
 
 void TimeCodeControlWidget::showTimecode(bool shown)
 {
-    QSettings settings(PENCIL2D, PENCIL2D);
-    settings.setValue(SETTING_TIMECODE_ON, shown);
+    mPrefs->set(SETTING::TIMECODE_ON, shown);
 
     mControls->enabled = shown;
     emit timecodeUpdated();
 }
 
-void TimeCodeControlWidget::setTimecodeTimerKind(TimecodeKind kind)
+void TimeCodeControlWidget::setTimecodeKind(TimecodeKind kind)
 {
-    QSettings settings(PENCIL2D, PENCIL2D);
-    settings.setValue(SETTING_TIMECODE_KIND, timecodeKindToInt(kind));
-    settings.remove(SETTING_TIMECODE_TEXT);
+    mPrefs->set(SETTING::TIMECODE_KIND, timecodeKindToInt(kind));
     mControls->kind = kind;
 
     emit timecodeUpdated();

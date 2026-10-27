@@ -20,6 +20,8 @@ GNU General Public License for more details.
 #include <QWidget>
 #include "pencildef.h"
 
+class PreferenceManager;
+
 struct TimeCodeControls {
     bool enabled = false;
     bool showFrames = false;
@@ -47,7 +49,7 @@ class TimeCodeControlWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit TimeCodeControlWidget(TimeCodeControls* controls, QWidget* parent = nullptr);
+    TimeCodeControlWidget(TimeCodeControls* controls, PreferenceManager* prefs, QWidget* parent = nullptr);
 
 signals:
     void timecodeUpdated();
@@ -56,11 +58,12 @@ private:
 
     int timecodeKindToInt(TimecodeKind kind) const;
 
-    void setTimecodeTimerKind(TimecodeKind kind);
+    void setTimecodeKind(TimecodeKind kind);
     void showFrames(bool shown);
     void showTimecode(bool shown);
 
     TimeCodeControls* mControls = nullptr;
+    PreferenceManager* mPrefs = nullptr;
 };
 
 #endif // TIMECODECONTROLWIDGET_H

@@ -290,9 +290,7 @@ const static int MaxFramesBound = 9999;
 #define SETTING_ACTION_SAFE      "ActionSafe"
 #define SETTING_OVERLAY_SAFE_HELPER_TEXT_ON "OverlaySafeHelperTextOn"
 
-#define SETTING_TIMECODE_TEXT              "TimecodeText"
-
-#define SETTING_TIMECODE_ON           "TimecodeEnabled"
+#define SETTING_TIMECODE_ON          "TimecodeEnabled"
 #define SETTING_TIMECODE_KIND         "TimecodeKind"
 #define SETTING_TIMECODE_FRAMES_ON    "TimecodeFramesEnabled"
 

@@ -23,7 +23,6 @@ GNU General Public License for more details.
 
 class QLabel;
 class QToolButton;
-class QToolBar;
 class QHBoxLayout;
 
 class TitleBarWidget : public QWidget
@@ -46,7 +45,7 @@ public:
     void lock(bool locked);
 
     /// Returns true if a custom child widget has been added, otherwise false
-    bool hasChildWidget() const { return mHasChildWidget; }
+    bool hasChildWidget() const { return mChildWidget != nullptr; }
 
 signals:
     void closeButtonPressed();
@@ -65,10 +64,10 @@ private:
     QToolButton* mDockButton = nullptr;
 
     QHBoxLayout* mContainerLayout = nullptr;
+    QWidget* mChildWidget = nullptr;
 
     bool mIsLocked = false;
     bool mIsFloating = false;
-    bool mHasChildWidget = false;
 
     int mWidthOfFullLayout = 0;
 };

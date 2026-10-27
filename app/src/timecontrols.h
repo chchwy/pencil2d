@@ -18,8 +18,7 @@ GNU General Public License for more details.
 #define TIMECONTROL_H
 
 #include <QWidget>
-#include <QToolBar>
-#include <QPushButton>
+#include <QPointer>
 #include <QToolButton>
 #include <QSpinBox>
 #include <QCheckBox>
@@ -66,12 +65,8 @@ public slots:
 private:
     void showTimecodePanel();
     void updateTimecode();
-
-    void showFramesInTimecode(bool shown);
-    void showTimecode(bool shown);
     void makeConnections();
 
-    void setupTimeCodeMenu();
     void playButtonClicked();
     void jumpToStartButtonClicked();
     void jumpToEndButtonClicked();
@@ -97,7 +92,7 @@ private:
     QLabel*      mTimecodeLabel = nullptr;
 
     TimeCodeControls mTimecodeControls;
-    TimeCodeControlWidget* mTimeCodeWidget = nullptr;
+    QPointer<TimeCodeControlWidget> mTimeCodeWidget;
 
     QIcon mStartIcon;
     QIcon mStopIcon;

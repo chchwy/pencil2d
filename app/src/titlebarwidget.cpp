@@ -128,11 +128,12 @@ QWidget* TitleBarWidget::createCustomTitleBarWidget(QWidget* parent)
 
 void TitleBarWidget::setChildWidget(QWidget* widget)
 {
-    if (mHasChildWidget) {
-        mContainerLayout->removeWidget(widget);
+    if (mChildWidget) {
+        mContainerLayout->removeWidget(mChildWidget);
+        mChildWidget->deleteLater();
     }
     mContainerLayout->addWidget(widget);
-    mHasChildWidget = true;
+    mChildWidget = widget;
 }
 
 QString TitleBarWidget::flatButtonStylesheet() const

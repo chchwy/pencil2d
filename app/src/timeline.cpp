@@ -20,6 +20,8 @@ GNU General Public License for more details.
 #include <QWidget>
 #include <QScrollBar>
 #include <QHBoxLayout>
+#include <QToolBar>
+#include <QPushButton>
 #include <QMenu>
 #include <QAction>
 #include <QSplitter>

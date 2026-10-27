@@ -243,10 +243,10 @@ void TimeControls::setRangeState(bool checked)
 
 void TimeControls::makeConnections()
 {
-    connect(mPlayButton, &QPushButton::clicked, this, &TimeControls::playButtonClicked);
-    connect(mJumpToEndButton, &QPushButton::clicked, this, &TimeControls::jumpToEndButtonClicked);
-    connect(mJumpToStartButton, &QPushButton::clicked, this, &TimeControls::jumpToStartButtonClicked);
-    connect(mLoopButton, &QPushButton::clicked, this, &TimeControls::loopButtonClicked);
+    connect(mPlayButton, &QToolButton::clicked, this, &TimeControls::playButtonClicked);
+    connect(mJumpToEndButton, &QToolButton::clicked, this, &TimeControls::jumpToEndButtonClicked);
+    connect(mJumpToStartButton, &QToolButton::clicked, this, &TimeControls::jumpToStartButtonClicked);
+    connect(mLoopButton, &QToolButton::clicked, this, &TimeControls::loopButtonClicked);
     connect(mPlaybackRangeCheckBox, &QCheckBox::clicked, this, &TimeControls::playbackRangeClicked);
 
     auto spinBoxValueChanged = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
@@ -258,10 +258,10 @@ void TimeControls::makeConnections()
     connect(mPlaybackRangeCheckBox, &QCheckBox::toggled, mLoopStartSpinBox, &QSpinBox::setEnabled);
     connect(mPlaybackRangeCheckBox, &QCheckBox::toggled, mLoopEndSpinBox, &QSpinBox::setEnabled);
 
-    connect(mSoundButton, &QPushButton::clicked, this, &TimeControls::soundToggled);
+    connect(mSoundButton, &QToolButton::clicked, this, &TimeControls::soundToggled);
 
-    connect(mSoundScrubButton, &QPushButton::clicked, this, &TimeControls::soundScrubToggled);
-    connect(mSoundScrubButton, &QPushButton::clicked, this, &TimeControls::updateSoundScrubIcon);
+    connect(mSoundScrubButton, &QToolButton::clicked, this, &TimeControls::soundScrubToggled);
+    connect(mSoundScrubButton, &QToolButton::clicked, this, &TimeControls::updateSoundScrubIcon);
 
     connect(mFpsBox, spinBoxValueChanged, this, &TimeControls::fpsChanged);
     connect(mFpsBox, &QSpinBox::editingFinished, this, &TimeControls::onFpsEditingFinished);
@@ -274,14 +274,16 @@ void TimeControls::makeConnections()
 
 void TimeControls::showTimecodePanel()
 {
-    mTimeCodeWidget = new TimeCodeControlWidget(&mTimecodeControls, this);
+    if (mTimeCodeWidget) {
+        return;
+    }
+
+    mTimeCodeWidget = new TimeCodeControlWidget(&mTimecodeControls, mEditor->preference(), this);
     mTimeCodeWidget->setAttribute(Qt::WA_DeleteOnClose);
     mTimeCodeWidget->show();
     mTimeCodeWidget->move(QCursor::pos());
 
-    connect(mTimeCodeWidget, &TimeCodeControlWidget::timecodeUpdated, this, [this] {
-        updateTimecode();
-    });
+    connect(mTimeCodeWidget, &TimeCodeControlWidget::timecodeUpdated, this, &TimeControls::updateTimecode);
 }
 
 void TimeControls::playButtonClicked()
