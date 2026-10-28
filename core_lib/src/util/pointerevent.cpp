@@ -25,11 +25,19 @@ QPointF PointerEvent::viewportPos() const
 {
     if (mMouseEvent)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        return mMouseEvent->position();
+#else
         return mMouseEvent->localPos();
+#endif
     }
     else if (mTabletEvent)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        return mTabletEvent->position();
+#else
         return mTabletEvent->posF();
+#endif
     }
     Q_ASSERT(false);
     return QPointF();
@@ -96,37 +104,12 @@ qreal PointerEvent::tangentialPressure() const
 
 int PointerEvent::x() const
 {
-    if (mMouseEvent)
-    {
-        return mMouseEvent->x();
-    }
-    else if (mTabletEvent)
-    {
-        return mTabletEvent->x();
-    }
-    else
-    {
-        Q_ASSERT(false);
-        return 0;
-    }
-
+    return qRound(viewportPos().x());
 }
 
 int PointerEvent::y() const
 {
-    if (mMouseEvent)
-    {
-        return mMouseEvent->y();
-    }
-    else if (mTabletEvent)
-    {
-        return mTabletEvent->y();
-    }
-    else
-    {
-        Q_ASSERT(false);
-        return 0;
-    }
+    return qRound(viewportPos().y());
 }
 
 bool PointerEvent::isTabletEvent() const

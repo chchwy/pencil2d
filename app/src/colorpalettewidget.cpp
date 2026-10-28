@@ -119,9 +119,9 @@ void ColorPaletteWidget::showContextMenu(const QPoint& pos)
     QMenu* menu = new QMenu;
     connect(menu, &QMenu::triggered, menu, &QMenu::deleteLater);
 
-    menu->addAction(tr("Add"), this, &ColorPaletteWidget::addItem, 0);
-    menu->addAction(tr("Replace"),  this, &ColorPaletteWidget::replaceItem, 0);
-    menu->addAction(tr("Remove"), this, &ColorPaletteWidget::removeItem, 0);
+    menu->addAction(tr("Add"), this, &ColorPaletteWidget::addItem);
+    menu->addAction(tr("Replace"),  this, &ColorPaletteWidget::replaceItem);
+    menu->addAction(tr("Remove"), this, &ColorPaletteWidget::removeItem);
 
     menu->exec(globalPos);
 }
