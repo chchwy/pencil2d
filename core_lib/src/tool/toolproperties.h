@@ -92,6 +92,7 @@ struct PropertyInfo
             case INVALID:
                 return "INVALID";
         }
+        return QVariant();
     }
 
     int intValue() const {
