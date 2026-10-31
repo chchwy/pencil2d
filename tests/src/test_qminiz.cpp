@@ -59,4 +59,39 @@ TEST_CASE("QMiniZ::CompressFolder")
 
         mz_zip_reader_end(&zip);
     }
+
+    // https://github.com/pencil2d/pencil/issues/2037
+    SECTION("A failed compression leaves the existing zip file intact")
+    {
+        QTemporaryDir tempDir;
+        REQUIRE(tempDir.isValid());
+
+        QString srcFolder = tempDir.path() + "/src/";
+        QDir().mkpath(srcFolder);
+        QFile file(srcFolder + "main.xml");
+        REQUIRE(file.open(QIODevice::WriteOnly));
+        file.write("<document/>");
+        file.close();
+
+        QString zipPath = tempDir.path() + "/test.pclx";
+        Status st = MiniZ::compressFolder(zipPath, srcFolder, { srcFolder + "main.xml" }, "application/x-pencil2d-pclx");
+        REQUIRE(st.ok());
+
+        QFile zipFile(zipPath);
+        REQUIRE(zipFile.open(QIODevice::ReadOnly));
+        QByteArray originalBytes = zipFile.readAll();
+        zipFile.close();
+
+        // A missing file makes compression abort halfway through
+        QStringList filesToZip = { srcFolder + "main.xml", srcFolder + "missing.png" };
+        st = MiniZ::compressFolder(zipPath, srcFolder, filesToZip, "application/x-pencil2d-pclx");
+        REQUIRE_FALSE(st.ok());
+
+        REQUIRE(zipFile.open(QIODevice::ReadOnly));
+        REQUIRE(zipFile.readAll() == originalBytes);
+        zipFile.close();
+
+        QStringList leftovers = QDir(tempDir.path()).entryList(QDir::Files);
+        REQUIRE(leftovers == QStringList{ "test.pclx" });
+    }
 }
