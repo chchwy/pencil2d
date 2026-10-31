@@ -16,6 +16,7 @@ GNU General Public License for more details.
 #include "qminiz.h"
 
 #include <sstream>
+#include <QFile>
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
@@ -84,7 +85,16 @@ Status MiniZ::compressFolder(QString zipFilePath, QString srcFolderPath, const Q
 
     mz_zip_zero_struct(mz);
 
-    mz_bool ok = mz_zip_writer_init_file(mz, zipFilePath.toUtf8().data(), 0);
+    // Write to a temporary file first so that a failed or interrupted save
+    // never leaves a truncated zip in place of the user's project
+    const QString tmpZipPath = zipFilePath + ".tmp";
+    QFile::remove(tmpZipPath);
+    bool keepTmpZip = false;
+    ScopeGuard tmpZipScopeGuard([&] {
+        if (!keepTmpZip) QFile::remove(tmpZipPath);
+    });
+
+    mz_bool ok = mz_zip_writer_init_file(mz, tmpZipPath.toUtf8().data(), 0);
 
     if (!ok)
     {
@@ -152,6 +162,26 @@ Status MiniZ::compressFolder(QString zipFilePath, QString srcFolderPath, const Q
     {
         mz_zip_error err = mz_zip_get_last_error(mz);
         dd << QString("Error: Failed to finalize archive. Error code %1, reason: %2").arg(static_cast<int>(err)).arg(mz_zip_get_error_string(err));
+        return Status(Status::FAIL, dd);
+    }
+
+    // Close the file now so it is fully flushed before it replaces the old one
+    if (!mz_zip_writer_end(mz))
+    {
+        mz_zip_error err = mz_zip_get_last_error(mz);
+        dd << QString("Error: Failed to close archive. Error code %1, reason: %2").arg(static_cast<int>(err)).arg(mz_zip_get_error_string(err));
+        return Status(Status::FAIL, dd);
+    }
+
+    if (QFile::exists(zipFilePath) && !QFile::remove(zipFilePath))
+    {
+        dd << QString("Error: Unable to replace %1").arg(zipFilePath);
+        return Status(Status::FAIL, dd);
+    }
+    if (!QFile::rename(tmpZipPath, zipFilePath))
+    {
+        keepTmpZip = true;
+        dd << QString("Error: Unable to rename %1 to %2").arg(tmpZipPath, zipFilePath);
         return Status(Status::FAIL, dd);
     }
 
