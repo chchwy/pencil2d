@@ -2,8 +2,7 @@
 
 # Check if this is a tag build
 if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-  # For tag builds, use the tag name as the version (keep 'v' prefix)
-  VERSION_NUMBER="${GITHUB_REF_NAME}"
+  VERSION_NUMBER="${GITHUB_REF_NAME#v}"
   echo "VERSION_NUMBER=${VERSION_NUMBER}" >> "${GITHUB_ENV}"
   echo "Tag build detected. VERSION_NUMBER is $VERSION_NUMBER"
 elif [[ "${GITHUB_REF_NAME}" == "release/"* ]]; then
