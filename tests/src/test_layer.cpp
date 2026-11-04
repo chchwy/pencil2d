@@ -339,6 +339,17 @@ TEST_CASE("Layer::getPreviousFrameNumber()")
 TEST_CASE("Layer::moveKeyFrame(int position, int offset)")
 {
     Object* obj = new Object;
+    SECTION("move a key on a hidden layer")
+    {
+        Layer* layer = obj->addNewBitmapLayer();
+        layer->addNewKeyFrameAt(2);
+        layer->setVisible(false);
+
+        REQUIRE(layer->moveKeyFrame(2, 1));
+        REQUIRE(layer->keyExists(3));
+        REQUIRE_FALSE(layer->keyExists(2));
+    }
+
     SECTION("move one to the left")
     {
         Layer* layer = obj->addNewBitmapLayer();
