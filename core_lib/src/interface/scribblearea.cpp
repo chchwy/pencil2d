@@ -1448,6 +1448,12 @@ void ScribbleArea::deleteSelection()
         Layer* layer = mEditor->layers()->currentLayer();
         if (layer == nullptr) { return; }
 
+        // Hidden layer: warn and abort.
+        if (!layer->visible()) {
+            showLayerNotVisibleWarning();
+            return;
+        }
+
         handleDrawingOnEmptyFrame();
 
         mEditor->backup(tr("Delete Selection", "Undo Step: clear the selection area."));
